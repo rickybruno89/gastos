@@ -4,8 +4,18 @@ import Link from 'next/link';
 import Image from 'next/image'
 import AcmeLogo from '@/components/ui/acme-logo';
 import { lusitana } from '@/components/ui/fonts';
+import { getServerSession } from 'next-auth';
+import { nextAuthOptions } from '@/lib/auth';
+import { redirect } from "next/navigation";
+import ButtonSig from '@/components/ui/buttonSig';
 
-export default function Page() {
+export default async function Page() {
+
+  const session = await getServerSession(nextAuthOptions);
+
+  console.log("Session: ", session);
+
+  if (session) return redirect("/dashboard");
 
   return (
     <main className="flex min-h-screen flex-col p-6">
@@ -32,7 +42,7 @@ export default function Page() {
           </Link>
         </div>
         <div className="flex items-center justify-center p-6 md:w-3/5 md:px-28 md:py-12">
-
+          <ButtonSig />
         </div>
       </div>
 

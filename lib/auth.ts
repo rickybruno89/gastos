@@ -1,5 +1,5 @@
 import type { NextAuthOptions } from "next-auth";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import prisma from "@/lib/prisma";
 
@@ -10,11 +10,15 @@ export const nextAuthOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     }),
   ],
+  pages: {
+    signIn: "/",
+  },
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   callbacks: {
     signIn: async ({ user, account }) => {
-      console.log("here");
+      console.log("user", user);
+      console.log("account", account);
 
       // if (account!.provider === "google") {
       // const { name, email } = user;
