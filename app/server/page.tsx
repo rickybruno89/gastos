@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth/next"
 import { redirect } from "next/navigation"
-import { nextAuthOptions } from "../api/auth/[...nextauth]/options"
+import { nextAuthOptions } from "@/lib/auth"
 
 export default async function ServerPage() {
   const session = await getServerSession(nextAuthOptions)
