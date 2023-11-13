@@ -6,7 +6,8 @@
     "format:write": "prettier --write \"**/*.{css,js,json,jsx,ts,tsx}\"",
     "format": "prettier \"**/*.{css,js,json,jsx,ts,tsx}\"",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prisma-migrate": "prisma migrate dev"
   },
   "dependencies": {
     "@heroicons/react": "^2.0.18",
