@@ -110,12 +110,9 @@ export async function deleteInvoice(id: string) {
   revalidatePath("/dashboard/invoices");
 }
 
-export async function authenticate(
-  prevState: string | undefined,
-  formData: FormData
-) {
+export async function authenticate() {
   try {
-    await signIn("credentials", Object.fromEntries(formData));
+    await signIn("google");
   } catch (error) {
     if ((error as Error).message.includes("CredentialsSignin")) {
       return "CredentialSignin";

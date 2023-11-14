@@ -6,11 +6,10 @@ import { inter } from "@/components/ui/fonts";
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Acme',
-    default: 'Acme',
+    template: '%s | Gastos',
+    default: 'Gastos',
   },
-  description: 'The official Next.js Learn Dashboard built with App Router.',
-  metadataBase: new URL('https://next-learn-dashboard.vercel.sh'),
+  description: 'Lleva la cuenta de tus gastos mensuales',
 };
 export default function RootLayout({
   children,

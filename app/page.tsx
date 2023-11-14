@@ -1,19 +1,18 @@
-import { ArrowRightIcon } from '@heroicons/react/24/outline';
-
-import Link from 'next/link';
-import Image from 'next/image'
 import AcmeLogo from '@/components/ui/acme-logo';
 import { lusitana } from '@/components/ui/fonts';
 import { getServerSession } from 'next-auth';
 import { nextAuthOptions } from '@/lib/auth';
 import { redirect } from "next/navigation";
-import ButtonSig from '@/components/ui/buttonSig';
+import LoginForm from '@/components/ui/login-form';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Login',
+};
 
 export default async function Page() {
-
   const session = await getServerSession(nextAuthOptions);
   if (session) return redirect("/dashboard");
-
   return (
     <main className="flex min-h-screen flex-col p-6">
       <div className="flex h-20 shrink-0 items-end rounded-lg bg-blue-500 p-4 md:h-52">
@@ -33,11 +32,8 @@ export default async function Page() {
           />
 
         </div>
-        <div className="flex items-center justify-center p-6 md:w-3/5 md:px-28 md:py-12">
-          <ButtonSig />
-        </div>
+        <LoginForm />
       </div>
-
     </main>
   );
 }
