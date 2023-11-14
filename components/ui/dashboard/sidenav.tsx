@@ -2,10 +2,11 @@ import NavLinks from '@/components/ui/dashboard/nav-links';
 import Image from 'next/image';
 import { getServerSession } from 'next-auth';
 import SignOutButton from './sign-out-button';
+import { nextAuthOptions } from '@/lib/auth';
 
 export default async function SideNav() {
 
-  const session = await getServerSession()
+  const session = await getServerSession(nextAuthOptions)
 
   return (
     <div className="flex h-full flex-col px-3 py-4 md:px-2">

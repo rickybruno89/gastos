@@ -1,29 +1,30 @@
-// import { sql } from '@vercel/postgres';
-// import { formatCurrency } from './utils';
-// import { unstable_noStore as noStore } from 'next/cache';
+import { formatCurrency } from "./utils";
+import { unstable_noStore as noStore } from "next/cache";
+import prisma from "./prisma";
+import { getServerSession } from "next-auth";
+import { nextAuthOptions } from "./auth";
 
-// export async function fetchRevenue() {
-//   noStore()
-//   // Add noStore() here prevent the response from being cached.
-//   // This is equivalent to in fetch(..., {cache: 'no-store'}).
+const getAuthUserId = async () => {
+  const session = await getServerSession(nextAuthOptions);
+  return session?.user!.id as string;
+};
 
-//   try {
-//     // Artificially delay a reponse for demo purposes.
-//     // Don't do this in real life :)
-
-//     // console.log('Fetching revenue data...');
-//     await new Promise((resolve) => setTimeout(resolve, 2000));
-
-//     const data = await sql<Revenue>`SELECT * FROM revenue`;
-
-//     // console.log('Data fetch complete after 3 seconds.');
-
-//     return data.rows;
-//   } catch (error) {
-//     console.error('Database Error:', error);
-//     throw new Error('Failed to fetch revenue data.');
-//   }
-// }
+export async function fetchCreditCards() {
+  noStore();
+  // Add noStore() here prevent the response from being cached.
+  // This is equivalent to in fetch(..., {cache: 'no-store'}).
+  try {
+    const data = await prisma.expense.findMany({
+      where: {
+        userId: await getAuthUserId(),
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch revenue data.");
+  }
+}
 
 // export async function fetchLatestInvoices() {
 //   noStore()
