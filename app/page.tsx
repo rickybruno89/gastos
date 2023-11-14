@@ -12,9 +12,6 @@ import ButtonSig from '@/components/ui/buttonSig';
 export default async function Page() {
 
   const session = await getServerSession(nextAuthOptions);
-
-  console.log("Session: ", session);
-
   if (session) return redirect("/dashboard");
 
   return (

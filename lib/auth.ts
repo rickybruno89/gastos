@@ -16,42 +16,13 @@ export const nextAuthOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   callbacks: {
-    signIn: async ({ user, account }) => {
-      console.log("user", user);
-      console.log("account", account);
-
-      // if (account!.provider === "google") {
-      // const { name, email } = user;
-      // await connectMongoDB();
-      // const userExists = await User.findOne({ email });
-      // if (!userExists) {
-      //   const res = await fetch("http://localhost:3000/api/user", {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     body: JSON.stringify({
-      //       name,
-      //       email,
-      //     }),
-      //   });
-
-      //   if (res.ok) {
-      //     return user;
-      //   }
-      // }
-      // }
-      return true;
-    },
     jwt: async ({ token, user }) => {
-      console.log("here");
       if (user) {
         token.user = user;
       }
       return token;
     },
     session: async ({ session, token }) => {
-      console.log("here");
       session.user = {
         ...session.user,
         // @ts-expect-error

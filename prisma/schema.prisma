@@ -2,9 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -17,12 +16,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -46,6 +45,7 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  expenses      Expense[]
 }
 
 model VerificationToken {
@@ -54,4 +54,72 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Person {
+  id             String    @id @default(cuid())
+  name           String
+  sharedExpenses Expense[]
+}
+
+model PaymentHistory {
+  id        String   @id @default(cuid())
+  amount    Decimal
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expense   Expense  @relation(fields: [expenseId], references: [id])
+  expenseId String
+}
+
+model Currency {
+  id       String    @id @default(cuid())
+  name     String // ARS - USD
+  expenses Expense[]
+}
+
+model CreditCard {
+  id        String    @id @default(cuid())
+  name      String
+  taxes     Decimal
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expenses  Expense[]
+}
+
+model PaymentType {
+  id       String    @id @default(cuid())
+  name     String // EFECTIVO - HOME BANKING - TRANSFERENCIA - DEBITO AUTOMATICO
+  expenses Expense[]
+}
+
+model PaymentSource {
+  id       String    @id @default(cuid())
+  name     String // EFECTIVO - GALICIA - MACRO - HSBC - LEMON - PERSONAL PAY
+  expenses Expense[]
+}
+
+model Expense {
+  id                  String           @id @default(cuid())
+  description         String
+  notes               String
+  amount              Decimal
+  recurrent           Boolean
+  installmentQuantity Int?
+  installmentAmount   Decimal?
+  paymentBeginning    DateTime?
+  discount            Decimal?
+  paymentsHistory     PaymentHistory[]
+  sharedWith          Person[]
+  creditCard          CreditCard?      @relation(fields: [creditCardId], references: [id])
+  creditCardId        String?
+  currency            Currency         @relation(fields: [currencyId], references: [id])
+  currencyId          String
+  paymentType         PaymentType      @relation(fields: [paymentTypeId], references: [id])
+  paymentTypeId       String
+  paymentSource       PaymentSource    @relation(fields: [paymentSourceId], references: [id])
+  paymentSourceId     String
+  user                User             @relation(fields: [userId], references: [id])
+  userId              String
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 }
