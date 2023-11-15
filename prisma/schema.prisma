@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -38,14 +35,15 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  expenses      Expense[]
+  id                 String              @id @default(cuid())
+  name               String?
+  email              String?             @unique
+  emailVerified      DateTime?
+  image              String?
+  accounts           Account[]
+  sessions           Session[]
+  expenses           Expense[]
+  creditCardExpenses CreditCardExpense[]
 }
 
 model VerificationToken {
@@ -57,69 +55,132 @@ model VerificationToken {
 }
 
 model Person {
-  id             String    @id @default(cuid())
-  name           String
-  sharedExpenses Expense[]
-}
-
-model PaymentHistory {
-  id        String   @id @default(cuid())
-  amount    Decimal
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  expense   Expense  @relation(fields: [expenseId], references: [id])
-  expenseId String
+  id                           String                  @id @default(cuid())
+  name                         String
+  sharedExpenses               Expense[]
+  sharedCreditCardExpenseItems CreditCardExpenseItem[]
+  deleted                      Boolean
+  deletedAt                    DateTime
 }
 
 model Currency {
-  id       String    @id @default(cuid())
-  name     String // ARS - USD
-  expenses Expense[]
-}
-
-model CreditCard {
-  id        String    @id @default(cuid())
-  name      String
-  taxes     Decimal
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  expenses  Expense[]
+  id                     String                  @id @default(cuid())
+  name                   String // ARS - USD
+  expenses               Expense[]
+  creditCardExpenseItems CreditCardExpenseItem[]
+  deleted                Boolean
+  deletedAt              DateTime
 }
 
 model PaymentType {
-  id       String    @id @default(cuid())
-  name     String // EFECTIVO - HOME BANKING - TRANSFERENCIA - DEBITO AUTOMATICO
-  expenses Expense[]
+  id                         String                     @id @default(cuid())
+  name                       String // EFECTIVO - HOME BANKING - TRANSFERENCIA - DEBITO AUTOMATICO
+  expenses                   Expense[]
+  expensePaymentSummaries    ExpensePaymentSummary[]
+  creditCardExpenses         CreditCardExpense[]
+  creditCardPaymentSummaries CreditCardPaymentSummary[]
+  deleted                    Boolean
+  deletedAt                  DateTime
 }
 
 model PaymentSource {
-  id       String    @id @default(cuid())
-  name     String // EFECTIVO - GALICIA - MACRO - HSBC - LEMON - PERSONAL PAY
-  expenses Expense[]
+  id                         String                     @id @default(cuid())
+  name                       String // EFECTIVO - GALICIA - MACRO - HSBC - LEMON - PERSONAL PAY
+  expenses                   Expense[]
+  expensePaymentSummaries    ExpensePaymentSummary[]
+  creditCardExpenses         CreditCardExpense[]
+  creditCardPaymentSummaries CreditCardPaymentSummary[]
+  deleted                    Boolean
+  deletedAt                  DateTime
 }
 
-model Expense {
-  id                  String           @id @default(cuid())
+model CreditCardExpenseItem {
+  id                  String            @id @default(cuid())
   description         String
   notes               String
   amount              Decimal
-  recurrent           Boolean
-  installmentQuantity Int?
-  installmentAmount   Decimal?
-  paymentBeginning    DateTime?
-  discount            Decimal?
-  paymentsHistory     PaymentHistory[]
   sharedWith          Person[]
-  creditCard          CreditCard?      @relation(fields: [creditCardId], references: [id])
-  creditCardId        String?
-  currency            Currency         @relation(fields: [currencyId], references: [id])
+  currency            Currency          @relation(fields: [currencyId], references: [id])
   currencyId          String
-  paymentType         PaymentType      @relation(fields: [paymentTypeId], references: [id])
+  recurrent           Boolean
+  installmentQuantity Int               @default(0)
+  installmentAmount   Decimal           @default(0)
+  paymentBeginning    DateTime          @default(now())
+  discount            Decimal           @default(0)
+  creditCardExpense   CreditCardExpense @relation(fields: [creditCardExpenseId], references: [id])
+  creditCardExpenseId String
+  deleted             Boolean
+  deletedAt           DateTime
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+}
+
+model CreditCardExpense {
+  id                     String                     @id @default(cuid())
+  name                   String
+  taxes                  Decimal
+  paymentType            PaymentType                @relation(fields: [paymentTypeId], references: [id])
+  paymentTypeId          String
+  paymentSource          PaymentSource              @relation(fields: [paymentSourceId], references: [id])
+  paymentSourceId        String
+  paymentSummaries       CreditCardPaymentSummary[]
+  creditCardExpenseItems CreditCardExpenseItem[]
+  user                   User                       @relation(fields: [userId], references: [id])
+  userId                 String
+  deleted                Boolean
+  deletedAt              DateTime
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+}
+
+model CreditCardPaymentSummary {
+  id                  String            @id @default(cuid())
+  date                DateTime
+  amount              Decimal
+  paid                Boolean           @default(false)
+  paymentType         PaymentType       @relation(fields: [paymentTypeId], references: [id])
   paymentTypeId       String
-  paymentSource       PaymentSource    @relation(fields: [paymentSourceId], references: [id])
+  paymentSource       PaymentSource     @relation(fields: [paymentSourceId], references: [id])
   paymentSourceId     String
-  user                User             @relation(fields: [userId], references: [id])
-  userId              String
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  creditCardExpense   CreditCardExpense @relation(fields: [creditCardExpenseId], references: [id])
+  creditCardExpenseId String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+}
+
+model Expense {
+  id               String                  @id @default(cuid())
+  description      String
+  notes            String
+  amount           Decimal
+  recurrent        Boolean
+  sharedWith       Person[]
+  currency         Currency                @relation(fields: [currencyId], references: [id])
+  currencyId       String
+  paymentType      PaymentType             @relation(fields: [paymentTypeId], references: [id])
+  paymentTypeId    String
+  paymentSource    PaymentSource           @relation(fields: [paymentSourceId], references: [id])
+  paymentSourceId  String
+  user             User                    @relation(fields: [userId], references: [id])
+  userId           String
+  paymentSummaries ExpensePaymentSummary[]
+  deleted          Boolean
+  deletedAt        DateTime
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+}
+
+model ExpensePaymentSummary {
+  id              String        @id @default(cuid())
+  date            DateTime
+  amount          Decimal
+  paid            Boolean       @default(false)
+  expense         Expense       @relation(fields: [expenseId], references: [id])
+  expenseId       String
+  paymentType     PaymentType   @relation(fields: [paymentTypeId], references: [id])
+  paymentTypeId   String
+  paymentSource   PaymentSource @relation(fields: [paymentSourceId], references: [id])
+  paymentSourceId String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
