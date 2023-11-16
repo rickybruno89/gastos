@@ -5,9 +5,11 @@ import { createPaymentSource } from '@/services/payment-source';
 import Link from 'next/link';
 import { useFormState } from 'react-dom';
 
-export default function PaymentSourceForm() {
+export default function PaymentSourceForm({ callbackUrl }: { callbackUrl: string }) {
   const initialState = { message: null, errors: {} };
-  const [state, dispatch] = useFormState(createPaymentSource, initialState);
+  const createPaymentSourceWithCallbackUrl = createPaymentSource.bind(null, callbackUrl);
+
+  const [state, dispatch] = useFormState(createPaymentSourceWithCallbackUrl, initialState);
 
 
   return (

@@ -5,6 +5,8 @@ import {
   CheckIcon,
   ClockIcon,
   CurrencyDollarIcon,
+  PlusCircleIcon,
+  PlusIcon,
   ReceiptPercentIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
@@ -12,10 +14,14 @@ import { useFormState } from 'react-dom';
 import { createCreditCard } from '@/services/credit-card';
 import { Button } from '@/components/ui/button';
 import { PaymentSource, PaymentType } from '@prisma/client';
+import { useRouter } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PAGES_URL } from '@/lib/routes';
 
 export default function CreditCardCreateForm({ paymentTypes, paymentSources }: { paymentTypes: PaymentType[], paymentSources: PaymentSource[] }) {
   const initialState = { message: null, errors: {} };
   const [state, dispatch] = useFormState(createCreditCard, initialState);
+  const router = useRouter()
   return (
     <form action={dispatch}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6 w-fit flex flex-col gap-4">
@@ -81,24 +87,31 @@ export default function CreditCardCreateForm({ paymentTypes, paymentSources }: {
           <label htmlFor="paymentType" className="mb-2 block text-sm font-medium">
             Seleccione la forma de pago a usar
           </label>
-          <div className="relative">
-            <select
-              id="paymentType"
+          <div>
+            <Select onValueChange={(value) => {
+              if (value.includes("/dashboard"))
+                router.push(value)
+            }}
               name="paymentTypeId"
-              className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-              defaultValue=""
               aria-describedby="paymentType-error"
             >
-              <option value="" disabled>
-                Seleccione una opción
-              </option>
-              {paymentTypes.map((paymentType) => (
-                <option key={paymentType.id} value={paymentType.id}>
-                  {paymentType.name}
-                </option>
-              ))}
-            </select>
-            <UserCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500" />
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccione una opción" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem className='bg-blue-500 focus:bg-blue-400 cursor-pointer text-white focus:text-white' value={`${PAGES_URL.SETTINGS.PAYMENT_TYPE_CREATE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.CREATE}`}>
+                  <div className='flex gap-2 p-1'>
+                    <PlusCircleIcon className='w-5' />
+                    Crear nueva forma de pago
+                  </div>
+                </SelectItem>
+                {paymentTypes.map((paymentType) => (
+                  <SelectItem key={paymentType.id} value={paymentType.id}>
+                    {paymentType.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {state.errors?.paymentTypeId ? (
             <div
@@ -118,24 +131,31 @@ export default function CreditCardCreateForm({ paymentTypes, paymentSources }: {
           <label htmlFor="paymentSource" className="mb-2 block text-sm font-medium">
             Seleccione un canal de pago
           </label>
-          <div className="relative">
-            <select
-              id="paymentSource"
+          <div>
+            <Select onValueChange={(value) => {
+              if (value.includes("/dashboard"))
+                router.push(value)
+            }}
               name="paymentSourceId"
-              className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-              defaultValue=""
               aria-describedby="paymentSource-error"
             >
-              <option value="" disabled>
-                Seleccione una opción
-              </option>
-              {paymentSources.map((paymentSource) => (
-                <option key={paymentSource.id} value={paymentSource.id}>
-                  {paymentSource.name}
-                </option>
-              ))}
-            </select>
-            <UserCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500" />
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccione una opción" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem className='bg-blue-500 focus:bg-blue-400 cursor-pointer text-white focus:text-white' value={`${PAGES_URL.SETTINGS.PAYMENT_SOURCE_CREATE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.CREATE}`}>
+                  <div className='flex gap-2 p-1'>
+                    <PlusCircleIcon className='w-5' />
+                    Crear nuevo canal de pago
+                  </div>
+                </SelectItem>
+                {paymentSources.map((paymentSource) => (
+                  <SelectItem key={paymentSource.id} value={paymentSource.id}>
+                    {paymentSource.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {state.errors?.paymentSourceId ? (
             <div

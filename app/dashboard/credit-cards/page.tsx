@@ -1,5 +1,6 @@
 
 import Breadcrumbs from '@/components/ui/breadcrumbs';
+import { PAGES_URL } from '@/lib/routes';
 import { fetchCreditCards } from '@/services/credit-card';
 import { PlusCircleIcon } from '@heroicons/react/20/solid';
 import { Metadata } from 'next';
@@ -16,7 +17,7 @@ export default async function Page() {
     <main>
       <Breadcrumbs
         breadcrumbs={[
-          { label: 'Tarjetas de crédito', href: '/dashboard/credit-cards', active: true }
+          { label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH, active: true }
         ]}
       />
       <div className='flex gap-4 flex-wrap justify-center md:justify-start'>
@@ -30,8 +31,8 @@ export default async function Page() {
                   <p>Canal de pago: <span className='font-bold'>{creditCard.paymentSource.name}</span></p>
                 </div>
                 <div className='flex justify-between items-end'>
-                  <Link href={"/dashboard/credit-cards/summary"}>Mas información</Link>
-                  <Link href={"/dashboard/credit-cards/summary/create"}>Generar resumen</Link>
+                  <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.BASE_PATH("asdasdads")}>Mas información</Link>
+                  <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE("asdadasdasd")}>Generar resumen</Link>
                 </div>
               </div>
             </div>
@@ -39,7 +40,7 @@ export default async function Page() {
           ))
         }
 
-        <Link href={"/dashboard/credit-cards/create"} className='w-full md:w-[350px] aspect-video rounded-xl border border-dashed border-blue-400 flex justify-center items-center gap-4 text-blue-400 cursor-pointer'>
+        <Link href={PAGES_URL.CREDIT_CARDS.CREATE} className='w-full md:w-[350px] aspect-video rounded-xl border border-dashed border-blue-400 flex justify-center items-center gap-4 text-blue-400 cursor-pointer'>
           <PlusCircleIcon className='w-12 ' />
           Agregar tarjeta
         </Link>

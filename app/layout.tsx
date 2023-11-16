@@ -1,4 +1,4 @@
-import "@/app/global.css"
+import "@/app/globals.css"
 
 import { Metadata } from 'next';
 import { NextAuthProvider } from "./Providers";

@@ -9,20 +9,24 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
+import { BASE_PATH, PAGES_URL } from '@/lib/routes';
 
 // Map of links to display in the side navigation.
 // Depending on the size of the application, this would be stored in a database.
+
+
+
 const links = [
-  { name: 'Resumen', href: '/dashboard', icon: BanknotesIcon },
-  { name: 'Gastos', href: '/dashboard/expenses', icon: CurrencyDollarIcon },
+  { name: 'Resumen', href: BASE_PATH, icon: BanknotesIcon },
+  { name: 'Gastos', href: PAGES_URL.EXPENSES.BASE_PATH, icon: CurrencyDollarIcon },
   {
     name: 'Tarjetas de Crédito',
-    href: '/dashboard/credit-cards',
+    href: PAGES_URL.CREDIT_CARDS.BASE_PATH,
     icon: CreditCardIcon,
   },
   {
     name: 'Configuración',
-    href: '/dashboard/settings',
+    href: PAGES_URL.SETTINGS.BASE_PATH,
     icon: Cog8ToothIcon,
   },
 ];

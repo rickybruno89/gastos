@@ -1,7 +1,16 @@
 import Breadcrumbs from '@/components/ui/breadcrumbs'
 import PaymentTypeForm from '../../_components/PaymentTypeForm'
+import { PAGES_URL } from '@/lib/routes';
 
-export default function page() {
+export default function Page({
+  searchParams,
+}: {
+  searchParams?: {
+    callbackUrl?: string;
+  };
+}) {
+  const callbackUrl = searchParams?.callbackUrl || PAGES_URL.SETTINGS.BASE_PATH;
+
   return (
     <>
       <Breadcrumbs
@@ -14,7 +23,7 @@ export default function page() {
           },
         ]}
       />
-      <PaymentTypeForm />
+      <PaymentTypeForm callbackUrl={callbackUrl} />
     </>
 
   )

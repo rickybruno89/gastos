@@ -6,6 +6,7 @@ import { getAuthUserId } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
+import { PAGES_URL } from "@/lib/routes";
 
 type State = {
   errors?: {
@@ -22,6 +23,7 @@ const PaymentSourceSchema = z.object({
 const CreatePaymentSourceSchema = PaymentSourceSchema.omit({ id: true });
 
 export const createPaymentSource = async (
+  callbackUrl: string,
   _prevState: State,
   formData: FormData
 ) => {
@@ -64,8 +66,9 @@ export const createPaymentSource = async (
       message: "Error en base de datos",
     };
   }
-  revalidatePath("/dashboard/settings");
-  redirect("/dashboard/settings");
+  revalidatePath(PAGES_URL.SETTINGS.BASE_PATH);
+  revalidatePath(PAGES_URL.CREDIT_CARDS.CREATE);
+  redirect(callbackUrl);
 };
 
 export async function fetchPaymentSource() {

@@ -5,9 +5,10 @@ import { createPaymentType } from '@/services/payment-type';
 import Link from 'next/link';
 import { useFormState } from 'react-dom';
 
-export default function PaymentTypeForm() {
+export default function PaymentTypeForm({ callbackUrl }: { callbackUrl: string }) {
   const initialState = { message: null, errors: {} };
-  const [state, dispatch] = useFormState(createPaymentType, initialState);
+  const createPaymentTypeWithCallbackUrl = createPaymentType.bind(null, callbackUrl);
+  const [state, dispatch] = useFormState(createPaymentTypeWithCallbackUrl, initialState);
 
 
   return (
@@ -43,7 +44,7 @@ export default function PaymentTypeForm() {
         </div>
         <div className="mt-6 flex justify-end gap-4">
           <Link
-            href="/dashboard/settings"
+            href={callbackUrl}
             className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
           >
             Cancel
