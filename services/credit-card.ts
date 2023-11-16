@@ -9,25 +9,43 @@ import { unstable_noStore as noStore } from "next/cache";
 
 type State = {
   errors?: {
-    name?: string[];
+    creditCardName?: string[];
+    taxesPercent?: string[];
+    paymentTypeId?: string[];
+    paymentSourceId?: string[];
   };
   message?: string | null;
 };
 
-const PaymentTypeSchema = z.object({
+const CreditCardSchema = z.object({
   id: z.string().cuid(),
-  name: z.string().min(1, { message: "El nombre es requerido" }).toUpperCase(),
+  creditCardName: z
+    .string()
+    .min(1, { message: "El nombre es requerido" })
+    .toUpperCase(),
+  taxesPercent: z.coerce
+    .number()
+    .gt(0, { message: "El porcentaje tiene que ser mayor que 0" }),
+  paymentTypeId: z.string({
+    invalid_type_error: "Por favor seleccione una forma de pago",
+  }),
+  paymentSourceId: z.string({
+    invalid_type_error: "Por favor seleccione un canal de pago",
+  }),
 });
 
-const CreatePaymentTypeSchema = PaymentTypeSchema.omit({ id: true });
+const CreateCreditCardSchema = CreditCardSchema.omit({ id: true });
 
-export const createPaymentType = async (
+export const createCreditCard = async (
   _prevState: State,
   formData: FormData
 ): Promise<PaymentType | any> => {
   try {
-    const validatedFields = CreatePaymentTypeSchema.safeParse({
-      name: formData.get("name"),
+    const validatedFields = CreateCreditCardSchema.safeParse({
+      creditCardName: formData.get("creditCardName"),
+      taxesPercent: formData.get("taxesPercent"),
+      paymentTypeId: formData.get("paymentTypeId"),
+      paymentSourceId: formData.get("paymentSourceId"),
     });
 
     if (!validatedFields.success) {
@@ -37,26 +55,34 @@ export const createPaymentType = async (
       };
     }
 
-    const { name } = validatedFields.data;
+    const { creditCardName, taxesPercent, paymentTypeId, paymentSourceId } =
+      validatedFields.data;
+    console.log(
+      "🚀 ~ file: credit-card.ts:60 ~ validatedFields.data:",
+      validatedFields.data
+    );
     const userId = await getAuthUserId();
 
-    const existingPaymentType = await prisma.paymentType.findFirst({
+    const existingCreditCard = await prisma.creditCardExpense.findFirst({
       where: {
-        name,
+        name: creditCardName,
         userId,
       },
     });
 
-    if (existingPaymentType) {
+    if (existingCreditCard) {
       return {
-        errors: { name: ["La forma de pago ya existe"] },
+        errors: { creditCardName: ["La Tarjeta de crédito ya existe"] },
         message: "Error",
       };
     }
 
-    await prisma.paymentType.create({
+    await prisma.creditCardExpense.create({
       data: {
-        name: name,
+        name: creditCardName,
+        taxesPercent: taxesPercent,
+        paymentTypeId: paymentTypeId,
+        paymentSourceId: paymentSourceId,
         userId,
       },
     });
@@ -65,23 +91,84 @@ export const createPaymentType = async (
       message: "Error en base de datos",
     };
   }
-  revalidatePath("/dashboard/settings");
-  redirect("/dashboard/settings");
+  revalidatePath("/dashboard/credit-cards");
+  redirect("/dashboard/credit-cards");
 };
 
-export async function fetchPaymentType() {
+export async function fetchCreditCards() {
   noStore();
   // Add noStore() here prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
   try {
-    const data = await prisma.paymentType.findMany({
+    const data = await prisma.creditCardExpense.findMany({
       where: {
         userId: await getAuthUserId(),
+      },
+      include: {
+        paymentSource: true,
+        paymentType: true,
       },
     });
     return data;
   } catch (error) {
     console.error("Error:", error);
-    throw new Error("Error al cargar Formas de pago");
+    throw new Error("Error al cargar Tarjetas de créditos");
   }
 }
+
+// export async function updateInvoice(
+//   id: string,
+//   prevState: State,
+//   formData: FormData
+// ) {
+//   const validatedFields = UpdateInvoice.safeParse({
+//     customerId: formData.get("customerId"),
+//     amount: formData.get("amount"),
+//     status: formData.get("status"),
+//   });
+
+//   if (!validatedFields.success) {
+//     return {
+//       errors: validatedFields.error.flatten().fieldErrors,
+//       message: "Missing Fields. Failed to Update Invoice.",
+//     };
+//   }
+
+//   const { customerId, amount, status } = validatedFields.data;
+//   const amountInCents = amount * 100;
+
+//   try {
+//     await sql`
+//       UPDATE invoices
+//       SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+//       WHERE id = ${id}
+//     `;
+//   } catch (error) {
+//     return { message: "Database Error: Failed to Update Invoice." };
+//   }
+
+//   revalidatePath("/dashboard/invoices");
+//   redirect("/dashboard/invoices");
+// }
+
+// export async function deleteInvoice(id: string) {
+//   try {
+//     await sql`DELETE FROM invoices WHERE id = ${id}`;
+//   } catch (error) {
+//     return {
+//       message: "Database Error: Failed to Create Invoice.",
+//     };
+//   }
+//   revalidatePath("/dashboard/invoices");
+// }
+
+// export async function authenticate() {
+//   try {
+//     await signIn("google");
+//   } catch (error) {
+//     if ((error as Error).message.includes("CredentialsSignin")) {
+//       return "CredentialSignin";
+//     }
+//     throw error;
+//   }
+// }

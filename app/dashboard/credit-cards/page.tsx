@@ -1,8 +1,8 @@
 
-import { fetchCreditCards } from '@/lib/data';
+import Breadcrumbs from '@/components/ui/breadcrumbs';
+import { fetchCreditCards } from '@/services/credit-card';
 import { PlusCircleIcon } from '@heroicons/react/20/solid';
 import { Metadata } from 'next';
-import { getServerSession } from 'next-auth';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
@@ -10,16 +10,36 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const data = await fetchCreditCards()
-  console.log("🚀 ~ file: page.tsx:12 ~ Page ~ data:", data)
+  const creditCards = await fetchCreditCards()
 
   return (
-    <main className=''>
-      <h1 className='text-xl mb-4'>Tarjetas de crédito</h1>
+    <main>
+      <Breadcrumbs
+        breadcrumbs={[
+          { label: 'Tarjetas de crédito', href: '/dashboard/credit-cards', active: true }
+        ]}
+      />
       <div className='flex gap-4 flex-wrap justify-center md:justify-start'>
+        {
+          creditCards.map(creditCard => (
+            <div key={creditCard.id} className='bg-red-700 w-full md:w-[350px] aspect-video rounded-xl shadow-xl p-4 text-white flex flex-col gap-4'>
+              <h1 className='font-bold'>{creditCard.name}</h1>
+              <div className='flex flex-1 flex-col gap-2 justify-between'>
+                <div>
+                  <p>Forma de pago: <span className='font-bold'>{creditCard.paymentType.name}</span></p>
+                  <p>Canal de pago: <span className='font-bold'>{creditCard.paymentSource.name}</span></p>
+                </div>
+                <div className='flex justify-between items-end'>
+                  <Link href={"/dashboard/credit-cards/summary"}>Mas información</Link>
+                  <Link href={"/dashboard/credit-cards/summary/create"}>Generar resumen</Link>
+                </div>
+              </div>
+            </div>
 
-        <div className='bg-red-700 w-[300px] aspect-video rounded-xl shadow-xl'></div>
-        <Link href={"/dashboard/credit-card/create"} className=' w-[300px] aspect-video rounded-xl border border-dashed border-blue-400 flex justify-center items-center gap-4 text-blue-400 cursor-pointer'>
+          ))
+        }
+
+        <Link href={"/dashboard/credit-cards/create"} className='w-full md:w-[350px] aspect-video rounded-xl border border-dashed border-blue-400 flex justify-center items-center gap-4 text-blue-400 cursor-pointer'>
           <PlusCircleIcon className='w-12 ' />
           Agregar tarjeta
         </Link>

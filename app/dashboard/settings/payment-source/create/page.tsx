@@ -3,7 +3,7 @@ import PaymentSourceForm from '../../_components/PaymentSourceForm'
 
 export default function page() {
   return (
-    <>
+    <main>
       <Breadcrumbs
         breadcrumbs={[
           { label: 'Configuración', href: '/dashboard/settings' },
@@ -15,7 +15,7 @@ export default function page() {
         ]}
       />
       <PaymentSourceForm />
-    </>
+    </main>
 
   )
 }
