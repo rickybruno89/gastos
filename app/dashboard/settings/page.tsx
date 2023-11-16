@@ -1,3 +1,5 @@
+import LinkButton from '@/components/ui/link-button';
+import { PAGES_URL } from '@/lib/routes';
 import { fetchPaymentSource } from '@/services/payment-source';
 import { fetchPaymentType } from '@/services/payment-type';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -12,13 +14,12 @@ export default async function Page() {
       <section className='bg-white rounded-lg p-4 md:p-6'>
         <div className='flex justify-between gap-4 items-center'>
           <h1 className='text-xl'>Forma de pago</h1>
-          <Link
-            href="/dashboard/settings/payment-type/create"
-            className="py-2 px-4 w-fit flex items-center rounded-lg bg-blue-600 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          <LinkButton
+            href={PAGES_URL.SETTINGS.PAYMENT_TYPE_CREATE}
           >
+            <PlusIcon className="h-5 " />
             <span className="hidden md:block">Crear Forma de pago</span>
-            <PlusIcon className="h-5 md:ml-4" />
-          </Link>
+          </LinkButton>
         </div>
         {paymentTypes.length ? (
           paymentTypes.map(paymentType => (
@@ -33,13 +34,12 @@ export default async function Page() {
       <section className='bg-white rounded-lg p-4 md:p-6'>
         <div className='flex justify-between gap-4 items-center'>
           <h1 className='text-xl'>Canales de pago</h1>
-          <Link
-            href="/dashboard/settings/payment-source/create"
-            className="py-2 px-4 w-fit flex items-center rounded-lg bg-blue-600 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          <LinkButton
+            href={PAGES_URL.SETTINGS.PAYMENT_SOURCE_CREATE}
           >
+            <PlusIcon className="h-5" />
             <span className="hidden md:block">Crear Canal de pago</span>
-            <PlusIcon className="h-5 md:ml-4" />
-          </Link>
+          </LinkButton>
         </div>
         {paymentSources.length ? (
           paymentSources.map(paymentSource => (

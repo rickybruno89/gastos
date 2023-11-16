@@ -15,10 +15,10 @@ export default function Page({
     <>
       <Breadcrumbs
         breadcrumbs={[
-          { label: 'Configuración', href: '/dashboard/settings' },
+          { label: 'Configuración', href: PAGES_URL.SETTINGS.BASE_PATH },
           {
-            label: 'Crear Forma de Pago',
-            href: '/dashboard/settings/payment-type/create',
+            label: 'Nueva forma de pago',
+            href: PAGES_URL.SETTINGS.PAYMENT_TYPE_CREATE,
             active: true,
           },
         ]}

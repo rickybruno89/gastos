@@ -3,6 +3,7 @@ import Breadcrumbs from '@/components/ui/breadcrumbs';
 import CreditCardCreateForm from './_components/create-form';
 import { fetchPaymentSource } from '@/services/payment-source';
 import { fetchPaymentType } from '@/services/payment-type';
+import { PAGES_URL } from '@/lib/routes';
 
 export const metadata: Metadata = {
   title: 'Crear Tarjeta de Crédito',
@@ -14,10 +15,10 @@ export default async function Page() {
     <main>
       <Breadcrumbs
         breadcrumbs={[
-          { label: 'Tarjetas de crédito', href: '/dashboard/credit-cards' },
+          { label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH },
           {
-            label: 'Crear Tarjeta de Crédito',
-            href: '/dashboard/credit-cards/create',
+            label: 'Crear tarjeta de crédito',
+            href: PAGES_URL.CREDIT_CARDS.CREATE,
             active: true,
           },
         ]}

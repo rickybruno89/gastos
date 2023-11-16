@@ -6,6 +6,7 @@ import { getAuthUserId } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
+import { PAGES_URL } from "@/lib/routes";
 
 type State = {
   errors?: {
@@ -91,8 +92,8 @@ export const createCreditCard = async (
       message: "Error en base de datos",
     };
   }
-  revalidatePath("/dashboard/credit-cards");
-  redirect("/dashboard/credit-cards");
+  revalidatePath(PAGES_URL.CREDIT_CARDS.BASE_PATH);
+  redirect(PAGES_URL.CREDIT_CARDS.BASE_PATH);
 };
 
 export async function fetchCreditCards() {

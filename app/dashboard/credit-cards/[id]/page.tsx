@@ -17,7 +17,7 @@ export default async function Page({ params }: { params: { id: string } }) {
     <main>
       <Breadcrumbs
         breadcrumbs={[
-          { label: 'Tarjetas de crédito', href: '/dashboard/credit-cards' },
+          { label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH },
           {
             label: `${creditCardDetails?.name}`,
             href: PAGES_URL.CREDIT_CARDS.DETAILS(id),

@@ -14,10 +14,10 @@ export default function Page({
     <main>
       <Breadcrumbs
         breadcrumbs={[
-          { label: 'Configuración', href: '/dashboard/settings' },
+          { label: 'Configuración', href: PAGES_URL.SETTINGS.BASE_PATH },
           {
-            label: 'Crear Canal de Pago',
-            href: '/dashboard/settings/payment-source/create',
+            label: 'Nuevo canal de pago',
+            href: PAGES_URL.SETTINGS.PAYMENT_SOURCE_CREATE,
             active: true,
           },
         ]}

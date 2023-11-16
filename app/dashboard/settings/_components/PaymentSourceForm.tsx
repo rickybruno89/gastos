@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { PAGES_URL } from '@/lib/routes';
 import { createPaymentSource } from '@/services/payment-source';
 import Link from 'next/link';
 import { useFormState } from 'react-dom';
@@ -45,7 +46,7 @@ export default function PaymentSourceForm({ callbackUrl }: { callbackUrl: string
         </div>
         <div className="mt-6 flex justify-end gap-4">
           <Link
-            href="/dashboard/settings"
+            href={PAGES_URL.SETTINGS.BASE_PATH}
             className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
           >
             Cancel
