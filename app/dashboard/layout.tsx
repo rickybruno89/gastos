@@ -7,7 +7,7 @@ import React from 'react'
 export default async function Layout({ children }: { children: React.ReactNode }) {
 
   const session = await getServerSession(nextAuthOptions)
-  if (!session) return redirect("/");
+  if (!session?.user.id) return redirect("/");
 
   return (
     <div className="flex h-screen flex-col md:flex-row md:overflow-hidden">

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   const session = await getServerSession(nextAuthOptions);
-  if (session) return redirect(BASE_PATH);
+  if (session?.user.id) return redirect(BASE_PATH);
   return (
     <main className="flex min-h-screen flex-col p-6">
       <div className="flex h-20 shrink-0 items-end rounded-lg bg-blue-500 p-4 md:h-52">

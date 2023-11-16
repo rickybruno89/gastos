@@ -29,7 +29,16 @@ export const nextAuthOptions: NextAuthOptions = {
         },
       });
 
-      if (!userDb) return null;
+      if (!userDb)
+        return {
+          expires: "",
+          user: {
+            name: null,
+            id: null,
+            email: null,
+            image: null,
+          },
+        };
 
       session.user = {
         ...session.user,

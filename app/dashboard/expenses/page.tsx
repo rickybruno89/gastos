@@ -1,7 +1,5 @@
 
-import { fetchCreditCards } from '@/lib/data';
 import { Metadata } from 'next';
-import { getServerSession } from 'next-auth';
 
 export const metadata: Metadata = {
   title: 'Gastos',
