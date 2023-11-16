@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   },
   description: 'Lleva la cuenta de tus gastos mensuales',
 };
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;

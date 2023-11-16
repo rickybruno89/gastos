@@ -7,7 +7,6 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const session = await getServerSession()
 
   return (
     <main>

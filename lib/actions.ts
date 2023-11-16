@@ -3,7 +3,8 @@ import { z } from "zod";
 import { sql } from "@vercel/postgres";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { nextAuthOptions } from "./auth";
 
 const InvoiceSchema = z.object({
   id: z.string(),
@@ -22,16 +23,7 @@ const InvoiceSchema = z.object({
 const CreateInvoice = InvoiceSchema.omit({ id: true, date: true });
 const UpdateInvoice = InvoiceSchema.omit({ date: true, id: true });
 
-export type State = {
-  errors?: {
-    customerId?: string[];
-    amount?: string[];
-    status?: string[];
-  };
-  message?: string | null;
-};
-
-export async function createInvoice(prevState: State, formData: FormData) {
+export async function createCreditCard(prevState: State, formData: FormData) {
   try {
     const validatedFields = CreateInvoice.safeParse({
       customerId: formData.get("customerId"),
@@ -42,7 +34,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
     if (!validatedFields.success) {
       return {
         errors: validatedFields.error.flatten().fieldErrors,
-        message: "Missing Fields. Failed to Create Invoice.",
+        message: "Error",
       };
     }
 
@@ -64,59 +56,66 @@ export async function createInvoice(prevState: State, formData: FormData) {
   redirect("/dashboard/invoices");
 }
 
-export async function updateInvoice(
-  id: string,
-  prevState: State,
-  formData: FormData
-) {
-  const validatedFields = UpdateInvoice.safeParse({
-    customerId: formData.get("customerId"),
-    amount: formData.get("amount"),
-    status: formData.get("status"),
-  });
+type State = {
+  errors?: {
+    name?: string[];
+  };
+  message?: string | null;
+};
 
-  if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: "Missing Fields. Failed to Update Invoice.",
-    };
-  }
+// export async function updateInvoice(
+//   id: string,
+//   prevState: State,
+//   formData: FormData
+// ) {
+//   const validatedFields = UpdateInvoice.safeParse({
+//     customerId: formData.get("customerId"),
+//     amount: formData.get("amount"),
+//     status: formData.get("status"),
+//   });
 
-  const { customerId, amount, status } = validatedFields.data;
-  const amountInCents = amount * 100;
+//   if (!validatedFields.success) {
+//     return {
+//       errors: validatedFields.error.flatten().fieldErrors,
+//       message: "Missing Fields. Failed to Update Invoice.",
+//     };
+//   }
 
-  try {
-    await sql`
-      UPDATE invoices
-      SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-      WHERE id = ${id}
-    `;
-  } catch (error) {
-    return { message: "Database Error: Failed to Update Invoice." };
-  }
+//   const { customerId, amount, status } = validatedFields.data;
+//   const amountInCents = amount * 100;
 
-  revalidatePath("/dashboard/invoices");
-  redirect("/dashboard/invoices");
-}
+//   try {
+//     await sql`
+//       UPDATE invoices
+//       SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+//       WHERE id = ${id}
+//     `;
+//   } catch (error) {
+//     return { message: "Database Error: Failed to Update Invoice." };
+//   }
 
-export async function deleteInvoice(id: string) {
-  try {
-    await sql`DELETE FROM invoices WHERE id = ${id}`;
-  } catch (error) {
-    return {
-      message: "Database Error: Failed to Create Invoice.",
-    };
-  }
-  revalidatePath("/dashboard/invoices");
-}
+//   revalidatePath("/dashboard/invoices");
+//   redirect("/dashboard/invoices");
+// }
 
-export async function authenticate() {
-  try {
-    await signIn("google");
-  } catch (error) {
-    if ((error as Error).message.includes("CredentialsSignin")) {
-      return "CredentialSignin";
-    }
-    throw error;
-  }
-}
+// export async function deleteInvoice(id: string) {
+//   try {
+//     await sql`DELETE FROM invoices WHERE id = ${id}`;
+//   } catch (error) {
+//     return {
+//       message: "Database Error: Failed to Create Invoice.",
+//     };
+//   }
+//   revalidatePath("/dashboard/invoices");
+// }
+
+// export async function authenticate() {
+//   try {
+//     await signIn("google");
+//   } catch (error) {
+//     if ((error as Error).message.includes("CredentialsSignin")) {
+//       return "CredentialSignin";
+//     }
+//     throw error;
+//   }
+// }

@@ -6,7 +6,7 @@ import { nextAuthOptions } from "./auth";
 
 const getAuthUserId = async () => {
   const session = await getServerSession(nextAuthOptions);
-  return session?.user!.id as string;
+  return session?.user.id;
 };
 
 export async function fetchCreditCards() {

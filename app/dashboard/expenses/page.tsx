@@ -4,16 +4,16 @@ import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 
 export const metadata: Metadata = {
-  title: 'Tarjeta Crédito',
+  title: 'Gastos',
 };
 
 export default async function Page() {
-  const data = await fetchCreditCards()
+  // const data = await fetchCreditCards()
+  // console.log("🚀 ~ file: page.tsx:12 ~ Page ~ data:", data)
 
   return (
     <main className=''>
-      <h1 className='text-xl mb-4'>Tarjetas de crédito</h1>
-      <div className='bg-red-700 w-[300px] aspect-video rounded-xl shadow-xl'></div>
+      <h1 className='text-xl mb-4'>Gastos</h1>
     </main>
   );
 }

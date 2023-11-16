@@ -2,6 +2,9 @@
 import {
   CurrencyDollarIcon,
   CreditCardIcon,
+  ChartBarIcon,
+  BanknotesIcon,
+  Cog8ToothIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -10,11 +13,17 @@ import clsx from 'clsx';
 // Map of links to display in the side navigation.
 // Depending on the size of the application, this would be stored in a database.
 const links = [
-  { name: 'Gastos', href: '/dashboard', icon: CurrencyDollarIcon },
+  { name: 'Resumen', href: '/dashboard', icon: BanknotesIcon },
+  { name: 'Gastos', href: '/dashboard/expenses', icon: CurrencyDollarIcon },
   {
     name: 'Tarjetas de Crédito',
-    href: '/dashboard/credit-card',
+    href: '/dashboard/credit-cards',
     icon: CreditCardIcon,
+  },
+  {
+    name: 'Configuración',
+    href: '/dashboard/settings',
+    icon: Cog8ToothIcon,
   },
 ];
 

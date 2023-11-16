@@ -35,15 +35,21 @@ model Session {
 }
 
 model User {
-  id                 String              @id @default(cuid())
-  name               String?
-  email              String?             @unique
-  emailVerified      DateTime?
-  image              String?
-  accounts           Account[]
-  sessions           Session[]
-  expenses           Expense[]
-  creditCardExpenses CreditCardExpense[]
+  id                         String                     @id @default(cuid())
+  name                       String?
+  email                      String?                    @unique
+  emailVerified              DateTime?
+  image                      String?
+  accounts                   Account[]
+  sessions                   Session[]
+  expenses                   Expense[]
+  creditCardExpenses         CreditCardExpense[]
+  sharedPaymentPersons       Person[]
+  currencies                 Currency[]
+  paymentTypes               PaymentType[]
+  paymentSources             PaymentSource[]
+  creditCardPaymentSummaries CreditCardPaymentSummary[]
+  expensePaymentSummaries    ExpensePaymentSummary[]
 }
 
 model VerificationToken {
@@ -59,17 +65,21 @@ model Person {
   name                         String
   sharedExpenses               Expense[]
   sharedCreditCardExpenseItems CreditCardExpenseItem[]
-  deleted                      Boolean
-  deletedAt                    DateTime
+  user                         User                    @relation(fields: [userId], references: [id])
+  userId                       String
+  deleted                      Boolean                 @default(false)
+  deletedAt                    DateTime?
 }
 
 model Currency {
   id                     String                  @id @default(cuid())
-  name                   String // ARS - USD
+  name                   String // ARS - USD 
   expenses               Expense[]
   creditCardExpenseItems CreditCardExpenseItem[]
-  deleted                Boolean
-  deletedAt              DateTime
+  user                   User                    @relation(fields: [userId], references: [id])
+  userId                 String
+  deleted                Boolean                 @default(false)
+  deletedAt              DateTime?
 }
 
 model PaymentType {
@@ -79,8 +89,12 @@ model PaymentType {
   expensePaymentSummaries    ExpensePaymentSummary[]
   creditCardExpenses         CreditCardExpense[]
   creditCardPaymentSummaries CreditCardPaymentSummary[]
-  deleted                    Boolean
-  deletedAt                  DateTime
+  user                       User                       @relation(fields: [userId], references: [id])
+  userId                     String
+  deleted                    Boolean                    @default(false)
+  deletedAt                  DateTime?
+
+  @@unique([userId, name])
 }
 
 model PaymentSource {
@@ -90,8 +104,12 @@ model PaymentSource {
   expensePaymentSummaries    ExpensePaymentSummary[]
   creditCardExpenses         CreditCardExpense[]
   creditCardPaymentSummaries CreditCardPaymentSummary[]
-  deleted                    Boolean
-  deletedAt                  DateTime
+  user                       User                       @relation(fields: [userId], references: [id])
+  userId                     String
+  deleted                    Boolean                    @default(false)
+  deletedAt                  DateTime?
+
+  @@unique([userId, name])
 }
 
 model CreditCardExpenseItem {
@@ -109,8 +127,8 @@ model CreditCardExpenseItem {
   discount            Decimal           @default(0)
   creditCardExpense   CreditCardExpense @relation(fields: [creditCardExpenseId], references: [id])
   creditCardExpenseId String
-  deleted             Boolean
-  deletedAt           DateTime
+  deleted             Boolean           @default(false)
+  deletedAt           DateTime?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 }
@@ -118,7 +136,7 @@ model CreditCardExpenseItem {
 model CreditCardExpense {
   id                     String                     @id @default(cuid())
   name                   String
-  taxes                  Decimal
+  taxesPercent           Decimal
   paymentType            PaymentType                @relation(fields: [paymentTypeId], references: [id])
   paymentTypeId          String
   paymentSource          PaymentSource              @relation(fields: [paymentSourceId], references: [id])
@@ -127,8 +145,8 @@ model CreditCardExpense {
   creditCardExpenseItems CreditCardExpenseItem[]
   user                   User                       @relation(fields: [userId], references: [id])
   userId                 String
-  deleted                Boolean
-  deletedAt              DateTime
+  deleted                Boolean                    @default(false)
+  deletedAt              DateTime?
   createdAt              DateTime                   @default(now())
   updatedAt              DateTime                   @updatedAt
 }
@@ -144,6 +162,8 @@ model CreditCardPaymentSummary {
   paymentSourceId     String
   creditCardExpense   CreditCardExpense @relation(fields: [creditCardExpenseId], references: [id])
   creditCardExpenseId String
+  user                User              @relation(fields: [userId], references: [id])
+  userId              String
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 }
@@ -164,8 +184,8 @@ model Expense {
   user             User                    @relation(fields: [userId], references: [id])
   userId           String
   paymentSummaries ExpensePaymentSummary[]
-  deleted          Boolean
-  deletedAt        DateTime
+  deleted          Boolean                 @default(false)
+  deletedAt        DateTime?
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt
 }
@@ -181,6 +201,8 @@ model ExpensePaymentSummary {
   paymentTypeId   String
   paymentSource   PaymentSource @relation(fields: [paymentSourceId], references: [id])
   paymentSourceId String
+  user            User          @relation(fields: [userId], references: [id])
+  userId          String
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }

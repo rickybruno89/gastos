@@ -1,4 +1,4 @@
-import type { NextAuthOptions } from "next-auth";
+import { getServerSession, type NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import prisma from "@/lib/prisma";
@@ -23,14 +23,24 @@ export const nextAuthOptions: NextAuthOptions = {
       return token;
     },
     session: async ({ session, token }) => {
+      const userDb = await prisma.user.findUnique({
+        where: {
+          id: token.sub,
+        },
+      });
+
+      if (!userDb) return null;
+
       session.user = {
         ...session.user,
-        // @ts-expect-error
-        id: token.sub,
-        // @ts-expect-error
-        username: token?.user?.username || token?.user?.gh_username,
+        id: userDb.id,
       };
       return session;
     },
   },
+};
+
+export const getAuthUserId = async () => {
+  const session = await getServerSession(nextAuthOptions);
+  return session!.user.id;
 };
