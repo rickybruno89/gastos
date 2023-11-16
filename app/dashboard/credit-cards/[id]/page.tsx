@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: 'Tarjeta de Crédito',
 };
 
+
 export default async function Page({ params }: { params: { id: string } }) {
   const { id } = params
 
