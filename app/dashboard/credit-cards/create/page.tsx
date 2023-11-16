@@ -7,7 +7,6 @@ import { fetchPaymentType } from '@/services/payment-type';
 export const metadata: Metadata = {
   title: 'Crear Tarjeta de Crédito',
 };
-
 export default async function Page() {
   const paymentSources = await fetchPaymentSource();
   const paymentType = await fetchPaymentType();
