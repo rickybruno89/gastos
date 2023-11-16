@@ -1,9 +1,14 @@
+import Breadcrumbs from '@/components/ui/breadcrumbs';
 import LinkButton from '@/components/ui/link-button';
 import { PAGES_URL } from '@/lib/routes';
 import { fetchPaymentSource } from '@/services/payment-source';
 import { fetchPaymentType } from '@/services/payment-type';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Configuración',
+};
 
 export default async function Page() {
 
@@ -11,6 +16,15 @@ export default async function Page() {
   const paymentSources = await fetchPaymentSource()
   return (
     <main className='flex gap-4 flex-wrap flex-col'>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            label: `Configuración`,
+            href: PAGES_URL.SETTINGS.BASE_PATH,
+            active: true,
+          },
+        ]}
+      />
       <section className='bg-white rounded-lg p-4 md:p-6'>
         <div className='flex justify-between gap-4 items-center'>
           <h1 className='text-xl'>Forma de pago</h1>

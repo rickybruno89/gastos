@@ -1,4 +1,6 @@
 
+import Breadcrumbs from '@/components/ui/breadcrumbs';
+import { PAGES_URL } from '@/lib/routes';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -10,8 +12,17 @@ export default async function Page() {
   // console.log("🚀 ~ file: page.tsx:12 ~ Page ~ data:", data)
 
   return (
-    <main className=''>
-      <h1 className='text-xl mb-4'>Gastos</h1>
+    <main>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            label: `Gastos`,
+            href: PAGES_URL.EXPENSES.BASE_PATH,
+            active: true,
+          },
+        ]}
+      />
+
     </main>
   );
 }

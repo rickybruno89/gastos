@@ -1,6 +1,7 @@
 
+import Breadcrumbs from '@/components/ui/breadcrumbs';
+import { BASE_PATH } from '@/lib/routes';
 import { Metadata } from 'next';
-import { getServerSession } from 'next-auth';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -10,9 +11,15 @@ export default async function Page() {
 
   return (
     <main>
-      <h1 className={`mb-4 text-xl md:text-2xl`}>
-        Dashboard
-      </h1>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            label: `Gastos`,
+            href: BASE_PATH,
+            active: true,
+          },
+        ]}
+      />
       {/* <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Suspense fallback={<CardsSkeleton />}>
           <CardWrapper />
