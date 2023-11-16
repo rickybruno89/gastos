@@ -1,10 +1,9 @@
 'use client';
 import {
-  CurrencyDollarIcon,
   CreditCardIcon,
-  ChartBarIcon,
   BanknotesIcon,
   Cog8ToothIcon,
+  HomeIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -17,8 +16,8 @@ import { BASE_PATH, PAGES_URL } from '@/lib/routes';
 
 
 const links = [
-  { name: 'Resumen', href: BASE_PATH, icon: BanknotesIcon },
-  { name: 'Gastos', href: PAGES_URL.EXPENSES.BASE_PATH, icon: CurrencyDollarIcon },
+  { name: 'Resumen', href: BASE_PATH, icon: HomeIcon },
+  { name: 'Gastos', href: PAGES_URL.EXPENSES.BASE_PATH, icon: BanknotesIcon },
   {
     name: 'Tarjetas de Crédito',
     href: PAGES_URL.CREDIT_CARDS.BASE_PATH,

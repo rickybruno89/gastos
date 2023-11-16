@@ -23,16 +23,14 @@ export default async function Page() {
       <div className='flex gap-4 flex-wrap justify-center md:justify-start'>
         {
           creditCards.map(creditCard => (
-            <Link href={PAGES_URL.CREDIT_CARDS.DETAILS(creditCard.id)} key={creditCard.id} >
-              <div className='bg-red-700 w-full md:w-[350px] aspect-video rounded-xl shadow-xl p-4 text-white flex flex-col justify-between'>
-                <h1 className='font-bold'>{creditCard.name}</h1>
-                <div className='flex flex-1 flex-col gap-2 justify-end'>
-                  <p>Total: $<span className='font-bold'>0</span></p>
-                  <p>Forma de pago: <span className='font-bold'>{creditCard.paymentType.name}</span></p>
-                  <p>Canal de pago: <span className='font-bold'>{creditCard.paymentSource.name}</span></p>
-                  {/* <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.BASE_PATH("asdasdads")}>Mas información</Link>
+            <Link className='bg-red-700 w-full md:w-[350px] aspect-video rounded-xl shadow-xl p-4 text-white flex flex-col justify-between' href={PAGES_URL.CREDIT_CARDS.DETAILS(creditCard.id)} key={creditCard.id} >
+              <h1 className='font-bold'>{creditCard.name}</h1>
+              <div className='flex flex-1 flex-col gap-2 justify-end'>
+                <p>Total: $<span className='font-bold'>0</span></p>
+                <p>Forma de pago: <span className='font-bold'>{creditCard.paymentType.name}</span></p>
+                <p>Canal de pago: <span className='font-bold'>{creditCard.paymentSource.name}</span></p>
+                {/* <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.BASE_PATH("asdasdads")}>Mas información</Link>
                   <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE("asdadasdasd")}>Generar resumen</Link> */}
-                </div>
               </div>
             </Link>
 

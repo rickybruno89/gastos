@@ -11,15 +11,8 @@ export default async function Page() {
 
   return (
     <main>
-      <Breadcrumbs
-        breadcrumbs={[
-          {
-            label: `Gastos`,
-            href: BASE_PATH,
-            active: true,
-          },
-        ]}
-      />
+      Bienvenido. Proximamente aqui estará el resumen de todo
+
       {/* <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Suspense fallback={<CardsSkeleton />}>
           <CardWrapper />
