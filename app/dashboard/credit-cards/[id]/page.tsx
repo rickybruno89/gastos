@@ -12,7 +12,6 @@ export const metadata: Metadata = {
 
 export default async function Page({ params }: { params: { id: string } }) {
   const { id } = params
-
   const creditCardDetails = await fetchCreditCardWithItems(id)
   return (
     <main>
