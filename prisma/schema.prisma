@@ -123,6 +123,7 @@ model CreditCardExpenseItem {
   recurrent           Boolean
   installmentQuantity Int               @default(0)
   installmentAmount   Decimal           @default(0)
+  installmentPaid     Int               @default(0)
   paymentBeginning    DateTime          @default(now())
   discount            Decimal           @default(0)
   creditCardExpense   CreditCardExpense @relation(fields: [creditCardExpenseId], references: [id])
