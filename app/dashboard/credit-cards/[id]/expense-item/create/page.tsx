@@ -3,6 +3,7 @@ import { PAGES_URL } from '@/lib/routes';
 import { fetchCreditCardName } from '@/services/credit-card';
 import { Metadata } from 'next';
 import React from 'react'
+import CreditCardExpenseItemCreateForm from './_components/create-form';
 
 export const metadata: Metadata = {
   title: 'Nuevo Item',
@@ -28,6 +29,7 @@ export default async function Page({ params }: { params: { id: string } }) {
           },
         ]}
       />
+      <CreditCardExpenseItemCreateForm creditCardExpenseId={id} />
     </main>
   )
 }

@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
 import { PAGES_URL } from "@/lib/routes";
 
-type State = {
+type CreateCreditCardState = {
   errors?: {
     creditCardName?: string[];
     taxesPercent?: string[];
@@ -17,6 +17,54 @@ type State = {
   };
   message?: string | null;
 };
+
+type CreateCreditCardExpenseItemState = {
+  errors?: {
+    description?: string[];
+    notes?: string[];
+    amount?: string[];
+    sharedWith?: string[];
+    recurrent?: string[];
+    installmentQuantity?: string[];
+    installmentAmount?: string[];
+    installmentPaid?: string[];
+    paymentBeginning?: string[];
+    currencyId?: string[];
+    discount?: string[];
+    creditCardExpenseId?: string[];
+  };
+  message?: string | null;
+};
+
+const CreditCardExpenseItemSchema = z.object({
+  id: z.string().cuid(),
+  description: z.string().toUpperCase(),
+  notes: z.string().toUpperCase(),
+  amount: z.coerce
+    .number()
+    .gt(0, { message: "El total tiene que ser mayor que 0" }),
+  sharedWith: z.object({
+    id: z.string().cuid(),
+  }),
+  recurrent: z.boolean(),
+  installmentQuantity: z.coerce.number(),
+  installmentAmount: z.coerce
+    .number()
+    .gt(0, { message: "El total tiene que ser mayor que 0" }),
+  installmentPaid: z.coerce.number(),
+  paymentBeginning: z.date(),
+  currencyId: z
+    .string({
+      invalid_type_error: "Seleccione una moneda",
+    })
+    .cuid(),
+  discount: z.coerce.number(),
+  creditCardExpenseId: z.string().cuid(),
+});
+
+const CreateCreditCardExpenseItemSchema = CreditCardExpenseItemSchema.omit({
+  id: true,
+});
 
 const CreditCardSchema = z.object({
   id: z.string().cuid(),
@@ -38,7 +86,7 @@ const CreditCardSchema = z.object({
 const CreateCreditCardSchema = CreditCardSchema.omit({ id: true });
 
 export const createCreditCard = async (
-  _prevState: State,
+  _prevState: CreateCreditCardState,
   formData: FormData
 ): Promise<PaymentType | any> => {
   try {
@@ -58,10 +106,7 @@ export const createCreditCard = async (
 
     const { creditCardName, taxesPercent, paymentTypeId, paymentSourceId } =
       validatedFields.data;
-    console.log(
-      "🚀 ~ file: credit-card.ts:60 ~ validatedFields.data:",
-      validatedFields.data
-    );
+
     const userId = await getAuthUserId();
 
     const existingCreditCard = await prisma.creditCardExpense.findFirst({
@@ -94,6 +139,90 @@ export const createCreditCard = async (
   }
   revalidatePath(PAGES_URL.CREDIT_CARDS.BASE_PATH);
   redirect(PAGES_URL.CREDIT_CARDS.BASE_PATH);
+};
+
+export const createCreditCardExpenseItem = async (
+  creditCardExpenseId: string,
+  _prevState: CreateCreditCardExpenseItemState,
+  formData: FormData
+) => {
+  try {
+    const validatedFields = CreateCreditCardExpenseItemSchema.safeParse({
+      description: formData.get("description"),
+      notes: formData.get("notes"),
+      amount: formData.get("amount"),
+      sharedWith: formData.get("sharedWith"),
+      recurrent: formData.get("recurrent"),
+      installmentQuantity: formData.get("installmentQuantity"),
+      installmentAmount: formData.get("installmentAmount"),
+      installmentPaid: formData.get("installmentPaid"),
+      paymentBeginning: formData.get("paymentBeginning"),
+      currencyId: formData.get("currencyId"),
+      discount: formData.get("discount"),
+    });
+
+    if (!validatedFields.success) {
+      return {
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: "Error",
+      };
+    }
+
+    const {
+      description,
+      notes,
+      amount,
+      sharedWith,
+      recurrent,
+      installmentQuantity,
+      installmentAmount,
+      installmentPaid,
+      paymentBeginning,
+      currencyId,
+      discount,
+    } = validatedFields.data;
+
+    const userId = await getAuthUserId();
+
+    const existingCreditCard = await prisma.creditCardExpense.findFirst({
+      where: {
+        id: creditCardExpenseId,
+        userId,
+      },
+    });
+
+    if (!existingCreditCard) {
+      return {
+        errors: { description: ["La Tarjeta de No existe"] },
+        message: "Error",
+      };
+    }
+
+    await prisma.creditCardExpenseItem.create({
+      data: {
+        description,
+        notes,
+        amount,
+        sharedWith: {
+          connect: sharedWith,
+        },
+        recurrent,
+        installmentQuantity,
+        installmentAmount,
+        installmentPaid,
+        paymentBeginning,
+        currencyId,
+        discount,
+        creditCardExpenseId,
+      },
+    });
+  } catch (error) {
+    return {
+      message: "Error en base de datos",
+    };
+  }
+  revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardExpenseId));
+  redirect(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardExpenseId));
 };
 
 export async function fetchCreditCards() {
