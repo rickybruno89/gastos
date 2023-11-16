@@ -116,6 +116,50 @@ export async function fetchCreditCards() {
   }
 }
 
+export async function fetchCreditCardWithItems(id: string) {
+  noStore();
+  // Add noStore() here prevent the response from being cached.
+  // This is equivalent to in fetch(..., {cache: 'no-store'}).
+  try {
+    const data = await prisma.creditCardExpense.findFirst({
+      where: {
+        userId: await getAuthUserId(),
+        id,
+      },
+      include: {
+        creditCardExpenseItems: true,
+        paymentSource: true,
+        paymentType: true,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error:", error);
+    throw new Error("Error al cargar Tarjetas de créditos");
+  }
+}
+
+export async function fetchCreditCardName(id: string) {
+  noStore();
+  // Add noStore() here prevent the response from being cached.
+  // This is equivalent to in fetch(..., {cache: 'no-store'}).
+  try {
+    const data = await prisma.creditCardExpense.findFirst({
+      where: {
+        userId: await getAuthUserId(),
+        id,
+      },
+      select: {
+        name: true,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error:", error);
+    throw new Error("Error al cargar Tarjetas de créditos");
+  }
+}
+
 // export async function updateInvoice(
 //   id: string,
 //   prevState: State,

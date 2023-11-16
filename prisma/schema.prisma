@@ -125,11 +125,11 @@ model CreditCardExpenseItem {
   installmentAmount   Decimal           @default(0)
   installmentPaid     Int               @default(0)
   paymentBeginning    DateTime          @default(now())
+  finished            Boolean           @default(false)
+  finishedAt          DateTime?
   discount            Decimal           @default(0)
   creditCardExpense   CreditCardExpense @relation(fields: [creditCardExpenseId], references: [id])
   creditCardExpenseId String
-  deleted             Boolean           @default(false)
-  deletedAt           DateTime?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 }
