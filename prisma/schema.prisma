@@ -49,7 +49,6 @@ model User {
   expenses                   Expense[]
   expensePaymentSummaries    ExpensePaymentSummary[]
   creditCards                CreditCard[]
-  creditCardExpenses         CreditCardExpense[]
   creditCardPaymentSummaries CreditCardPaymentSummary[]
   creditCardExpenseItems     CreditCardExpenseItem[]
 }
@@ -93,7 +92,7 @@ model PaymentType {
   name                       String // EFECTIVO - HOME BANKING - TRANSFERENCIA - DEBITO AUTOMATICO
   expenses                   Expense[]
   expensePaymentSummaries    ExpensePaymentSummary[]
-  creditCardExpenses         CreditCardExpense[]
+  creditCards                CreditCard[]
   creditCardPaymentSummaries CreditCardPaymentSummary[]
   user                       User                       @relation(fields: [userId], references: [id])
   userId                     String
@@ -108,7 +107,7 @@ model PaymentSource {
   name                       String // EFECTIVO - GALICIA - MACRO - HSBC - LEMON - PERSONAL PAY
   expenses                   Expense[]
   expensePaymentSummaries    ExpensePaymentSummary[]
-  creditCardExpenses         CreditCardExpense[]
+  creditCards                CreditCard[]
   creditCardPaymentSummaries CreditCardPaymentSummary[]
   user                       User                       @relation(fields: [userId], references: [id])
   userId                     String
@@ -119,20 +118,9 @@ model PaymentSource {
 }
 
 model CreditCard {
-  id           String              @id @default(cuid())
-  name         String
-  taxesPercent Decimal
-  expenses     CreditCardExpense[]
-  user         User                @relation(fields: [userId], references: [id])
-  userId       String
-  deleted      Boolean             @default(false)
-  deletedAt    DateTime?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-}
-
-model CreditCardExpense {
   id                     String                     @id @default(cuid())
+  name                   String
+  taxesPercent           Decimal
   paymentType            PaymentType                @relation(fields: [paymentTypeId], references: [id])
   paymentTypeId          String
   paymentSource          PaymentSource              @relation(fields: [paymentSourceId], references: [id])
@@ -141,8 +129,6 @@ model CreditCardExpense {
   creditCardExpenseItems CreditCardExpenseItem[]
   user                   User                       @relation(fields: [userId], references: [id])
   userId                 String
-  creditCard             CreditCard                 @relation(fields: [creditCardId], references: [id])
-  creditCardId           String
   deleted                Boolean                    @default(false)
   deletedAt              DateTime?
   createdAt              DateTime                   @default(now())
@@ -158,37 +144,40 @@ model CreditCardExpenseItem {
   currency                   Currency                   @relation(fields: [currencyId], references: [id])
   currencyId                 String
   recurrent                  Boolean
-  installmentQuantity        Int                        @default(0)
+  installmentsQuantity       Int                        @default(0)
+  installmentsPaid           Int                        @default(0)
+  installmentsAmount         Decimal                    @default(0)
   paymentBeginning           DateTime                   @default(now())
   finished                   Boolean                    @default(false)
   finishedAt                 DateTime?
   discount                   Decimal                    @default(0)
-  creditCardExpense          CreditCardExpense          @relation(fields: [creditCardExpenseId], references: [id])
-  creditCardExpenseId        String
+  creditCard                 CreditCard                 @relation(fields: [creditCardId], references: [id])
+  creditCardId               String
   creditCardPaymentSummaries CreditCardPaymentSummary[]
   user                       User                       @relation(fields: [userId], references: [id])
   userId                     String
   createdAt                  DateTime                   @default(now())
   updatedAt                  DateTime                   @updatedAt
+
+  @@index([finished, recurrent])
 }
 
 model CreditCardPaymentSummary {
-  id                      String                @id @default(cuid())
-  date                    DateTime
-  amount                  Decimal
-  paid                    Boolean               @default(false)
-  paymentType             PaymentType           @relation(fields: [paymentTypeId], references: [id])
-  paymentTypeId           String
-  paymentSource           PaymentSource         @relation(fields: [paymentSourceId], references: [id])
-  paymentSourceId         String
-  creditCardExpense       CreditCardExpense     @relation(fields: [creditCardExpenseId], references: [id])
-  creditCardExpenseId     String
-  creditCardExpenseItems  CreditCardExpenseItem @relation(fields: [creditCardExpenseItemId], references: [id])
-  user                    User                  @relation(fields: [userId], references: [id])
-  userId                  String
-  createdAt               DateTime              @default(now())
-  updatedAt               DateTime              @updatedAt
-  creditCardExpenseItemId String
+  id                     String                  @id @default(cuid())
+  date                   DateTime
+  amount                 Decimal
+  paid                   Boolean                 @default(false)
+  paymentType            PaymentType             @relation(fields: [paymentTypeId], references: [id])
+  paymentTypeId          String
+  paymentSource          PaymentSource           @relation(fields: [paymentSourceId], references: [id])
+  paymentSourceId        String
+  creditCardExpenseItems CreditCardExpenseItem[]
+  creditCard             CreditCard              @relation(fields: [creditCardId], references: [id])
+  creditCardId           String
+  user                   User                    @relation(fields: [userId], references: [id])
+  userId                 String
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
 }
 
 model Expense {

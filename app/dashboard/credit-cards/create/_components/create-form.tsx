@@ -1,15 +1,6 @@
 'use client';
-
 import Link from 'next/link';
-import {
-  CheckIcon,
-  ClockIcon,
-  CurrencyDollarIcon,
-  PlusCircleIcon,
-  PlusIcon,
-  ReceiptPercentIcon,
-  UserCircleIcon,
-} from '@heroicons/react/24/outline';
+import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { useFormState } from 'react-dom';
 import { createCreditCard } from '@/services/credit-card';
 import { Button } from '@/components/ui/button';
