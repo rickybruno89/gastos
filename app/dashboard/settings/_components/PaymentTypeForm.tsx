@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { createPaymentType } from '@/services/payment-type';
+import { createPaymentType } from '@/services/settings/payment-type';
 import Link from 'next/link';
 import { useFormState } from 'react-dom';
 
@@ -24,7 +24,6 @@ export default function PaymentTypeForm({ callbackUrl }: { callbackUrl: string }
                 id="name"
                 name="name"
                 type="text"
-                placeholder="Efectivo"
                 aria-describedby="name-error"
                 className="peer block w-full rounded-md border border-gray-200 text-sm outline-2 placeholder:text-gray-500"
               />
@@ -47,7 +46,7 @@ export default function PaymentTypeForm({ callbackUrl }: { callbackUrl: string }
             href={callbackUrl}
             className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
           >
-            Cancel
+            Cancelar
           </Link>
           <Button type="submit">Crear Forma de pago</Button>
         </div>

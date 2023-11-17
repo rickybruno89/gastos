@@ -2,15 +2,15 @@
 
 import { Button } from '@/components/ui/button';
 import { PAGES_URL } from '@/lib/routes';
-import { createPaymentSource } from '@/services/settings/payment-source';
+import { createPersonToShare } from '@/services/settings/person-to-share-expense';
 import Link from 'next/link';
 import { useFormState } from 'react-dom';
 
-export default function PaymentSourceForm({ callbackUrl }: { callbackUrl: string }) {
+export default function PersonToShareForm({ callbackUrl }: { callbackUrl: string }) {
   const initialState = { message: null, errors: {} };
-  const createPaymentSourceWithCallbackUrl = createPaymentSource.bind(null, callbackUrl);
+  const createPersonToShareWithCallbackUrl = createPersonToShare.bind(null, callbackUrl);
 
-  const [state, dispatch] = useFormState(createPaymentSourceWithCallbackUrl, initialState);
+  const [state, dispatch] = useFormState(createPersonToShareWithCallbackUrl, initialState);
 
 
   return (
@@ -50,7 +50,7 @@ export default function PaymentSourceForm({ callbackUrl }: { callbackUrl: string
           >
             Cancelar
           </Link>
-          <Button type="submit">Crear Canal de pago</Button>
+          <Button type="submit">Crear persona</Button>
         </div>
       </div>
 

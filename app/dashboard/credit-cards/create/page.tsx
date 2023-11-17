@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
 import CreditCardCreateForm from './_components/create-form';
-import { fetchPaymentSource } from '@/services/payment-source';
-import { fetchPaymentType } from '@/services/payment-type';
+import { fetchPaymentSource } from '@/services/settings/payment-source';
+import { fetchPaymentType } from '@/services/settings/payment-type';
 import { PAGES_URL } from '@/lib/routes';
 
 export const metadata: Metadata = {
