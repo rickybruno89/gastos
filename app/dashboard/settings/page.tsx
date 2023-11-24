@@ -95,22 +95,13 @@ export default async function Page() {
       <section className='bg-white rounded-lg p-4 md:p-6'>
         <div className='flex justify-between gap-4 items-center'>
           <h1 className='text-xl'>Tipo de monedas a usar</h1>
-          <LinkButton
-            href={PAGES_URL.SETTINGS.CURRENCY_CREATE}
-          >
-            <PlusIcon className="h-5" />
-            <span className="hidden md:block">Crear monedas</span>
-          </LinkButton>
+
         </div>
-        {currencies.length ? (
-          currencies.map(currency => (
-            <p key={currency.id}>
-              &bull; {currency.name}
-            </p>
-          ))
-        ) :
-          (<h2>No se crearon monedas</h2>)
-        }
+        {currencies.map(currency => (
+          <p key={currency.id}>
+            &bull; {currency.name}
+          </p>
+        ))}
       </section>
     </main>
   );

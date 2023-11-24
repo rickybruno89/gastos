@@ -43,7 +43,6 @@ model User {
   accounts                   Account[]
   sessions                   Session[]
   sharedPaymentPersons       Person[]
-  currencies                 Currency[]
   paymentTypes               PaymentType[]
   paymentSources             PaymentSource[]
   expenses                   Expense[]
@@ -77,14 +76,9 @@ model Person {
 model Currency {
   id                     String                  @id @default(cuid())
   name                   String // ARS - USD 
+  useAsDefault           Boolean                 @default(false)
   expenses               Expense[]
   creditCardExpenseItems CreditCardExpenseItem[]
-  user                   User                    @relation(fields: [userId], references: [id])
-  userId                 String
-  deleted                Boolean                 @default(false)
-  deletedAt              DateTime?
-
-  @@unique([userId, name])
 }
 
 model PaymentType {
@@ -150,7 +144,6 @@ model CreditCardExpenseItem {
   paymentBeginning           DateTime                   @default(now())
   finished                   Boolean                    @default(false)
   finishedAt                 DateTime?
-  discount                   Decimal                    @default(0)
   creditCard                 CreditCard                 @relation(fields: [creditCardId], references: [id])
   creditCardId               String
   creditCardPaymentSummaries CreditCardPaymentSummary[]

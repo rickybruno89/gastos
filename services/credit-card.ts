@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
 import { PAGES_URL } from "@/lib/routes";
+import { removeCurrencyMaskFromInput } from "@/lib/utils";
 
 type CreateCreditCardState = {
   errors?: {
@@ -30,7 +31,6 @@ type CreateCreditCardExpenseItemState = {
     installmentsAmount?: string[];
     paymentBeginning?: string[];
     currencyId?: string[];
-    discount?: string[];
     creditCardId?: string[];
   };
   message?: string | null;
@@ -38,28 +38,22 @@ type CreateCreditCardExpenseItemState = {
 
 const CreditCardExpenseItemSchema = z.object({
   id: z.string().cuid(),
-  description: z.string().toUpperCase(),
+  description: z
+    .string()
+    .toUpperCase()
+    .min(1, { message: "Ingrese una descripción" }),
   notes: z.string().toUpperCase(),
-  amount: z.coerce
-    .number()
-    .gt(0, { message: "El total tiene que ser mayor que 0" }),
-  sharedWith: z.object({
-    id: z.string().cuid(),
-  }),
+  amount: z.string().min(1, { message: "El total tiene que ser mayor que 0" }),
+  sharedWith: z.string().array(),
   recurrent: z.boolean(),
   installmentsQuantity: z.coerce.number(),
-  installmentsAmount: z.coerce
-    .number()
-    .gt(0, { message: "El total tiene que ser mayor que 0" }),
   installmentsPaid: z.coerce.number(),
-  paymentBeginning: z.date(),
+  paymentBeginning: z.string().min(1, { message: "Ingrese una fecha" }),
   currencyId: z
     .string({
       invalid_type_error: "Seleccione una moneda",
     })
     .cuid(),
-  discount: z.coerce.number(),
-  creditCardId: z.string().cuid(),
 });
 
 const CreateCreditCardExpenseItemSchema = CreditCardExpenseItemSchema.omit({
@@ -151,11 +145,10 @@ export const createCreditCardExpenseItem = async (
       description: formData.get("description"),
       notes: formData.get("notes"),
       amount: formData.get("amount"),
-      sharedWith: formData.get("sharedWith"),
-      recurrent: formData.get("recurrent"),
+      sharedWith: formData.getAll("sharedWith"),
+      recurrent: formData.get("recurrent") === "true",
       installmentsQuantity: formData.get("installmentsQuantity"),
       installmentsPaid: formData.get("installmentsPaid"),
-      installmentsAmount: formData.get("installmentsAmount"),
       paymentBeginning: formData.get("paymentBeginning"),
       currencyId: formData.get("currencyId"),
       discount: formData.get("discount"),
@@ -176,10 +169,8 @@ export const createCreditCardExpenseItem = async (
       recurrent,
       installmentsQuantity,
       installmentsPaid,
-      installmentsAmount,
       paymentBeginning,
       currencyId,
-      discount,
     } = validatedFields.data;
 
     const userId = await getAuthUserId();
@@ -198,21 +189,26 @@ export const createCreditCardExpenseItem = async (
       };
     }
 
+    const [year, month] = paymentBeginning.split("-");
+    const date = new Date(Date.UTC(parseInt(year), parseInt(month) - 1));
+    const utcDate = date.toISOString();
+
     await prisma.creditCardExpenseItem.create({
       data: {
         description,
         notes,
-        amount,
+        amount: removeCurrencyMaskFromInput(amount),
         sharedWith: {
-          connect: sharedWith,
+          connect: sharedWith.map((personId) => ({ id: personId })),
         },
         recurrent,
         installmentsQuantity,
         installmentsPaid,
-        installmentsAmount,
-        paymentBeginning,
+        installmentsAmount: recurrent
+          ? 0
+          : removeCurrencyMaskFromInput(amount) / installmentsQuantity,
+        paymentBeginning: utcDate,
         currencyId,
-        discount,
         creditCardId,
         userId,
       },
@@ -247,21 +243,49 @@ export async function fetchCreditCards() {
   }
 }
 
-export async function fetchCreditCardWithItems(id: string) {
+export async function fetchCreditCardById(id: string) {
   noStore();
   // Add noStore() here prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
   try {
-    const data = await prisma.creditCard.findFirst({
+    const data = await prisma.creditCard.findUnique({
       where: {
         userId: await getAuthUserId(),
         id,
       },
       include: {
-        creditCardExpenseItems: true,
         paymentSource: true,
         paymentType: true,
       },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error:", error);
+    throw new Error("Error al cargar Tarjetas de créditos");
+  }
+}
+
+export async function fetchCreditCardExpenseItem(creditCardId: string) {
+  noStore();
+  // Add noStore() here prevent the response from being cached.
+  // This is equivalent to in fetch(..., {cache: 'no-store'}).
+  try {
+    const data = await prisma.creditCardExpenseItem.findMany({
+      where: {
+        userId: await getAuthUserId(),
+        creditCardId,
+      },
+      include: {
+        sharedWith: true,
+      },
+      orderBy: [
+        {
+          finishedAt: "desc",
+        },
+        {
+          createdAt: "asc",
+        },
+      ],
     });
     return data;
   } catch (error) {
