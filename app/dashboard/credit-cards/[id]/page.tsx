@@ -51,11 +51,11 @@ export default async function Page({ params }: { params: { id: string } }) {
             creditCardDetails.length ? (
               creditCardDetails.map(item => (
                 <div key={item.id} className="relative rounded-md bg-gray-50 shadow-md">
-                  {
+                  {/* {
                     !item.finished ? (<span className="absolute flex h-3 w-3">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75 top-1 left-1"></span>
                     </span>) : null
-                  }
+                  } */}
                   <div className='p-4 md:p-6'>
                     {
                       item.finished ? (<span className='font-bold text-red-600'>{item.description} - Pago finalizado</span>) : (<span className='font-bold'>{item.description}</span>)
@@ -73,6 +73,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                     {
                       item.sharedWith.length ? (<p>Gasto compartido con <span className='font-bold'>{item.sharedWith.map(person => person.name).join(" - ")}</span> </p>) : null
                     }
+                    <p>Notas: <span className='font-bold'>{item.notes}</span> </p>
                   </div>
                 </div>)
               )) : (<h1>No hay items </h1>)

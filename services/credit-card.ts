@@ -151,7 +151,6 @@ export const createCreditCardExpenseItem = async (
       installmentsPaid: formData.get("installmentsPaid"),
       paymentBeginning: formData.get("paymentBeginning"),
       currencyId: formData.get("currencyId"),
-      discount: formData.get("discount"),
     });
 
     if (!validatedFields.success) {
@@ -184,7 +183,7 @@ export const createCreditCardExpenseItem = async (
 
     if (!existingCreditCard) {
       return {
-        errors: { description: ["La Tarjeta de No existe"] },
+        errors: { description: ["La tarjeta no existe"] },
         message: "Error",
       };
     }

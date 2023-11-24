@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { PAGES_URL } from '@/lib/routes';
 import { createCreditCardExpenseItem } from '@/services/credit-card';
-import { PlusCircleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useFormState } from 'react-dom';
 import { Currency, Person } from '@prisma/client';
@@ -70,25 +70,13 @@ export default function CreditCardExpenseItemCreateForm({ creditCardId, personsT
               !personsToShare.length ?
                 (
                   <LinkButton href={`${PAGES_URL.SETTINGS.PERSON_TO_SHARE_EXPENSE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.CREATE(creditCardId)}`}>
-                    <PlusCircleIcon className='w-5' />
+                    <PlusIcon className='w-5' />
                     Crear persona
                   </LinkButton>
                 ) : (
                   <div className="flex flex-wrap gap-4" >
-
                     {
                       personsToShare.map(person =>
-
-                        // <div key={person.id} className='flex items-center justify-center gap-x-1'>
-                        //   <label
-                        //     htmlFor={`sharedWith[${person.id}]`}
-                        //     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        //   >
-                        //     <input type="checkbox" name="sharedWith" id={`sharedWith[${person.id}]`} value={person.id} />
-                        //     {person.name}
-                        //   </label>
-                        // </div>
-
                         <div key={person.id} className='flex items-center justify-center gap-x-1'>
                           <Checkbox id={`sharedWith[${person.id}]`} name="sharedWith" value={person.id} />
                           <label
@@ -114,11 +102,8 @@ export default function CreditCardExpenseItemCreateForm({ creditCardId, personsT
                     ) : null}
                   </div>
                 )
-
             }
-
           </div>
-
         </div>
         <div>
           <label className="mb-2 block text-sm font-medium">

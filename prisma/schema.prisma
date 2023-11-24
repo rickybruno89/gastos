@@ -178,7 +178,6 @@ model Expense {
   description      String
   notes            String
   amount           Decimal
-  recurrent        Boolean
   sharedWith       Person[]
   currency         Currency                @relation(fields: [currencyId], references: [id])
   currencyId       String

@@ -2,7 +2,7 @@
 import Breadcrumbs from '@/components/ui/breadcrumbs';
 import { PAGES_URL } from '@/lib/routes';
 import { fetchCreditCards } from '@/services/credit-card';
-import { PlusCircleIcon } from '@heroicons/react/20/solid';
+import { PlusIcon } from '@heroicons/react/20/solid';
 import { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -38,7 +38,7 @@ export default async function Page() {
         }
 
         <Link href={PAGES_URL.CREDIT_CARDS.CREATE} className='w-full md:w-[350px] aspect-video rounded-xl border border-dashed border-blue-400 flex justify-center items-center gap-4 text-blue-400 cursor-pointer'>
-          <PlusCircleIcon className='w-12 ' />
+          <PlusIcon className='w-12 ' />
           Agregar tarjeta
         </Link>
       </div>

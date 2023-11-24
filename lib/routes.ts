@@ -23,5 +23,6 @@ export const PAGES_URL = {
   },
   EXPENSES: {
     BASE_PATH: `${BASE_PATH}/expenses`,
+    CREATE: `${BASE_PATH}/expenses/create`,
   },
 };

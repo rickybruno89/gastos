@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { PlusCircleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { useFormState } from 'react-dom';
 import { createCreditCard } from '@/services/credit-card';
 import { Button } from '@/components/ui/button';
@@ -92,7 +92,7 @@ export default function CreditCardCreateForm({ paymentTypes, paymentSources }: {
               <SelectContent>
                 <SelectItem className='bg-blue-500 focus:bg-blue-400 cursor-pointer text-white focus:text-white' value={`${PAGES_URL.SETTINGS.PAYMENT_TYPE_CREATE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.CREATE}`}>
                   <div className='flex gap-2 p-1'>
-                    <PlusCircleIcon className='w-5' />
+                    <PlusIcon className='w-5' />
                     Crear nueva forma de pago
                   </div>
                 </SelectItem>
@@ -136,7 +136,7 @@ export default function CreditCardCreateForm({ paymentTypes, paymentSources }: {
               <SelectContent>
                 <SelectItem className='bg-blue-500 focus:bg-blue-400 cursor-pointer text-white focus:text-white' value={`${PAGES_URL.SETTINGS.PAYMENT_SOURCE_CREATE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.CREATE}`}>
                   <div className='flex gap-2 p-1'>
-                    <PlusCircleIcon className='w-5' />
+                    <PlusIcon className='w-5' />
                     Crear nuevo canal de pago
                   </div>
                 </SelectItem>
