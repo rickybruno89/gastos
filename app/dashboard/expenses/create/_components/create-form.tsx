@@ -37,7 +37,7 @@ export default function ExpenseCreateForm({
       <div className="rounded-md bg-gray-50 p-4 md:p-6 w-fit flex flex-col gap-4">
 
         <div>
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium" htmlFor='description'>
             Descripcion
           </label>
           <div className="relative mt-2 rounded-md">
@@ -65,9 +65,9 @@ export default function ExpenseCreateForm({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium">
+          <span className="mb-2 block text-sm font-medium">
             Seleccione con quien compartirá el gasto
-          </label>
+          </span>
           <div>
             <div className="flex flex-wrap gap-4" >
               {
@@ -103,13 +103,14 @@ export default function ExpenseCreateForm({
           </div>
         </div>
         <div>
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium" htmlFor='currencyId'>
             Seleccione tipo de moneda
           </label>
           <div>
             {
               <select
                 name="currencyId"
+                id="currencyId"
                 aria-describedby="currencyId"
                 className='w-full rounded-md'
                 defaultValue={currencies.find(currency => currency.useAsDefault)?.id}
@@ -160,7 +161,7 @@ export default function ExpenseCreateForm({
         </div>
 
         <div>
-          <label htmlFor="paymentType" className="mb-2 block text-sm font-medium">
+          <label htmlFor="paymentTypeId" className="mb-2 block text-sm font-medium">
             Seleccione la forma de pago a usar
           </label>
           <div>
@@ -173,6 +174,7 @@ export default function ExpenseCreateForm({
               ) : (
                 <select
                   name="paymentTypeId"
+                  id="paymentTypeId"
                   aria-describedby="paymentTypeId"
                   className='w-full rounded-md'
                   defaultValue={""}
@@ -202,7 +204,7 @@ export default function ExpenseCreateForm({
 
 
         <div>
-          <label htmlFor="paymentSource" className="mb-2 block text-sm font-medium">
+          <label htmlFor="paymentSourceId" className="mb-2 block text-sm font-medium">
             Seleccione un canal de pago
           </label>
           <div>
@@ -215,6 +217,7 @@ export default function ExpenseCreateForm({
               ) : (
                 <select
                   name="paymentSourceId"
+                  id="paymentSourceId"
                   aria-describedby="paymentSourceId"
                   className='w-full rounded-md'
                   defaultValue={""}
@@ -276,10 +279,10 @@ export default function ExpenseCreateForm({
 
         <div className="mt-6 flex justify-end gap-4">
           <Link
-            href={PAGES_URL.SETTINGS.BASE_PATH}
+            href={PAGES_URL.EXPENSES.BASE_PATH}
             className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
           >
-            Cancel
+            Cancelar
           </Link>
           <Button type="submit">Guardar</Button>
         </div>

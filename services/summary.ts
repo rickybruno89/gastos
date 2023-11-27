@@ -146,7 +146,11 @@ export async function fetchCreditCardSummaryById(id: string) {
       },
       include: {
         creditCard: true,
-        creditCardExpenseItems: true,
+        itemHistoryPayment: {
+          include: {
+            creditCardExpenseItem: true,
+          },
+        },
       },
     });
     return data;
@@ -221,8 +225,13 @@ export const createSummaryForCreditCard = async (
         paymentSourceId,
         creditCardId,
         userId,
-        creditCardExpenseItems: {
-          connect: creditCardExpenseItemIds.map((item) => ({ id: item })),
+        itemHistoryPayment: {
+          createMany: {
+            data: creditCardExpenseItems.map((item) => ({
+              creditCardExpenseItemId: item.id,
+              installmentPaid: item.installmentsPaid + 1,
+            })),
+          },
         },
       },
     });

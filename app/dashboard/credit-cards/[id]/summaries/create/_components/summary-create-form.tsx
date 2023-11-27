@@ -62,12 +62,13 @@ export default function SummaryCreateForm({
     <form action={dispatch}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6 w-full md:w-fit flex flex-col gap-4">
         <div>
-          <label htmlFor="paymentType" className="mb-2 block text-sm font-medium">
+          <label htmlFor="paymentTypeId" className="mb-2 block text-sm font-medium">
             Seleccione la forma de pago a usar
           </label>
           <div>
             <select
               name="paymentTypeId"
+              id="paymentTypeId"
               aria-describedby="paymentTypeId"
               className='w-full rounded-md'
               defaultValue={creditCard.paymentTypeId}
@@ -100,6 +101,7 @@ export default function SummaryCreateForm({
           <div>
             <select
               name="paymentSourceId"
+              id="paymentSourceId"
               aria-describedby="paymentSourceId"
               className='w-full rounded-md'
               defaultValue={creditCard.paymentSourceId}
@@ -125,13 +127,13 @@ export default function SummaryCreateForm({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium" htmlFor='date'>
             Comienzo del pago
           </label>
           <div>
             <input
               id="date"
-              value={getToday()}
+              defaultValue={getToday()}
               name="date"
               type="month"
               className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
@@ -151,9 +153,9 @@ export default function SummaryCreateForm({
         </div>
 
         <div className='flex flex-col gap-4'>
-          <label className="mb-2 block text-sm font-medium">
+          <p className="mb-2 block text-sm font-medium">
             Seleccione los items a pagar
-          </label>
+          </p>
           <div>
             <div className="flex flex-col gap-4" >
               {
@@ -195,7 +197,7 @@ export default function SummaryCreateForm({
 
         <div className="mt-6 flex justify-end gap-4">
           <Link
-            href={PAGES_URL.SETTINGS.BASE_PATH}
+            href={PAGES_URL.CREDIT_CARDS.DETAILS(creditCard.id)}
             className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
           >
             Cancelar

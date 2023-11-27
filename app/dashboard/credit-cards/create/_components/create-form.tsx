@@ -8,6 +8,7 @@ import { PaymentSource, PaymentType } from '@prisma/client';
 import { useRouter } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PAGES_URL } from '@/lib/routes';
+import LinkButton from '@/components/ui/link-button';
 
 export default function CreditCardCreateForm({ paymentTypes, paymentSources }: { paymentTypes: PaymentType[], paymentSources: PaymentSource[] }) {
   const initialState = { message: null, errors: {} };
@@ -75,34 +76,33 @@ export default function CreditCardCreateForm({ paymentTypes, paymentSources }: {
         </div>
 
         <div>
-          <label htmlFor="paymentType" className="mb-2 block text-sm font-medium">
+          <label htmlFor="paymentTypeId" className="mb-2 block text-sm font-medium">
             Seleccione la forma de pago a usar
           </label>
           <div>
-            <Select onValueChange={(value) => {
-              if (value.includes("/dashboard"))
-                router.push(value)
-            }}
-              name="paymentTypeId"
-              aria-describedby="paymentType-error"
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccione una opción" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem className='bg-blue-500 focus:bg-blue-400 cursor-pointer text-white focus:text-white' value={`${PAGES_URL.SETTINGS.PAYMENT_TYPE_CREATE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.CREATE}`}>
-                  <div className='flex gap-2 p-1'>
-                    <PlusIcon className='w-5' />
-                    Crear nueva forma de pago
-                  </div>
-                </SelectItem>
-                {paymentTypes.map((paymentType) => (
-                  <SelectItem key={paymentType.id} value={paymentType.id}>
-                    {paymentType.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {
+              !paymentTypes.length ? (
+                <LinkButton href={`${PAGES_URL.SETTINGS.PAYMENT_TYPE_CREATE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.CREATE}`}>
+                  <PlusIcon className='w-5' />
+                  Crear nueva forma de pago
+                </LinkButton>
+              ) : (
+                <select
+                  name="paymentTypeId"
+                  id="paymentTypeId"
+                  aria-describedby="paymentTypeId"
+                  className='w-full rounded-md'
+                  defaultValue={""}
+                >
+                  <option disabled value="">Seleccione una opción</option>
+                  {paymentTypes.map((paymentType) => (
+                    <option key={paymentType.id} value={paymentType.id} >
+                      {paymentType.name}
+                    </option>
+                  ))}
+                </select>
+              )
+            }
           </div>
           {state.errors?.paymentTypeId ? (
             <div
@@ -119,38 +119,37 @@ export default function CreditCardCreateForm({ paymentTypes, paymentSources }: {
 
 
         <div>
-          <label htmlFor="paymentSource" className="mb-2 block text-sm font-medium">
+          <label htmlFor="paymentSourceId" className="mb-2 block text-sm font-medium">
             Seleccione un canal de pago
           </label>
           <div>
-            <Select onValueChange={(value) => {
-              if (value.includes("/dashboard"))
-                router.push(value)
-            }}
-              name="paymentSourceId"
-              aria-describedby="paymentSource-error"
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccione una opción" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem className='bg-blue-500 focus:bg-blue-400 cursor-pointer text-white focus:text-white' value={`${PAGES_URL.SETTINGS.PAYMENT_SOURCE_CREATE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.CREATE}`}>
-                  <div className='flex gap-2 p-1'>
-                    <PlusIcon className='w-5' />
-                    Crear nuevo canal de pago
-                  </div>
-                </SelectItem>
-                {paymentSources.map((paymentSource) => (
-                  <SelectItem key={paymentSource.id} value={paymentSource.id}>
-                    {paymentSource.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {
+              !paymentSources.length ? (
+                <LinkButton href={`${PAGES_URL.SETTINGS.PAYMENT_SOURCE_CREATE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.CREATE}`}>
+                  <PlusIcon className='w-5' />
+                  Crear nueva canal de pago
+                </LinkButton>
+              ) : (
+                <select
+                  name="paymentSourceId"
+                  id="paymentSourceId"
+                  aria-describedby="paymentSourceId"
+                  className='w-full rounded-md'
+                  defaultValue={""}
+                >
+                  <option disabled value="">Seleccione una opción</option>
+                  {paymentSources.map((paymentSource) => (
+                    <option key={paymentSource.id} value={paymentSource.id} >
+                      {paymentSource.name}
+                    </option>
+                  ))}
+                </select>
+              )
+            }
           </div>
           {state.errors?.paymentSourceId ? (
             <div
-              id="customer-error"
+              id="paymentSourceId-error"
               aria-live="polite"
               className="mt-2 text-sm text-red-500"
             >
@@ -166,7 +165,7 @@ export default function CreditCardCreateForm({ paymentTypes, paymentSources }: {
             href={PAGES_URL.CREDIT_CARDS.BASE_PATH}
             className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
           >
-            Cancel
+            Cancelar
           </Link>
           <Button type="submit">Crear Tarjeta de Crédito</Button>
         </div>
