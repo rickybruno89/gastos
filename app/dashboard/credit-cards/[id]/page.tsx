@@ -1,20 +1,29 @@
 import Breadcrumbs from '@/components/ui/breadcrumbs'
 import LinkButton from '@/components/ui/link-button'
 import { PAGES_URL } from '@/lib/routes'
-import { formatCurrency, formatLocaleDate } from '@/lib/utils'
-import { fetchCreditCardById, fetchCreditCardExpenseItem, } from '@/services/credit-card'
+import { formatCurrency, formatLocaleDate, getToday } from '@/lib/utils'
+import { fetchCreditCardById } from '@/services/credit-card'
 import { PlusIcon } from '@radix-ui/react-icons'
 import { Metadata } from 'next'
+import Link from 'next/link'
 import React from 'react'
 
 export const metadata: Metadata = {
   title: 'Tarjeta de Crédito',
 };
 
+const GenerateSummaryButton = ({ creditCardId }: { creditCardId: string }) => (
+  <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE(creditCardId)} className='p-4 md:p-6 flex flex-col  mb-4 whitespace-nowrap w-56 h-32  rounded-md border border-dashed border-blue-400 items-center justify-center gap-1 text-blue-400 cursor-pointer'>
+    <PlusIcon className='w-12' />
+    Generar resumen
+  </Link>
+)
+
 export default async function Page({ params }: { params: { id: string } }) {
   const { id } = params
   const creditCard = await fetchCreditCardById(id)
-  const creditCardDetails = await fetchCreditCardExpenseItem(id)
+
+
 
   return (
     <main>
@@ -29,9 +38,31 @@ export default async function Page({ params }: { params: { id: string } }) {
         ]}
       />
 
+      <section className='mb-4'>
+        <h1 className='text-xl font-bold mb-2'>Resúmenes</h1>
+        <div className='flex flex-row flex-nowrap overflow-x-auto gap-x-4'>
+          <GenerateSummaryButton creditCardId={id} />
+          {
+            creditCard!.paymentSummaries.map(summary => (
+              <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(id, summary.id)} key={summary.id} className="rounded-md bg-white p-4 md:p-6 flex flex-col justify-center  mb-4 whitespace-nowrap w-56 h-32">
+                <p className='uppercase font-bold'>{formatLocaleDate(summary.date)}</p>
+                <p>{formatCurrency(summary.amount)} </p>
+                {
+                  summary.paid ? (
+                    <p className='text-green-500'>PAGADO</p>
+                  ) : (
+                    <p className='text-red-500'>NO PAGADO</p>
+                  )
+                }
+              </Link>
+            ))
+          }
+        </div>
+
+      </section>
       <section>
         <h1 className='text-xl font-bold mb-2'>Detalles</h1>
-        <div className="rounded-md bg-gray-50 p-4 md:p-6 shadow-md mb-4">
+        <div className="rounded-md bg-white p-4 md:p-6  mb-4 w-fit">
           <p>Nombre: <span className='font-bold'>{creditCard?.name}</span> </p>
           <p>Canal de pago: <span className='font-bold'>{creditCard?.paymentSource.name}</span> </p>
           <p>Forma de pago: <span className='font-bold'>{creditCard?.paymentType.name}</span> </p>
@@ -48,9 +79,9 @@ export default async function Page({ params }: { params: { id: string } }) {
         </div>
         <div className='flex flex-col gap-4'>
           {
-            creditCardDetails.length ? (
-              creditCardDetails.map(item => (
-                <div key={item.id} className="relative rounded-md bg-gray-50 shadow-md">
+            creditCard?.creditCardExpenseItems.length ? (
+              creditCard.creditCardExpenseItems.map(item => (
+                <div key={item.id} className="relative rounded-md bg-white ">
                   {/* {
                     !item.finished ? (<span className="absolute flex h-3 w-3">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75 top-1 left-1"></span>

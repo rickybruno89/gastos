@@ -188,10 +188,6 @@ export const createCreditCardExpenseItem = async (
       };
     }
 
-    const [year, month] = paymentBeginning.split("-");
-    const date = new Date(Date.UTC(parseInt(year), parseInt(month) - 1));
-    const utcDate = date.toISOString();
-
     await prisma.creditCardExpenseItem.create({
       data: {
         description,
@@ -206,7 +202,7 @@ export const createCreditCardExpenseItem = async (
         installmentsAmount: recurrent
           ? 0
           : removeCurrencyMaskFromInput(amount) / installmentsQuantity,
-        paymentBeginning: utcDate,
+        paymentBeginning,
         currencyId,
         creditCardId,
         userId,
@@ -225,6 +221,8 @@ export async function fetchCreditCards() {
   noStore();
   // Add noStore() here prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
+  const currentDate = new Date().toISOString().split("-").slice(0, 2).join("-");
+
   try {
     const data = await prisma.creditCard.findMany({
       where: {
@@ -233,6 +231,16 @@ export async function fetchCreditCards() {
       include: {
         paymentSource: true,
         paymentType: true,
+        paymentSummaries: {
+          where: {
+            date: {
+              equals: currentDate,
+            },
+          },
+          orderBy: {
+            date: "desc",
+          },
+        },
       },
     });
     return data;
@@ -255,36 +263,25 @@ export async function fetchCreditCardById(id: string) {
       include: {
         paymentSource: true,
         paymentType: true,
-      },
-    });
-    return data;
-  } catch (error) {
-    console.error("Error:", error);
-    throw new Error("Error al cargar Tarjetas de créditos");
-  }
-}
-
-export async function fetchCreditCardExpenseItem(creditCardId: string) {
-  noStore();
-  // Add noStore() here prevent the response from being cached.
-  // This is equivalent to in fetch(..., {cache: 'no-store'}).
-  try {
-    const data = await prisma.creditCardExpenseItem.findMany({
-      where: {
-        userId: await getAuthUserId(),
-        creditCardId,
-      },
-      include: {
-        sharedWith: true,
-      },
-      orderBy: [
-        {
-          finishedAt: "desc",
+        paymentSummaries: {
+          orderBy: {
+            date: "desc",
+          },
         },
-        {
-          createdAt: "asc",
+        creditCardExpenseItems: {
+          where: {
+            finished: false,
+          },
+          orderBy: [
+            {
+              paymentBeginning: "asc",
+            },
+          ],
+          include: {
+            sharedWith: true,
+          },
         },
-      ],
+      },
     });
     return data;
   } catch (error) {

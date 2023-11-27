@@ -39,6 +39,33 @@ const CreateExpenseSchema = ExpenseSummarySchema.omit({
   paymentSourceId: true,
 });
 
+type CreateCreditCardPaymentSummaryState = {
+  errors?: {
+    creditCardExpenseItemIds?: string[];
+    date?: string[];
+    paymentTypeId?: string[];
+    paymentSourceId?: string[];
+  };
+  message?: string | null;
+};
+
+const CreditCardPaymentSummarySchema = z.object({
+  id: z.string().cuid(),
+  creditCardExpenseItemIds: z.string().array(),
+  date: z.string().min(1, { message: "Ingrese una fecha" }),
+  paymentTypeId: z.string({
+    invalid_type_error: "Por favor seleccione una forma de pago",
+  }),
+  paymentSourceId: z.string({
+    invalid_type_error: "Por favor seleccione un canal de pago",
+  }),
+});
+
+const CreateCreditCardPaymentSummarySchema =
+  CreditCardPaymentSummarySchema.omit({
+    id: true,
+  });
+
 export const createSummaryForMonth = async (
   _prevState: CreateExpenseSummaryState,
   formData: FormData
@@ -57,43 +84,25 @@ export const createSummaryForMonth = async (
 
     const { date } = validatedFields.data;
 
-    const [year, month] = date.split("-");
-    const parsedDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1));
-    const utcDate = parsedDate.toISOString();
-    console.log("🚀 ~ file: summary.ts:58 ~ utcDate:", utcDate);
-
     const userId = await getAuthUserId();
 
-    // const expenses = await prisma.expense.findMany({
-    //   where: {
-    //     userId,
-    //     deleted: false,
-    //   },
-    // });
-
-    // await prisma.expensePaymentSummary.createMany({
-    //   data: expenses.map((expense) => ({
-    //     expenseId: expense.id,
-    //     date: utcDate,
-    //     amount: expense.amount,
-    //     paid: false,
-    //     paymentTypeId: expense.paymentTypeId,
-    //     paymentSourceId: expense.paymentSourceId,
-    //     userId,
-    //   })),
-    // });
-
-    const creditCardExpenseItems = await prisma.creditCard.findMany({
+    const expenses = await prisma.expense.findMany({
       where: {
         userId,
+        deleted: false,
       },
-      include: {
-        creditCardExpenseItems: {
-          where: {
-            finished: false,
-          },
-        },
-      },
+    });
+
+    await prisma.expensePaymentSummary.createMany({
+      data: expenses.map((expense) => ({
+        expenseId: expense.id,
+        date,
+        amount: expense.amount,
+        paid: false,
+        paymentTypeId: expense.paymentTypeId,
+        paymentSourceId: expense.paymentSourceId,
+        userId,
+      })),
     });
   } catch (error) {
     return {
@@ -125,6 +134,135 @@ export async function fetchExpenses() {
     throw new Error("Error al cargar Tarjetas de créditos");
   }
 }
+
+export async function fetchCreditCardSummaryById(id: string) {
+  noStore();
+  // Add noStore() here prevent the response from being cached.
+  // This is equivalent to in fetch(..., {cache: 'no-store'}).
+  try {
+    const data = await prisma.creditCardPaymentSummary.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        creditCard: true,
+        creditCardExpenseItems: true,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error:", error);
+    throw new Error("Error al cargar Tarjetas de créditos");
+  }
+}
+
+export const createSummaryForCreditCard = async (
+  creditCardId: string,
+  _prevState: CreateCreditCardPaymentSummaryState,
+  formData: FormData
+) => {
+  try {
+    const validatedFields = CreateCreditCardPaymentSummarySchema.safeParse({
+      creditCardExpenseItemIds: formData.getAll("creditCardExpenseItemIds"),
+      date: formData.get("date"),
+      paymentTypeId: formData.get("paymentTypeId"),
+      paymentSourceId: formData.get("paymentSourceId"),
+    });
+
+    if (!validatedFields.success) {
+      return {
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: "Error",
+      };
+    }
+
+    const userId = await getAuthUserId();
+
+    const { creditCardExpenseItemIds, date, paymentTypeId, paymentSourceId } =
+      validatedFields.data;
+
+    const existingSummaryForCreditCard =
+      await prisma.creditCardPaymentSummary.findFirst({
+        where: {
+          date,
+          creditCardId,
+        },
+      });
+
+    if (existingSummaryForCreditCard) {
+      return {
+        errors: {
+          date: ["Ya existe un resumen para la fecha"],
+        },
+        message: "Error",
+      };
+    }
+
+    const creditCardExpenseItems = await prisma.creditCardExpenseItem.findMany({
+      where: {
+        id: {
+          in: creditCardExpenseItemIds,
+        },
+      },
+    });
+
+    let totalAmount = 0;
+    creditCardExpenseItems.forEach((item) => {
+      if (item.recurrent) totalAmount += item.amount;
+      else totalAmount += item.installmentsAmount;
+    });
+
+    await prisma.creditCardPaymentSummary.create({
+      data: {
+        amount: totalAmount,
+        date,
+        paid: false,
+        paymentTypeId,
+        paymentSourceId,
+        creditCardId,
+        userId,
+        creditCardExpenseItems: {
+          connect: creditCardExpenseItemIds.map((item) => ({ id: item })),
+        },
+      },
+    });
+
+    await prisma.creditCardExpenseItem.updateMany({
+      data: {
+        installmentsPaid: {
+          increment: 1,
+        },
+      },
+      where: {
+        recurrent: false,
+        id: {
+          in: creditCardExpenseItemIds,
+        },
+      },
+    });
+    await prisma.creditCardExpenseItem.updateMany({
+      data: {
+        finished: true,
+        finishedAt: new Date(),
+      },
+      where: {
+        id: {
+          in: creditCardExpenseItemIds,
+        },
+        recurrent: false,
+        installmentsPaid: {
+          equals: prisma.creditCardExpenseItem.fields.installmentsQuantity,
+        },
+      },
+    });
+  } catch (error) {
+    return {
+      message: "Error en base de datos",
+    };
+  }
+  revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId));
+  redirect(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId));
+};
 
 // export async function updateInvoice(
 //   id: string,
