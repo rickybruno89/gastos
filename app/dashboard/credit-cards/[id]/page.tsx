@@ -82,29 +82,19 @@ export default async function Page({ params }: { params: { id: string } }) {
             creditCard?.creditCardExpenseItems.length ? (
               creditCard.creditCardExpenseItems.map(item => (
                 <div key={item.id} className="relative rounded-md bg-white ">
-                  {/* {
-                    !item.finished ? (<span className="absolute flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75 top-1 left-1"></span>
-                    </span>) : null
-                  } */}
                   <div className='p-4 md:p-6'>
+                    <span className='font-bold'></span>
+                    <p className='font-bold'>{item.description} - {formatCurrency(item.amount)} {item.recurrent ? "(PAGO RECURRENTE)" : ""}</p>
                     {
-                      item.finished ? (<span className='font-bold text-red-600'>{item.description} - Pago finalizado</span>) : (<span className='font-bold'>{item.description}</span>)
+                      !item.recurrent ? (
+                        <p><span className='font-bold'>{item.installmentsPaid} de {item.installmentsQuantity} cuotas de {formatCurrency(item.installmentsAmount)}</span> </p>
+                      ) : null
                     }
-                    {
-                      item.recurrent ? <p className='font-bold'>Pago recurrente</p> : (
-                        <>
-                          <p>Financiación: <span className='font-bold'>{item.installmentsQuantity} cuotas de {formatCurrency(item.installmentsAmount)}</span> </p>
-                          <p>Cuotas pagadas <span className='font-bold'>{item.installmentsPaid} de {item.installmentsQuantity}</span> </p>
-                        </>
-                      )
-                    }
-                    <p>Monto total: <span className='font-bold'>{formatCurrency(item.amount)}</span> </p>
                     <p>Primer pago <span className='font-bold'>{formatLocaleDate(item.paymentBeginning)}</span> </p>
                     {
                       item.sharedWith.length ? (<p>Gasto compartido con <span className='font-bold'>{item.sharedWith.map(person => person.name).join(" - ")}</span> </p>) : null
                     }
-                    <p>Notas: <span className='font-bold'>{item.notes}</span> </p>
+                    <p>Notas: <span className='font-bold'>{item.notes || "-"}</span> </p>
                   </div>
                 </div>)
               )) : (<h1>No hay items </h1>)

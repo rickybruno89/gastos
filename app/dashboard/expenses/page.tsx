@@ -37,13 +37,11 @@ export default async function Page() {
           {
             expenses.length ? (
               expenses.map(item => (
-                <div key={item.id} className="relative rounded-md bg-gray-50 shadow-md">
+                <div key={item.id} className="relative rounded-md bg-gray-50 shadow-md ">
                   <div className='p-4 md:p-6'>
-                    <span className='font-bold'>{item.description}</span>
-
-                    <p>Monto total: <span className='font-bold'>{formatCurrency(item.amount)}</span> </p>
+                    <span className='font-bold'>{item.description} - {formatCurrency(item.amount)}</span>
                     {
-                      item.sharedWith.length ? (<p>Gasto compartido con <span className='font-bold'>{item.sharedWith.map(person => person.name).join(" - ")}</span> </p>) : null
+                      item.sharedWith.length ? (<p>Compartido con <span className='font-bold'>{item.sharedWith.map(person => person.name).join(" - ")}</span> </p>) : null
                     }
                     <p>Notas: <span className='font-bold'>{item.notes}</span> </p>
                   </div>

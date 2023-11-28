@@ -59,9 +59,7 @@ CREATE TABLE "Person" (
 CREATE TABLE "Currency" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "deleted" BOOLEAN NOT NULL DEFAULT false,
-    "deletedAt" TIMESTAMP(3),
+    "useAsDefault" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Currency_pkey" PRIMARY KEY ("id")
 );
@@ -89,31 +87,10 @@ CREATE TABLE "PaymentSource" (
 );
 
 -- CreateTable
-CREATE TABLE "CreditCardExpenseItem" (
-    "id" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "notes" TEXT NOT NULL,
-    "amount" DECIMAL(65,30) NOT NULL,
-    "currencyId" TEXT NOT NULL,
-    "recurrent" BOOLEAN NOT NULL,
-    "installmentQuantity" INTEGER NOT NULL DEFAULT 0,
-    "installmentAmount" DECIMAL(65,30) NOT NULL DEFAULT 0,
-    "paymentBeginning" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "discount" DECIMAL(65,30) NOT NULL DEFAULT 0,
-    "creditCardExpenseId" TEXT NOT NULL,
-    "deleted" BOOLEAN NOT NULL DEFAULT false,
-    "deletedAt" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "CreditCardExpenseItem_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "CreditCardExpense" (
+CREATE TABLE "CreditCard" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "taxesPercent" DECIMAL(65,30) NOT NULL,
+    "taxesPercent" DOUBLE PRECISION NOT NULL,
     "paymentTypeId" TEXT NOT NULL,
     "paymentSourceId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -122,18 +99,51 @@ CREATE TABLE "CreditCardExpense" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "CreditCardExpense_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "CreditCard_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CreditCardExpenseItem" (
+    "id" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "notes" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION,
+    "currencyId" TEXT NOT NULL,
+    "recurrent" BOOLEAN NOT NULL,
+    "installmentsQuantity" INTEGER NOT NULL DEFAULT 0,
+    "installmentsPaid" INTEGER NOT NULL DEFAULT 0,
+    "installmentsAmount" DOUBLE PRECISION NOT NULL,
+    "paymentBeginning" TEXT NOT NULL,
+    "finished" BOOLEAN NOT NULL DEFAULT false,
+    "finishedAt" TIMESTAMP(3),
+    "creditCardId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CreditCardExpenseItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CreditCardSummaryExpenseItem" (
+    "id" TEXT NOT NULL,
+    "creditCardExpenseItemId" TEXT NOT NULL,
+    "creditCardPaymentSummaryId" TEXT NOT NULL,
+    "installmentsPaid" INTEGER NOT NULL DEFAULT 0,
+    "installmentsAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+
+    CONSTRAINT "CreditCardSummaryExpenseItem_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "CreditCardPaymentSummary" (
     "id" TEXT NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
-    "amount" DECIMAL(65,30) NOT NULL,
+    "date" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
     "paid" BOOLEAN NOT NULL DEFAULT false,
     "paymentTypeId" TEXT NOT NULL,
     "paymentSourceId" TEXT NOT NULL,
-    "creditCardExpenseId" TEXT NOT NULL,
+    "creditCardId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -146,8 +156,7 @@ CREATE TABLE "Expense" (
     "id" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "notes" TEXT NOT NULL,
-    "amount" DECIMAL(65,30) NOT NULL,
-    "recurrent" BOOLEAN NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
     "currencyId" TEXT NOT NULL,
     "paymentTypeId" TEXT NOT NULL,
     "paymentSourceId" TEXT NOT NULL,
@@ -162,18 +171,17 @@ CREATE TABLE "Expense" (
 
 -- CreateTable
 CREATE TABLE "ExpensePaymentSummary" (
-    "id" TEXT NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
-    "amount" DECIMAL(65,30) NOT NULL,
-    "paid" BOOLEAN NOT NULL DEFAULT false,
     "expenseId" TEXT NOT NULL,
+    "date" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "paid" BOOLEAN NOT NULL DEFAULT false,
     "paymentTypeId" TEXT NOT NULL,
     "paymentSourceId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "ExpensePaymentSummary_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ExpensePaymentSummary_pkey" PRIMARY KEY ("expenseId","date")
 );
 
 -- CreateTable
@@ -204,10 +212,16 @@ CREATE UNIQUE INDEX "VerificationToken_token_key" ON "VerificationToken"("token"
 CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Person_name_userId_key" ON "Person"("name", "userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PaymentType_userId_name_key" ON "PaymentType"("userId", "name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PaymentSource_userId_name_key" ON "PaymentSource"("userId", "name");
+
+-- CreateIndex
+CREATE INDEX "CreditCardExpenseItem_finished_recurrent_idx" ON "CreditCardExpenseItem"("finished", "recurrent");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_CreditCardExpenseItemToPerson_AB_unique" ON "_CreditCardExpenseItemToPerson"("A", "B");
@@ -231,28 +245,34 @@ ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "Person" ADD CONSTRAINT "Person_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Currency" ADD CONSTRAINT "Currency_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "PaymentType" ADD CONSTRAINT "PaymentType_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PaymentSource" ADD CONSTRAINT "PaymentSource_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "CreditCard" ADD CONSTRAINT "CreditCard_paymentTypeId_fkey" FOREIGN KEY ("paymentTypeId") REFERENCES "PaymentType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CreditCard" ADD CONSTRAINT "CreditCard_paymentSourceId_fkey" FOREIGN KEY ("paymentSourceId") REFERENCES "PaymentSource"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CreditCard" ADD CONSTRAINT "CreditCard_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "CreditCardExpenseItem" ADD CONSTRAINT "CreditCardExpenseItem_currencyId_fkey" FOREIGN KEY ("currencyId") REFERENCES "Currency"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CreditCardExpenseItem" ADD CONSTRAINT "CreditCardExpenseItem_creditCardExpenseId_fkey" FOREIGN KEY ("creditCardExpenseId") REFERENCES "CreditCardExpense"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CreditCardExpenseItem" ADD CONSTRAINT "CreditCardExpenseItem_creditCardId_fkey" FOREIGN KEY ("creditCardId") REFERENCES "CreditCard"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CreditCardExpense" ADD CONSTRAINT "CreditCardExpense_paymentTypeId_fkey" FOREIGN KEY ("paymentTypeId") REFERENCES "PaymentType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CreditCardExpenseItem" ADD CONSTRAINT "CreditCardExpenseItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CreditCardExpense" ADD CONSTRAINT "CreditCardExpense_paymentSourceId_fkey" FOREIGN KEY ("paymentSourceId") REFERENCES "PaymentSource"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CreditCardSummaryExpenseItem" ADD CONSTRAINT "CreditCardSummaryExpenseItem_creditCardExpenseItemId_fkey" FOREIGN KEY ("creditCardExpenseItemId") REFERENCES "CreditCardExpenseItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CreditCardExpense" ADD CONSTRAINT "CreditCardExpense_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CreditCardSummaryExpenseItem" ADD CONSTRAINT "CreditCardSummaryExpenseItem_creditCardPaymentSummaryId_fkey" FOREIGN KEY ("creditCardPaymentSummaryId") REFERENCES "CreditCardPaymentSummary"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CreditCardPaymentSummary" ADD CONSTRAINT "CreditCardPaymentSummary_paymentTypeId_fkey" FOREIGN KEY ("paymentTypeId") REFERENCES "PaymentType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -261,7 +281,7 @@ ALTER TABLE "CreditCardPaymentSummary" ADD CONSTRAINT "CreditCardPaymentSummary_
 ALTER TABLE "CreditCardPaymentSummary" ADD CONSTRAINT "CreditCardPaymentSummary_paymentSourceId_fkey" FOREIGN KEY ("paymentSourceId") REFERENCES "PaymentSource"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CreditCardPaymentSummary" ADD CONSTRAINT "CreditCardPaymentSummary_creditCardExpenseId_fkey" FOREIGN KEY ("creditCardExpenseId") REFERENCES "CreditCardExpense"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CreditCardPaymentSummary" ADD CONSTRAINT "CreditCardPaymentSummary_creditCardId_fkey" FOREIGN KEY ("creditCardId") REFERENCES "CreditCard"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CreditCardPaymentSummary" ADD CONSTRAINT "CreditCardPaymentSummary_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

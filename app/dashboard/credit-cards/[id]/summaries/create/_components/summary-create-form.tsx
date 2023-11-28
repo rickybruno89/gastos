@@ -7,8 +7,9 @@ import { useFormState } from 'react-dom';
 import { Checkbox } from "@/components/ui/checkbox"
 import { createSummaryForCreditCard } from '@/services/summary';
 import { PaymentSource, PaymentType, Prisma } from '@prisma/client';
-import { formatCurrency, getToday } from '@/lib/utils';
-import { useState } from 'react';
+import { formatCurrency, getToday, removeCurrencyMaskFromInput } from '@/lib/utils';
+import { FormEvent, useEffect, useState } from 'react';
+import { NumericFormat } from 'react-number-format';
 
 type CreditCardWithItems = Prisma.CreditCardGetPayload<{
   include: {
@@ -38,6 +39,7 @@ export default function SummaryCreateForm({
 
   const [state, dispatch] = useFormState(createSummaryForCreditCardWithId, initialState);
   const [selectedItems, setSelectedItems] = useState(creditCard.creditCardExpenseItems.map(item => ({ ...item, checked: true })))
+  const [total, setTotal] = useState(0)
 
   const handleItemChecked = (checked: boolean, id: string) => {
     const newSelectedItems = selectedItems.map(item => {
@@ -47,19 +49,48 @@ export default function SummaryCreateForm({
     setSelectedItems(newSelectedItems)
   }
 
-  const getTotal = () => {
+  const handleItemAmountChange = (inputAmount: string, id: string) => {
+    const amount = removeCurrencyMaskFromInput(inputAmount)
+    const newSelectedItems = selectedItems.map(item => {
+      if (item.id === id) {
+        return { ...item, installmentsAmount: amount }
+      }
+      return item
+    })
+    setSelectedItems(newSelectedItems)
+  }
+
+  useEffect(() => {
     const total = selectedItems.reduce((total, item) => {
       if (item.checked) {
-        if (item.recurrent) return total += item.amount
         return total += item.installmentsAmount
       }
       return total
     }, 0)
-    return formatCurrency(total)
+
+    setTotal(total)
+  }, [selectedItems])
+
+  const handleSubmit = (e: any) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget);
+
+    const selectedItemsToSend = selectedItems
+      .filter(item => item.checked)
+      .map(item => {
+        const { id, installmentsAmount, installmentsPaid } = item;
+        return { id, installmentsAmount, installmentsPaid }
+      });
+
+    formData.set('totalAmount', total.toString());
+    formData.set('creditCardExpenseItems', JSON.stringify(selectedItemsToSend));
+
+    dispatch(formData)
   }
 
+
   return (
-    <form action={dispatch}>
+    <form onSubmit={handleSubmit}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6 w-full md:w-fit flex flex-col gap-4">
         <div>
           <label htmlFor="paymentTypeId" className="mb-2 block text-sm font-medium">
@@ -125,10 +156,9 @@ export default function SummaryCreateForm({
             </div>
           ) : null}
         </div>
-
         <div>
           <label className="mb-2 block text-sm font-medium" htmlFor='date'>
-            Comienzo del pago
+            Seleccione el mes para el resumen
           </label>
           <div>
             <input
@@ -160,38 +190,50 @@ export default function SummaryCreateForm({
             <div className="flex flex-col gap-4" >
               {
                 selectedItems.map(item =>
-                  <div key={item.id} className='flex items-center justify-end gap-x-1'>
+                  <div key={item.id} className='flex items-center justify-between gap-4'>
                     <label
-                      htmlFor={`creditCardExpenseItemIds[${item.id}]`}
-                      className="flex flex-wrap gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      htmlFor={`creditCardExpenseItems[${item.id}]`}
+                      className="flex flex-wrap gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 items-center"
                     >
-                      <span className='font-bold'>{item.description}</span>
-                      <span>-</span>
-                      {
-                        !item.recurrent ? (<span>Cuota {item.installmentsPaid + 1} de {item.installmentsQuantity} - {formatCurrency(item.installmentsAmount)}</span>) : (
-                          <span>{formatCurrency(item.amount)}</span>
-                        )
-                      }
+                      <div>
+                        <p className='font-bold'>
+                          {item.description}
+                        </p>
+                        {
+                          item.recurrent ? (
+                            <p>Pago recurrente</p>
+                          ) : (
+                            <p>
+                              Cuota {item.installmentsPaid + 1} de {item.installmentsQuantity}
+                            </p>
+                          )
+                        }
+                      </div>
+
                     </label>
-                    <Checkbox className="ml-4" id={`creditCardExpenseItemIds[${item.id}]`} name="creditCardExpenseItemIds" value={item.id} checked={item.checked} onCheckedChange={(e) => handleItemChecked(e as boolean, item.id)} />
+                    <div className='flex justify-end items-center gap-2'>
+                      <NumericFormat className='rounded-md w-36 px-2 py-1' value={item.installmentsAmount} onChange={(e) => handleItemAmountChange(e.target.value, item.id)} prefix={'$ '} thousandSeparator="." decimalScale={2} decimalSeparator="," />
+                      <Checkbox className='h-8 w-8 rounded-md' id={`creditCardExpenseItems[${item.id}]`} name="creditCardExpenseItems" value={item.id} checked={item.checked} onCheckedChange={(e) => handleItemChecked(e as boolean, item.id)} />
+                    </div>
                   </div>
                 )
               }
-              {state.errors?.creditCardExpenseItemIds ? (
+              {state.errors?.creditCardExpenseItems ? (
                 <div
-                  id="creditCardExpenseItemIds-error"
+                  id="creditCardExpenseItems-error"
                   aria-live="polite"
                   className="mt-2 text-sm text-red-500"
                 >
-                  {state.errors.creditCardExpenseItemIds.map((error: string) => (
+                  {state.errors.creditCardExpenseItems.map((error: string) => (
                     <p key={error}>{error}</p>
                   ))}
                 </div>
               ) : null}
             </div>
           </div>
-          <div>
-            <p className='font-bold text-right'>Total: <span>{getTotal()}</span></p>
+          <div className='flex gap-2 justify-end items-center'>
+            <p className='font-bold text-right'>Total</p>
+            <NumericFormat className='rounded-md w-36 px-2 py-1' name="totalAmount" id="totalAmount" value={total} prefix={'$ '} thousandSeparator="." decimalScale={2} decimalSeparator="," onChange={(e) => setTotal(removeCurrencyMaskFromInput(e.target.value))} />
           </div>
         </div>
 

@@ -22,11 +22,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             href: PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId),
           },
           {
-            label: 'Resúmenes',
-            href: PAGES_URL.CREDIT_CARDS.SUMMARY.BASE_PATH(creditCardId),
-          },
-          {
-            label: 'Crear',
+            label: 'Crear resumen',
             href: PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE(creditCardId),
             active: true,
           },

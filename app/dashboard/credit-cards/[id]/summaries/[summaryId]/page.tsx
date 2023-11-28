@@ -19,11 +19,7 @@ export default async function Page({ params }: { params: { id: string, summaryId
             href: PAGES_URL.CREDIT_CARDS.DETAILS(id),
           },
           {
-            label: 'Resúmenes',
-            href: PAGES_URL.CREDIT_CARDS.SUMMARY.BASE_PATH(id),
-          },
-          {
-            label: `${formatLocaleDate(creditCardSummary?.date!)}`,
+            label: `Resumen ${formatLocaleDate(creditCardSummary?.date!)}`,
             href: PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(id, summaryId),
             active: true,
           },
@@ -38,14 +34,15 @@ export default async function Page({ params }: { params: { id: string, summaryId
                 <span>{item.creditCardExpenseItem.description}</span>
                 {
                   !item.creditCardExpenseItem.recurrent ? (
-                    <span>Cuota pagada {item.installmentPaid} de {item.creditCardExpenseItem.installmentsQuantity} de {formatCurrency(item.creditCardExpenseItem.installmentsAmount)}</span>
+                    <span>Cuota pagada {item.installmentsPaid} de {item.creditCardExpenseItem.installmentsQuantity} de {formatCurrency(item.installmentsAmount)}</span>
                   ) :
-                    <span>{formatCurrency(item.creditCardExpenseItem.amount)}</span>
+                    <span>{formatCurrency(item.installmentsAmount)}</span>
                 }
               </div>
             ))
           }
-
+          <p>{creditCardSummary?.paid ? "PAGADO" : "NO PAGADO"}</p>
+          <p>Total {formatCurrency(creditCardSummary?.amount as number)}</p>
         </div>
       </section>
 

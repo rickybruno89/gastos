@@ -133,14 +133,14 @@ model CreditCardExpenseItem {
   id                   String                         @id @default(cuid())
   description          String
   notes                String
-  amount               Float
+  amount               Float? // only for items with installments (this is the total amount)
   sharedWith           Person[]
   currency             Currency                       @relation(fields: [currencyId], references: [id])
   currencyId           String
   recurrent            Boolean
   installmentsQuantity Int                            @default(0)
   installmentsPaid     Int                            @default(0)
-  installmentsAmount   Float                          @default(0)
+  installmentsAmount   Float // this is the amount for recurrent items TOO
   paymentBeginning     String
   finished             Boolean                        @default(false)
   finishedAt           DateTime?
@@ -161,7 +161,8 @@ model CreditCardSummaryExpenseItem {
   creditCardExpenseItemId    String
   creditCardPaymentSummary   CreditCardPaymentSummary @relation(fields: [creditCardPaymentSummaryId], references: [id])
   creditCardPaymentSummaryId String
-  installmentPaid            Int                      @default(0)
+  installmentsPaid           Int                      @default(0)
+  installmentsAmount         Float                    @default(0)
 }
 
 model CreditCardPaymentSummary {

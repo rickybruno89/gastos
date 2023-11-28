@@ -39,33 +39,6 @@ const CreateExpenseSchema = ExpenseSummarySchema.omit({
   paymentSourceId: true,
 });
 
-type CreateCreditCardPaymentSummaryState = {
-  errors?: {
-    creditCardExpenseItemIds?: string[];
-    date?: string[];
-    paymentTypeId?: string[];
-    paymentSourceId?: string[];
-  };
-  message?: string | null;
-};
-
-const CreditCardPaymentSummarySchema = z.object({
-  id: z.string().cuid(),
-  creditCardExpenseItemIds: z.string().array(),
-  date: z.string().min(1, { message: "Ingrese una fecha" }),
-  paymentTypeId: z.string({
-    invalid_type_error: "Por favor seleccione una forma de pago",
-  }),
-  paymentSourceId: z.string({
-    invalid_type_error: "Por favor seleccione un canal de pago",
-  }),
-});
-
-const CreateCreditCardPaymentSummarySchema =
-  CreditCardPaymentSummarySchema.omit({
-    id: true,
-  });
-
 export const createSummaryForMonth = async (
   _prevState: CreateExpenseSummaryState,
   formData: FormData
@@ -160,17 +133,59 @@ export async function fetchCreditCardSummaryById(id: string) {
   }
 }
 
+type CreateCreditCardPaymentSummaryState = {
+  errors?: {
+    creditCardExpenseItems?: string[];
+    date?: string[];
+    paymentTypeId?: string[];
+    paymentSourceId?: string[];
+    totalAmount?: string[];
+  };
+  message?: string | null;
+};
+
+const CreditCardPaymentSummarySchema = z.object({
+  id: z.string().cuid(),
+  creditCardExpenseItems: z
+    .object({
+      id: z.string().cuid(),
+      installmentsAmount: z.number(),
+      installmentsPaid: z.number(),
+    })
+    .array(),
+  date: z.string().min(1, { message: "Ingrese una fecha" }),
+  paymentTypeId: z.string({
+    invalid_type_error: "Por favor seleccione una forma de pago",
+  }),
+  paymentSourceId: z.string({
+    invalid_type_error: "Por favor seleccione un canal de pago",
+  }),
+  totalAmount: z
+    .string()
+    .min(1, { message: "El total tiene que ser mayor que 0" }),
+});
+
+const CreateCreditCardPaymentSummarySchema =
+  CreditCardPaymentSummarySchema.omit({
+    id: true,
+  });
+
 export const createSummaryForCreditCard = async (
   creditCardId: string,
   _prevState: CreateCreditCardPaymentSummaryState,
   formData: FormData
 ) => {
   try {
+    const creditCardExpenseItemsForm = formData.get(
+      "creditCardExpenseItems"
+    ) as string;
+    const creditCardExpenseItemsParsed = JSON.parse(creditCardExpenseItemsForm);
     const validatedFields = CreateCreditCardPaymentSummarySchema.safeParse({
-      creditCardExpenseItemIds: formData.getAll("creditCardExpenseItemIds"),
+      creditCardExpenseItems: creditCardExpenseItemsParsed,
       date: formData.get("date"),
       paymentTypeId: formData.get("paymentTypeId"),
       paymentSourceId: formData.get("paymentSourceId"),
+      totalAmount: formData.get("totalAmount"),
     });
 
     if (!validatedFields.success) {
@@ -182,8 +197,13 @@ export const createSummaryForCreditCard = async (
 
     const userId = await getAuthUserId();
 
-    const { creditCardExpenseItemIds, date, paymentTypeId, paymentSourceId } =
-      validatedFields.data;
+    const {
+      creditCardExpenseItems,
+      date,
+      paymentTypeId,
+      paymentSourceId,
+      totalAmount,
+    } = validatedFields.data;
 
     const existingSummaryForCreditCard =
       await prisma.creditCardPaymentSummary.findFirst({
@@ -202,23 +222,9 @@ export const createSummaryForCreditCard = async (
       };
     }
 
-    const creditCardExpenseItems = await prisma.creditCardExpenseItem.findMany({
-      where: {
-        id: {
-          in: creditCardExpenseItemIds,
-        },
-      },
-    });
-
-    let totalAmount = 0;
-    creditCardExpenseItems.forEach((item) => {
-      if (item.recurrent) totalAmount += item.amount;
-      else totalAmount += item.installmentsAmount;
-    });
-
     await prisma.creditCardPaymentSummary.create({
       data: {
-        amount: totalAmount,
+        amount: parseFloat(totalAmount),
         date,
         paid: false,
         paymentTypeId,
@@ -229,7 +235,8 @@ export const createSummaryForCreditCard = async (
           createMany: {
             data: creditCardExpenseItems.map((item) => ({
               creditCardExpenseItemId: item.id,
-              installmentPaid: item.installmentsPaid + 1,
+              installmentsPaid: item.installmentsPaid + 1,
+              installmentsAmount: item.installmentsAmount,
             })),
           },
         },
@@ -245,7 +252,7 @@ export const createSummaryForCreditCard = async (
       where: {
         recurrent: false,
         id: {
-          in: creditCardExpenseItemIds,
+          in: creditCardExpenseItems.map((item) => item.id),
         },
       },
     });
@@ -256,7 +263,7 @@ export const createSummaryForCreditCard = async (
       },
       where: {
         id: {
-          in: creditCardExpenseItemIds,
+          in: creditCardExpenseItems.map((item) => item.id),
         },
         recurrent: false,
         installmentsPaid: {
@@ -272,6 +279,31 @@ export const createSummaryForCreditCard = async (
   revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId));
   redirect(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId));
 };
+
+export async function fetchSummariesForMonth(date: string) {
+  noStore();
+  // Add noStore() here prevent the response from being cached.
+  // This is equivalent to in fetch(..., {cache: 'no-store'}).
+  try {
+    const data = await prisma.creditCardPaymentSummary.findUnique({
+      where: {
+        id: "",
+      },
+      include: {
+        creditCard: true,
+        itemHistoryPayment: {
+          include: {
+            creditCardExpenseItem: true,
+          },
+        },
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error:", error);
+    throw new Error("Error al cargar Tarjetas de créditos");
+  }
+}
 
 // export async function updateInvoice(
 //   id: string,

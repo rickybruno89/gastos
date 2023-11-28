@@ -147,15 +147,7 @@ export default function CreditCardExpenseItemCreateForm({ creditCardId, personsT
             <div className="relative ">
               <InputNumberFormat name="amount" locales="es-AR" maximumFractionDigits={2} format='currency' currency='ARS' className='rounded-md w-full' onChange={(e) => setTotalAmount(removeCurrencyMaskFromInput(e.target.value))}
                 id="amount" />
-              {/* <input
-                onChange={(e) => setTotalAmount(parseFloat(e.target.value))}
-                id="amount"
-                onWheel={(e) => e.currentTarget.blur()}
-                name="amount"
-                type="number"
-                step="0.01"
-                className="peer pl-8 block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
-              /> */}
+
             </div>
             {state.errors?.amount ? (
               <div

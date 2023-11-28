@@ -1,11 +1,15 @@
 import { Metadata } from 'next';
 import CreateSummaryForm from './_components/create-summary-form';
+import { getToday } from '@/lib/utils';
+import { fetchSummariesForMonth } from '@/services/summary';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
 };
 
 export default async function Page() {
+
+  const summaries = await fetchSummariesForMonth(getToday())
 
   return (
     <main>
