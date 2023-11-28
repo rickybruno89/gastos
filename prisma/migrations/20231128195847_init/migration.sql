@@ -107,7 +107,7 @@ CREATE TABLE "CreditCardExpenseItem" (
     "id" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "notes" TEXT NOT NULL,
-    "amount" DOUBLE PRECISION,
+    "amount" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "currencyId" TEXT NOT NULL,
     "recurrent" BOOLEAN NOT NULL,
     "installmentsQuantity" INTEGER NOT NULL DEFAULT 0,
@@ -171,6 +171,7 @@ CREATE TABLE "Expense" (
 
 -- CreateTable
 CREATE TABLE "ExpensePaymentSummary" (
+    "id" TEXT NOT NULL,
     "expenseId" TEXT NOT NULL,
     "date" TEXT NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
@@ -181,7 +182,7 @@ CREATE TABLE "ExpensePaymentSummary" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "ExpensePaymentSummary_pkey" PRIMARY KEY ("expenseId","date")
+    CONSTRAINT "ExpensePaymentSummary_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable

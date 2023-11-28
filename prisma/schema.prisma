@@ -205,6 +205,7 @@ model Expense {
 }
 
 model ExpensePaymentSummary {
+  id              String        @id @default(cuid())
   expense         Expense       @relation(fields: [expenseId], references: [id])
   expenseId       String
   date            String
@@ -218,6 +219,4 @@ model ExpensePaymentSummary {
   userId          String
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-
-  @@id([expenseId, date])
 }
