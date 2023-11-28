@@ -6,7 +6,7 @@ import { getAuthUserId } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
-import { BASE_PATH, PAGES_URL } from '@/lib/routes'
+import { PAGES_URL } from '@/lib/routes'
 import { removeCurrencyMaskFromInput } from '@/lib/utils'
 
 type CreateExpenseSummaryState = {
@@ -132,7 +132,7 @@ export const createSummaryForMonth = async (_prevState: CreateExpenseSummaryStat
       message: 'Error en base de datos',
     }
   }
-  revalidatePath(BASE_PATH)
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
   redirect('/')
 }
 

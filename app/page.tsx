@@ -1,19 +1,19 @@
-import AcmeLogo from '@/components/ui/acme-logo';
-import { lusitana } from '@/components/ui/fonts';
-import { getServerSession } from 'next-auth';
-import { nextAuthOptions } from '@/lib/auth';
-import { redirect } from "next/navigation";
-import LoginForm from '@/components/ui/login-form';
-import { Metadata } from 'next';
-import { BASE_PATH } from '@/lib/routes';
+import AcmeLogo from '@/components/ui/acme-logo'
+import { lusitana } from '@/components/ui/fonts'
+import { getServerSession } from 'next-auth'
+import { nextAuthOptions } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+import LoginForm from '@/components/ui/login-form'
+import { Metadata } from 'next'
+import { PAGES_URL } from '@/lib/routes'
 
 export const metadata: Metadata = {
   title: 'Login',
-};
+}
 
 export default async function Page() {
-  const session = await getServerSession(nextAuthOptions);
-  if (session?.user.id) return redirect(BASE_PATH);
+  const session = await getServerSession(nextAuthOptions)
+  if (session?.user.id) return redirect(PAGES_URL.DASHBOARD.BASE_PATH)
   return (
     <main className="flex min-h-screen flex-col p-6">
       <div className="flex h-20 shrink-0 items-end rounded-lg bg-blue-500 p-4 md:h-52">
@@ -28,13 +28,10 @@ export default async function Page() {
             </a>
             , brought to you by Vercel.
           </p>
-          <div
-            className="h-0 w-0 border-b-[30px] border-l-[20px] border-r-[20px] border-b-black border-l-transparent border-r-transparent"
-          />
-
+          <div className="h-0 w-0 border-b-[30px] border-l-[20px] border-r-[20px] border-b-black border-l-transparent border-r-transparent" />
         </div>
         <LoginForm />
       </div>
     </main>
-  );
+  )
 }
