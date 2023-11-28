@@ -219,4 +219,6 @@ model ExpensePaymentSummary {
   userId          String
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+
+  @@unique([expenseId, date])
 }

@@ -1,5 +1,5 @@
 'use server'
-import { PaymentType } from '@prisma/client'
+import { ExpensePaymentSummary, PaymentType } from '@prisma/client'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth'
@@ -22,21 +22,8 @@ const ExpenseSummarySchema = z.object({
   date: z.string().min(1, { message: 'Ingrese una fecha' }),
 })
 
-export const generateExpenseSummaryForMonth = async (_prevState: CreateExpenseSummaryState, formData: FormData) => {
+export const generateExpenseSummaryForMonth = async (date: string) => {
   try {
-    const validatedFields = ExpenseSummarySchema.safeParse({
-      date: formData.get('date'),
-    })
-
-    if (!validatedFields.success) {
-      return {
-        errors: validatedFields.error.flatten().fieldErrors,
-        message: 'Error',
-      }
-    }
-
-    const { date } = validatedFields.data
-
     const userId = await getAuthUserId()
 
     const expenses = await prisma.expense.findMany({
@@ -63,7 +50,7 @@ export const generateExpenseSummaryForMonth = async (_prevState: CreateExpenseSu
     }
   }
   revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
-  redirect('/')
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
 }
 
 export async function fetchCreditCardSummaryById(id: string) {
@@ -277,12 +264,48 @@ export async function fetchExpenseSummariesForMonth(date: string) {
           },
         },
       },
+      orderBy: {
+        expense: {
+          createdAt: 'asc',
+        },
+      },
     })
     return data
   } catch (error) {
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
   }
+}
+
+export const setExpensePaymentSummaryPaid = async (expenseItem: ExpensePaymentSummary) => {
+  try {
+    await prisma.expense.update({
+      data: {
+        amount: expenseItem.amount,
+        paymentSourceId: expenseItem.paymentSourceId,
+        paymentTypeId: expenseItem.paymentTypeId,
+      },
+      where: {
+        id: expenseItem.expenseId,
+      },
+    })
+    await prisma.expensePaymentSummary.update({
+      data: {
+        amount: expenseItem.amount,
+        paid: true,
+        paymentSourceId: expenseItem.paymentSourceId,
+        paymentTypeId: expenseItem.paymentTypeId,
+      },
+      where: {
+        id: expenseItem.id,
+      },
+    })
+  } catch (error) {
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
+  }
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${expenseItem.date}`)
 }
 
 // export async function updateInvoice(
