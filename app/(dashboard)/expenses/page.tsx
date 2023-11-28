@@ -37,23 +37,7 @@ export default async function Page() {
           },
         ]}
       />
-      <section className="mb-4">
-        <h1 className="text-xl font-bold mb-2">Resúmenes</h1>
-        <div className="flex flex-row flex-nowrap overflow-x-auto gap-x-4">
-          <GenerateSummaryButton />
-          {/* {paymentSummaries.map((summary) => (
-            <Link
-              href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(id, summary.id)}
-              key={summary.id}
-              className="rounded-md bg-white p-4 md:p-6 flex flex-col justify-center  mb-4 whitespace-nowrap w-56 h-32"
-            >
-              <p className="uppercase font-bold">{formatLocaleDate(summary.date)}</p>
-              <p>{formatCurrency(summary.amount)} </p>
-              {summary.paid ? <p className="text-green-500">PAGADO</p> : <p className="text-red-500">NO PAGADO</p>}
-            </Link>
-          ))} */}
-        </div>
-      </section>
+
       <section>
         <div className="flex gap-4 items-center mb-2">
           <h1 className="text-xl font-bold">Items</h1>
