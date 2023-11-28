@@ -2,16 +2,29 @@ import Breadcrumbs from '@/components/ui/breadcrumbs'
 import LinkButton from '@/components/ui/link-button'
 import { PAGES_URL } from '@/lib/routes'
 import { formatCurrency } from '@/lib/utils'
-import { fetchExpenses } from '@/services/expense'
+import { fetchExpensePaymentSummaries, fetchExpenses } from '@/services/expense'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import { Metadata } from 'next'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Gastos',
 }
 
+const GenerateSummaryButton = () => (
+  <Link
+    href={PAGES_URL.EXPENSES.SUMMARY.CREATE}
+    className="p-4 md:p-6 flex flex-col  mb-4 whitespace-nowrap w-56 h-32  rounded-md border border-dashed border-blue-400 items-center justify-center gap-1 text-blue-400 cursor-pointer"
+  >
+    <PlusIcon className="w-12" />
+    Generar resumen
+  </Link>
+)
+
 export default async function Page() {
   const expenses = await fetchExpenses()
+  const paymentSummaries = await fetchExpensePaymentSummaries()
+  console.log('🚀 ~ file: page.tsx:27 ~ Page ~ paymentSummaries:', paymentSummaries)
 
   return (
     <main>
@@ -24,6 +37,23 @@ export default async function Page() {
           },
         ]}
       />
+      <section className="mb-4">
+        <h1 className="text-xl font-bold mb-2">Resúmenes</h1>
+        <div className="flex flex-row flex-nowrap overflow-x-auto gap-x-4">
+          <GenerateSummaryButton />
+          {/* {paymentSummaries.map((summary) => (
+            <Link
+              href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(id, summary.id)}
+              key={summary.id}
+              className="rounded-md bg-white p-4 md:p-6 flex flex-col justify-center  mb-4 whitespace-nowrap w-56 h-32"
+            >
+              <p className="uppercase font-bold">{formatLocaleDate(summary.date)}</p>
+              <p>{formatCurrency(summary.amount)} </p>
+              {summary.paid ? <p className="text-green-500">PAGADO</p> : <p className="text-red-500">NO PAGADO</p>}
+            </Link>
+          ))} */}
+        </div>
+      </section>
       <section>
         <div className="flex gap-4 items-center mb-2">
           <h1 className="text-xl font-bold">Items</h1>
@@ -39,6 +69,9 @@ export default async function Page() {
                 <div className="p-4 md:p-6">
                   <p className="text-lg font-bold">
                     {item.description} - {formatCurrency(item.amount)}
+                  </p>
+                  <p>
+                    {item.paymentType.name} - {item.paymentSource.name}
                   </p>
                   {item.sharedWith.length ? (
                     <p>

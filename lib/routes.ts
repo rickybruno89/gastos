@@ -1,4 +1,4 @@
-export const BASE_PATH = "/dashboard";
+export const BASE_PATH = '/dashboard'
 
 export const PAGES_URL = {
   CREDIT_CARDS: {
@@ -6,15 +6,12 @@ export const PAGES_URL = {
     CREATE: `${BASE_PATH}/credit-cards/create`,
     DETAILS: (id: string) => `${BASE_PATH}/credit-cards/${id}`,
     EXPENSE_ITEM: {
-      CREATE: (id: string) =>
-        `${BASE_PATH}/credit-cards/${id}/expense-item/create`,
+      CREATE: (id: string) => `${BASE_PATH}/credit-cards/${id}/expense-item/create`,
     },
     SUMMARY: {
       BASE_PATH: (id: string) => `${BASE_PATH}/credit-cards/${id}/summaries`,
-      CREATE: (id: string) =>
-        `${BASE_PATH}/credit-cards/${id}/summaries/create`,
-      DETAIL: (id: string, summaryId: string) =>
-        `${BASE_PATH}/credit-cards/${id}/summaries/${summaryId}`,
+      CREATE: (id: string) => `${BASE_PATH}/credit-cards/${id}/summaries/create`,
+      DETAIL: (id: string, summaryId: string) => `${BASE_PATH}/credit-cards/${id}/summaries/${summaryId}`,
     },
   },
   SETTINGS: {
@@ -27,5 +24,9 @@ export const PAGES_URL = {
   EXPENSES: {
     BASE_PATH: `${BASE_PATH}/expenses`,
     CREATE: `${BASE_PATH}/expenses/create`,
+    SUMMARY: {
+      CREATE: `${BASE_PATH}/expenses/summaries/create`,
+      DETAIL: (summaryId: string) => `${BASE_PATH}/expenses/summaries/${summaryId}`,
+    },
   },
-};
+}

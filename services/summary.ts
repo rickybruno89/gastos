@@ -11,38 +11,44 @@ import { removeCurrencyMaskFromInput } from '@/lib/utils'
 
 type CreateExpenseSummaryState = {
   errors?: {
+    expenseItems?: string[]
     date?: string[]
+    totalAmount?: string[]
   }
   message?: string | null
 }
 
 const ExpenseSummarySchema = z.object({
   id: z.string().cuid(),
+  expenseItems: z
+    .object({
+      id: z.string().cuid(),
+      amount: z.number(),
+      paymentTypeId: z.string({
+        invalid_type_error: 'Por favor seleccione una forma de pago',
+      }),
+      paymentSourceId: z.string({
+        invalid_type_error: 'Por favor seleccione un canal de pago',
+      }),
+    })
+    .array(),
   date: z.string().min(1, { message: 'Ingrese una fecha' }),
-  amount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
-  paid: z.boolean(),
-  sharedWith: z.string().array(),
-  paymentTypeId: z.string({
-    invalid_type_error: 'Por favor seleccione una forma de pago',
-  }),
-  paymentSourceId: z.string({
-    invalid_type_error: 'Por favor seleccione un canal de pago',
-  }),
+
+  totalAmount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
 })
 
-const CreateExpenseSchema = ExpenseSummarySchema.omit({
+const CreateExpenseSummarySchema = ExpenseSummarySchema.omit({
   id: true,
-  amount: true,
-  paid: true,
-  sharedWith: true,
-  paymentTypeId: true,
-  paymentSourceId: true,
 })
 
 export const createSummaryForMonth = async (_prevState: CreateExpenseSummaryState, formData: FormData) => {
   try {
-    const validatedFields = CreateExpenseSchema.safeParse({
+    const expenseItemsForm = formData.get('expenseItems') as string
+    const expenseItemsParsed = JSON.parse(expenseItemsForm)
+    const validatedFields = CreateExpenseSummarySchema.safeParse({
+      expenseItems: expenseItemsParsed,
       date: formData.get('date'),
+      totalAmount: formData.get('totalAmount'),
     })
 
     if (!validatedFields.success) {
@@ -52,28 +58,75 @@ export const createSummaryForMonth = async (_prevState: CreateExpenseSummaryStat
       }
     }
 
-    const { date } = validatedFields.data
-
     const userId = await getAuthUserId()
 
-    const expenses = await prisma.expense.findMany({
+    const { expenseItems, date, totalAmount } = validatedFields.data
+
+    const existingSummaryForExpense = await prisma.expensePaymentSummary.findFirst({
       where: {
+        date,
         userId,
-        deleted: false,
       },
     })
 
-    await prisma.expensePaymentSummary.createMany({
-      data: expenses.map((expense) => ({
-        expenseId: expense.id,
-        date,
-        amount: expense.amount,
-        paid: false,
-        paymentTypeId: expense.paymentTypeId,
-        paymentSourceId: expense.paymentSourceId,
-        userId,
-      })),
-    })
+    if (existingSummaryForExpense) {
+      return {
+        errors: {
+          date: ['Ya existe un resumen para la fecha'],
+        },
+        message: 'Error',
+      }
+    }
+
+    // await prisma.expensePaymentSummary.createMany({
+    //   data: {
+    //     amount: parseFloat(totalAmount),
+    //     date,
+    //     paid: false,
+    //     paymentTypeId,
+    //     paymentSourceId,
+    //     creditCardId,
+    //     userId,
+    //     itemHistoryPayment: {
+    //       createMany: {
+    //         data: expenseItems.map((item) => ({
+    //           creditCardExpenseItemId: item.id,
+    //           installmentsPaid: item.installmentsPaid + 1,
+    //           installmentsAmount: item.installmentsAmount,
+    //         })),
+    //       },
+    //     },
+    //   },
+    // })
+
+    // await prisma.creditCardExpenseItem.updateMany({
+    //   data: {
+    //     installmentsPaid: {
+    //       increment: 1,
+    //     },
+    //   },
+    //   where: {
+    //     recurrent: false,
+    //     id: {
+    //       in: expenseItems.map((item) => item.id),
+    //     },
+    //   },
+    // })
+    // await prisma.creditCardExpenseItem.updateMany({
+    //   data: {
+    //     finished: true,
+    //     finishedAt: new Date(),
+    //   },
+    //   where: {
+    //     id: {
+    //       in: expenseItems.map((item) => item.id),
+    //     },
+    //     recurrent: false,
+    //     installmentsPaid: {
+    //       equals: prisma.creditCardExpenseItem.fields.installmentsQuantity,
+    //     },
+    //   },
+    // })
   } catch (error) {
     return {
       message: 'Error en base de datos',
@@ -81,28 +134,6 @@ export const createSummaryForMonth = async (_prevState: CreateExpenseSummaryStat
   }
   revalidatePath(BASE_PATH)
   redirect('/')
-}
-
-export async function fetchExpenses() {
-  noStore()
-  // Add noStore() here prevent the response from being cached.
-  // This is equivalent to in fetch(..., {cache: 'no-store'}).
-  try {
-    const data = await prisma.expense.findMany({
-      where: {
-        userId: await getAuthUserId(),
-      },
-      include: {
-        paymentSource: true,
-        paymentType: true,
-        sharedWith: true,
-      },
-    })
-    return data
-  } catch (error) {
-    console.error('Error:', error)
-    throw new Error('Error al cargar Tarjetas de créditos')
-  }
 }
 
 export async function fetchCreditCardSummaryById(id: string) {

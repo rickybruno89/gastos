@@ -1,86 +1,71 @@
-"use server";
-import { PaymentType } from "@prisma/client";
-import { z } from "zod";
-import prisma from "@/lib/prisma";
-import { getAuthUserId } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { unstable_noStore as noStore } from "next/cache";
-import { PAGES_URL } from "@/lib/routes";
-import { removeCurrencyMaskFromInput } from "@/lib/utils";
+'use server'
+import { z } from 'zod'
+import prisma from '@/lib/prisma'
+import { getAuthUserId } from '@/lib/auth'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { unstable_noStore as noStore } from 'next/cache'
+import { PAGES_URL } from '@/lib/routes'
+import { removeCurrencyMaskFromInput } from '@/lib/utils'
 
 type CreateExpenseState = {
   errors?: {
-    description?: string[];
-    notes?: string[];
-    amount?: string[];
-    sharedWith?: string[];
-    currencyId?: string[];
-    paymentTypeId?: string[];
-    paymentSourceId?: string[];
-  };
-  message?: string | null;
-};
+    description?: string[]
+    notes?: string[]
+    amount?: string[]
+    sharedWith?: string[]
+    currencyId?: string[]
+    paymentTypeId?: string[]
+    paymentSourceId?: string[]
+  }
+  message?: string | null
+}
 
 const ExpenseSchema = z.object({
   id: z.string().cuid(),
-  description: z
-    .string()
-    .toUpperCase()
-    .min(1, { message: "Ingrese una descripción" }),
+  description: z.string().toUpperCase().min(1, { message: 'Ingrese una descripción' }),
   notes: z.string().toUpperCase(),
-  amount: z.string().min(1, { message: "El total tiene que ser mayor que 0" }),
+  amount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
   sharedWith: z.string().array(),
   currencyId: z
     .string({
-      invalid_type_error: "Seleccione una moneda",
+      invalid_type_error: 'Seleccione una moneda',
     })
     .cuid(),
   paymentTypeId: z.string({
-    invalid_type_error: "Por favor seleccione una forma de pago",
+    invalid_type_error: 'Por favor seleccione una forma de pago',
   }),
   paymentSourceId: z.string({
-    invalid_type_error: "Por favor seleccione un canal de pago",
+    invalid_type_error: 'Por favor seleccione un canal de pago',
   }),
-});
+})
 
 const CreateExpenseSchema = ExpenseSchema.omit({
   id: true,
-});
+})
 
-export const createExpense = async (
-  _prevState: CreateExpenseState,
-  formData: FormData
-) => {
+export const createExpense = async (_prevState: CreateExpenseState, formData: FormData) => {
   try {
     const validatedFields = CreateExpenseSchema.safeParse({
-      description: formData.get("description"),
-      notes: formData.get("notes"),
-      amount: formData.get("amount"),
-      sharedWith: formData.getAll("sharedWith"),
-      currencyId: formData.get("currencyId"),
-      paymentTypeId: formData.get("paymentTypeId"),
-      paymentSourceId: formData.get("paymentSourceId"),
-    });
+      description: formData.get('description'),
+      notes: formData.get('notes'),
+      amount: formData.get('amount'),
+      sharedWith: formData.getAll('sharedWith'),
+      currencyId: formData.get('currencyId'),
+      paymentTypeId: formData.get('paymentTypeId'),
+      paymentSourceId: formData.get('paymentSourceId'),
+    })
 
     if (!validatedFields.success) {
       return {
         errors: validatedFields.error.flatten().fieldErrors,
-        message: "Error",
-      };
+        message: 'Error',
+      }
     }
 
-    const {
-      description,
-      notes,
-      amount,
-      sharedWith,
-      currencyId,
-      paymentTypeId,
-      paymentSourceId,
-    } = validatedFields.data;
+    const { description, notes, amount, sharedWith, currencyId, paymentTypeId, paymentSourceId } = validatedFields.data
 
-    const userId = await getAuthUserId();
+    const userId = await getAuthUserId()
 
     await prisma.expense.create({
       data: {
@@ -95,18 +80,18 @@ export const createExpense = async (
         paymentSourceId,
         userId,
       },
-    });
+    })
   } catch (error) {
     return {
-      message: "Error en base de datos",
-    };
+      message: 'Error en base de datos',
+    }
   }
-  revalidatePath(PAGES_URL.EXPENSES.BASE_PATH);
-  redirect(PAGES_URL.EXPENSES.BASE_PATH);
-};
+  revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
+  redirect(PAGES_URL.EXPENSES.BASE_PATH)
+}
 
 export async function fetchExpenses() {
-  noStore();
+  noStore()
   // Add noStore() here prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
   try {
@@ -119,11 +104,29 @@ export async function fetchExpenses() {
         paymentType: true,
         sharedWith: true,
       },
-    });
-    return data;
+    })
+    return data
   } catch (error) {
-    console.error("Error:", error);
-    throw new Error("Error al cargar Tarjetas de créditos");
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
+  }
+}
+
+export async function fetchExpensePaymentSummaries() {
+  noStore()
+  // Add noStore() here prevent the response from being cached.
+  // This is equivalent to in fetch(..., {cache: 'no-store'}).
+  try {
+    const data = await prisma.expensePaymentSummary.groupBy({
+      by: 'date',
+      where: {
+        userId: await getAuthUserId(),
+      },
+    })
+    return data
+  } catch (error) {
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
   }
 }
 
