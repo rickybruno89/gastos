@@ -133,7 +133,7 @@ model CreditCardExpenseItem {
   id                   String                         @id @default(cuid())
   description          String
   notes                String
-  amount               Float? // only for items with installments (this is the total amount)
+  amount               Float                          @default(0) // only for items with installments (this is the total amount)
   sharedWith           Person[]
   currency             Currency                       @relation(fields: [currencyId], references: [id])
   currencyId           String

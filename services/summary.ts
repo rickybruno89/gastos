@@ -1,34 +1,34 @@
-"use server";
-import { PaymentType } from "@prisma/client";
-import { z } from "zod";
-import prisma from "@/lib/prisma";
-import { getAuthUserId } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { unstable_noStore as noStore } from "next/cache";
-import { BASE_PATH, PAGES_URL } from "@/lib/routes";
-import { removeCurrencyMaskFromInput } from "@/lib/utils";
+'use server'
+import { PaymentType } from '@prisma/client'
+import { z } from 'zod'
+import prisma from '@/lib/prisma'
+import { getAuthUserId } from '@/lib/auth'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { unstable_noStore as noStore } from 'next/cache'
+import { BASE_PATH, PAGES_URL } from '@/lib/routes'
+import { removeCurrencyMaskFromInput } from '@/lib/utils'
 
 type CreateExpenseSummaryState = {
   errors?: {
-    date?: string[];
-  };
-  message?: string | null;
-};
+    date?: string[]
+  }
+  message?: string | null
+}
 
 const ExpenseSummarySchema = z.object({
   id: z.string().cuid(),
-  date: z.string().min(1, { message: "Ingrese una fecha" }),
-  amount: z.string().min(1, { message: "El total tiene que ser mayor que 0" }),
+  date: z.string().min(1, { message: 'Ingrese una fecha' }),
+  amount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
   paid: z.boolean(),
   sharedWith: z.string().array(),
   paymentTypeId: z.string({
-    invalid_type_error: "Por favor seleccione una forma de pago",
+    invalid_type_error: 'Por favor seleccione una forma de pago',
   }),
   paymentSourceId: z.string({
-    invalid_type_error: "Por favor seleccione un canal de pago",
+    invalid_type_error: 'Por favor seleccione un canal de pago',
   }),
-});
+})
 
 const CreateExpenseSchema = ExpenseSummarySchema.omit({
   id: true,
@@ -37,34 +37,31 @@ const CreateExpenseSchema = ExpenseSummarySchema.omit({
   sharedWith: true,
   paymentTypeId: true,
   paymentSourceId: true,
-});
+})
 
-export const createSummaryForMonth = async (
-  _prevState: CreateExpenseSummaryState,
-  formData: FormData
-) => {
+export const createSummaryForMonth = async (_prevState: CreateExpenseSummaryState, formData: FormData) => {
   try {
     const validatedFields = CreateExpenseSchema.safeParse({
-      date: formData.get("date"),
-    });
+      date: formData.get('date'),
+    })
 
     if (!validatedFields.success) {
       return {
         errors: validatedFields.error.flatten().fieldErrors,
-        message: "Error",
-      };
+        message: 'Error',
+      }
     }
 
-    const { date } = validatedFields.data;
+    const { date } = validatedFields.data
 
-    const userId = await getAuthUserId();
+    const userId = await getAuthUserId()
 
     const expenses = await prisma.expense.findMany({
       where: {
         userId,
         deleted: false,
       },
-    });
+    })
 
     await prisma.expensePaymentSummary.createMany({
       data: expenses.map((expense) => ({
@@ -76,18 +73,18 @@ export const createSummaryForMonth = async (
         paymentSourceId: expense.paymentSourceId,
         userId,
       })),
-    });
+    })
   } catch (error) {
     return {
-      message: "Error en base de datos",
-    };
+      message: 'Error en base de datos',
+    }
   }
-  revalidatePath(BASE_PATH);
-  redirect("/");
-};
+  revalidatePath(BASE_PATH)
+  redirect('/')
+}
 
 export async function fetchExpenses() {
-  noStore();
+  noStore()
   // Add noStore() here prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
   try {
@@ -100,16 +97,16 @@ export async function fetchExpenses() {
         paymentType: true,
         sharedWith: true,
       },
-    });
-    return data;
+    })
+    return data
   } catch (error) {
-    console.error("Error:", error);
-    throw new Error("Error al cargar Tarjetas de créditos");
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
   }
 }
 
 export async function fetchCreditCardSummaryById(id: string) {
-  noStore();
+  noStore()
   // Add noStore() here prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
   try {
@@ -119,30 +116,32 @@ export async function fetchCreditCardSummaryById(id: string) {
       },
       include: {
         creditCard: true,
+        paymentSource: true,
+        paymentType: true,
         itemHistoryPayment: {
           include: {
             creditCardExpenseItem: true,
           },
         },
       },
-    });
-    return data;
+    })
+    return data
   } catch (error) {
-    console.error("Error:", error);
-    throw new Error("Error al cargar Tarjetas de créditos");
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
   }
 }
 
 type CreateCreditCardPaymentSummaryState = {
   errors?: {
-    creditCardExpenseItems?: string[];
-    date?: string[];
-    paymentTypeId?: string[];
-    paymentSourceId?: string[];
-    totalAmount?: string[];
-  };
-  message?: string | null;
-};
+    creditCardExpenseItems?: string[]
+    date?: string[]
+    paymentTypeId?: string[]
+    paymentSourceId?: string[]
+    totalAmount?: string[]
+  }
+  message?: string | null
+}
 
 const CreditCardPaymentSummarySchema = z.object({
   id: z.string().cuid(),
@@ -153,22 +152,19 @@ const CreditCardPaymentSummarySchema = z.object({
       installmentsPaid: z.number(),
     })
     .array(),
-  date: z.string().min(1, { message: "Ingrese una fecha" }),
+  date: z.string().min(1, { message: 'Ingrese una fecha' }),
   paymentTypeId: z.string({
-    invalid_type_error: "Por favor seleccione una forma de pago",
+    invalid_type_error: 'Por favor seleccione una forma de pago',
   }),
   paymentSourceId: z.string({
-    invalid_type_error: "Por favor seleccione un canal de pago",
+    invalid_type_error: 'Por favor seleccione un canal de pago',
   }),
-  totalAmount: z
-    .string()
-    .min(1, { message: "El total tiene que ser mayor que 0" }),
-});
+  totalAmount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
+})
 
-const CreateCreditCardPaymentSummarySchema =
-  CreditCardPaymentSummarySchema.omit({
-    id: true,
-  });
+const CreateCreditCardPaymentSummarySchema = CreditCardPaymentSummarySchema.omit({
+  id: true,
+})
 
 export const createSummaryForCreditCard = async (
   creditCardId: string,
@@ -176,50 +172,41 @@ export const createSummaryForCreditCard = async (
   formData: FormData
 ) => {
   try {
-    const creditCardExpenseItemsForm = formData.get(
-      "creditCardExpenseItems"
-    ) as string;
-    const creditCardExpenseItemsParsed = JSON.parse(creditCardExpenseItemsForm);
+    const creditCardExpenseItemsForm = formData.get('creditCardExpenseItems') as string
+    const creditCardExpenseItemsParsed = JSON.parse(creditCardExpenseItemsForm)
     const validatedFields = CreateCreditCardPaymentSummarySchema.safeParse({
       creditCardExpenseItems: creditCardExpenseItemsParsed,
-      date: formData.get("date"),
-      paymentTypeId: formData.get("paymentTypeId"),
-      paymentSourceId: formData.get("paymentSourceId"),
-      totalAmount: formData.get("totalAmount"),
-    });
+      date: formData.get('date'),
+      paymentTypeId: formData.get('paymentTypeId'),
+      paymentSourceId: formData.get('paymentSourceId'),
+      totalAmount: formData.get('totalAmount'),
+    })
 
     if (!validatedFields.success) {
       return {
         errors: validatedFields.error.flatten().fieldErrors,
-        message: "Error",
-      };
+        message: 'Error',
+      }
     }
 
-    const userId = await getAuthUserId();
+    const userId = await getAuthUserId()
 
-    const {
-      creditCardExpenseItems,
-      date,
-      paymentTypeId,
-      paymentSourceId,
-      totalAmount,
-    } = validatedFields.data;
+    const { creditCardExpenseItems, date, paymentTypeId, paymentSourceId, totalAmount } = validatedFields.data
 
-    const existingSummaryForCreditCard =
-      await prisma.creditCardPaymentSummary.findFirst({
-        where: {
-          date,
-          creditCardId,
-        },
-      });
+    const existingSummaryForCreditCard = await prisma.creditCardPaymentSummary.findFirst({
+      where: {
+        date,
+        creditCardId,
+      },
+    })
 
     if (existingSummaryForCreditCard) {
       return {
         errors: {
-          date: ["Ya existe un resumen para la fecha"],
+          date: ['Ya existe un resumen para la fecha'],
         },
-        message: "Error",
-      };
+        message: 'Error',
+      }
     }
 
     await prisma.creditCardPaymentSummary.create({
@@ -241,7 +228,7 @@ export const createSummaryForCreditCard = async (
           },
         },
       },
-    });
+    })
 
     await prisma.creditCardExpenseItem.updateMany({
       data: {
@@ -255,7 +242,7 @@ export const createSummaryForCreditCard = async (
           in: creditCardExpenseItems.map((item) => item.id),
         },
       },
-    });
+    })
     await prisma.creditCardExpenseItem.updateMany({
       data: {
         finished: true,
@@ -270,24 +257,24 @@ export const createSummaryForCreditCard = async (
           equals: prisma.creditCardExpenseItem.fields.installmentsQuantity,
         },
       },
-    });
+    })
   } catch (error) {
     return {
-      message: "Error en base de datos",
-    };
+      message: 'Error en base de datos',
+    }
   }
-  revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId));
-  redirect(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId));
-};
+  revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
+  redirect(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
+}
 
 export async function fetchSummariesForMonth(date: string) {
-  noStore();
+  noStore()
   // Add noStore() here prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
   try {
     const data = await prisma.creditCardPaymentSummary.findUnique({
       where: {
-        id: "",
+        id: '',
       },
       include: {
         creditCard: true,
@@ -297,11 +284,11 @@ export async function fetchSummariesForMonth(date: string) {
           },
         },
       },
-    });
-    return data;
+    })
+    return data
   } catch (error) {
-    console.error("Error:", error);
-    throw new Error("Error al cargar Tarjetas de créditos");
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
   }
 }
 
