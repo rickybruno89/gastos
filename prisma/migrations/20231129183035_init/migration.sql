@@ -225,6 +225,9 @@ CREATE UNIQUE INDEX "PaymentSource_userId_name_key" ON "PaymentSource"("userId",
 CREATE INDEX "CreditCardExpenseItem_finished_recurrent_idx" ON "CreditCardExpenseItem"("finished", "recurrent");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "ExpensePaymentSummary_expenseId_date_key" ON "ExpensePaymentSummary"("expenseId", "date");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "_CreditCardExpenseItemToPerson_AB_unique" ON "_CreditCardExpenseItemToPerson"("A", "B");
 
 -- CreateIndex
