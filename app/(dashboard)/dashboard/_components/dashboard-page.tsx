@@ -3,9 +3,8 @@ import { Button } from '@/components/ui/button'
 import { formatCurrency, formatLocaleDate, getToday, removeCurrencyMaskFromInput } from '@/lib/utils'
 import {
   generateExpenseSummaryForMonth,
-  fetchCreditCardSummariesForMonth,
-  fetchExpenseSummariesForMonth,
   setExpensePaymentSummaryPaid,
+  setCreditCardPaymentSummaryPaid,
 } from '@/services/summary'
 import { CreditCardPaymentSummary, ExpensePaymentSummary, PaymentSource, PaymentType, Prisma } from '@prisma/client'
 import Link from 'next/link'
@@ -85,7 +84,7 @@ export default function DashboardPage({
     router.push(pathname + '?' + createQueryString('date', date))
   }
 
-  const handleItemAmountChange = (inputAmount: string, id: string) => {
+  const handleExpenseAmountChange = (inputAmount: string, id: string) => {
     const amount = removeCurrencyMaskFromInput(inputAmount)
     const newSelectedItems = expenseSummaries!.map((item) => {
       if (item.id === id) {
@@ -96,7 +95,7 @@ export default function DashboardPage({
     setExpenseItems(newSelectedItems)
   }
 
-  const handleItemChangePaymentType = (paymentTypeId: string, id: string) => {
+  const handleExpenseChangePaymentType = (paymentTypeId: string, id: string) => {
     const newSelectedItems = expenseItems.map((item) => {
       if (item.id === id) {
         return { ...item, paymentTypeId }
@@ -105,7 +104,7 @@ export default function DashboardPage({
     })
     setExpenseItems(newSelectedItems)
   }
-  const handleItemChangePaymentSource = (paymentSourceId: string, id: string) => {
+  const handleExpenseChangePaymentSource = (paymentSourceId: string, id: string) => {
     const newSelectedItems = expenseItems.map((item) => {
       if (item.id === id) {
         return { ...item, paymentSourceId }
@@ -117,6 +116,40 @@ export default function DashboardPage({
 
   const payExpense = (item: ExpensePaymentSummary) => {
     setExpensePaymentSummaryPaid(item)
+  }
+
+  const handleCreditCardAmountChange = (inputAmount: string, id: string) => {
+    const amount = removeCurrencyMaskFromInput(inputAmount)
+    const newSelectedItems = creditCardExpenseItems!.map((item) => {
+      if (item.id === id) {
+        return { ...item, amount }
+      }
+      return item
+    })
+    setCreditCardExpenseItems(newSelectedItems)
+  }
+
+  const handleCreditCardChangePaymentType = (paymentTypeId: string, id: string) => {
+    const newSelectedItems = creditCardExpenseItems.map((item) => {
+      if (item.id === id) {
+        return { ...item, paymentTypeId }
+      }
+      return item
+    })
+    setCreditCardExpenseItems(newSelectedItems)
+  }
+  const handleCreditCardChangePaymentSource = (paymentSourceId: string, id: string) => {
+    const newSelectedItems = creditCardExpenseItems.map((item) => {
+      if (item.id === id) {
+        return { ...item, paymentSourceId }
+      }
+      return item
+    })
+    setCreditCardExpenseItems(newSelectedItems)
+  }
+
+  const payCreditCardExpense = (item: CreditCardExpensesWithInclude) => {
+    setCreditCardPaymentSummaryPaid(item)
   }
 
   return (
@@ -144,7 +177,7 @@ export default function DashboardPage({
                       className="rounded-md text-sm w-full md:w-fit"
                       aria-describedby="paymentTypeId"
                       defaultValue={item.paymentTypeId}
-                      onChange={(e) => handleItemChangePaymentType(e.target.value, item.id)}
+                      onChange={(e) => handleExpenseChangePaymentType(e.target.value, item.id)}
                     >
                       {paymentTypes.map((paymentType) => (
                         <option key={paymentType.id} value={paymentType.id}>
@@ -161,7 +194,7 @@ export default function DashboardPage({
                       className="rounded-md text-sm w-full md:w-fit"
                       aria-describedby="paymentSourceId"
                       defaultValue={item.paymentSourceId}
-                      onChange={(e) => handleItemChangePaymentSource(e.target.value, item.id)}
+                      onChange={(e) => handleExpenseChangePaymentSource(e.target.value, item.id)}
                     >
                       {paymentSources.map((paymentSource) => (
                         <option key={paymentSource.id} value={paymentSource.id}>
@@ -184,7 +217,7 @@ export default function DashboardPage({
                       <NumericFormat
                         className="rounded-md text-sm w-full md:w-28"
                         value={item.amount}
-                        onChange={(e) => handleItemAmountChange(e.target.value, item.id)}
+                        onChange={(e) => handleExpenseAmountChange(e.target.value, item.id)}
                         prefix={'$ '}
                         thousandSeparator="."
                         decimalScale={2}
@@ -215,7 +248,72 @@ export default function DashboardPage({
       {creditCardExpenseItems?.length ? (
         <section className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col gap-4">
           <p className="font-bold">Tarjetas de Crédito</p>
-          <form></form>
+          <div className="flex flex-col gap-4">
+            <p className="mb-2 block text-sm font-medium">Seleccione los items a pagar</p>
+            {creditCardExpenseItems.map((item) => (
+              <div key={item.id} className="flex flex-wrap items-center justify-between gap-4">
+                <p className="font-bold w-full md:w-fit">{item.creditCard.name}</p>
+                <div>
+                  <div>
+                    <select
+                      className="rounded-md text-sm w-full md:w-fit"
+                      aria-describedby="paymentTypeId"
+                      defaultValue={item.paymentTypeId}
+                      onChange={(e) => handleCreditCardChangePaymentType(e.target.value, item.id)}
+                    >
+                      {paymentTypes.map((paymentType) => (
+                        <option key={paymentType.id} value={paymentType.id}>
+                          {paymentType.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <div>
+                    <select
+                      className="rounded-md text-sm w-full md:w-fit"
+                      aria-describedby="paymentSourceId"
+                      defaultValue={item.paymentSourceId}
+                      onChange={(e) => handleCreditCardChangePaymentSource(e.target.value, item.id)}
+                    >
+                      {paymentSources.map((paymentSource) => (
+                        <option key={paymentSource.id} value={paymentSource.id}>
+                          {paymentSource.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                {item.paid ? (
+                  <>
+                    <div className="flex justify-end items-center gap-4">
+                      <span className="text-sm">{formatCurrency(item.amount)}</span>
+                      <span className="text-green-500">PAGADO</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-end items-center gap-2">
+                      <NumericFormat
+                        className="rounded-md text-sm w-full md:w-28"
+                        value={item.amount}
+                        onChange={(e) => handleCreditCardAmountChange(e.target.value, item.id)}
+                        prefix={'$ '}
+                        thousandSeparator="."
+                        decimalScale={2}
+                        decimalSeparator=","
+                      />
+                    </div>
+                    <Button size={'sm'} onClick={() => payCreditCardExpense(item)}>
+                      Pagar
+                    </Button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         </section>
       ) : (
         <section className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col gap-4">
@@ -230,14 +328,14 @@ export default function DashboardPage({
           .map((item) => (
             <div key={item.expenseId}>
               <span></span>
-              <p>
+              <div>
                 {item.expense.sharedWith.map((person) => (
                   <div key={person.id}>
                     {person.name}: {formatCurrency(item.expense.amount / (item.expense.sharedWith.length + 1))}{' '}
                     {item.expense.description}
                   </div>
                 ))}
-              </p>
+              </div>
             </div>
           ))}
         {/* <p>total: {getSharedTotalForPerson(item.expense.sharedWith)}</p> */}

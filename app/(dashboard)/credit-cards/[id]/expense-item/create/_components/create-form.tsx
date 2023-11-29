@@ -62,37 +62,34 @@ export default function CreditCardExpenseItemCreateForm({
         <div>
           <label className="mb-2 block text-sm font-medium">Seleccione con quien compartirá el gasto</label>
           <div>
-            {!personsToShare.length ? (
+            <div className="flex flex-wrap gap-4">
+              {personsToShare.map((person) => (
+                <div key={person.id} className="flex items-center justify-center gap-x-1">
+                  <Checkbox id={`sharedWith[${person.id}]`} name="sharedWith" value={person.id} />
+                  <label
+                    htmlFor={`sharedWith[${person.id}]`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {person.name}
+                  </label>
+                </div>
+              ))}
               <LinkButton
                 href={`${
                   PAGES_URL.SETTINGS.PERSON_TO_SHARE_EXPENSE
                 }?callbackUrl=${PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.CREATE(creditCardId)}`}
               >
-                <PlusIcon className="w-5" />
+                <PlusIcon className="w-4" />
                 Crear persona
               </LinkButton>
-            ) : (
-              <div className="flex flex-wrap gap-4">
-                {personsToShare.map((person) => (
-                  <div key={person.id} className="flex items-center justify-center gap-x-1">
-                    <Checkbox id={`sharedWith[${person.id}]`} name="sharedWith" value={person.id} />
-                    <label
-                      htmlFor={`sharedWith[${person.id}]`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {person.name}
-                    </label>
-                  </div>
-                ))}
-                {state.errors?.sharedWith ? (
-                  <div id="sharedWith-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-                    {state.errors.sharedWith.map((error: string) => (
-                      <p key={error}>{error}</p>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            )}
+              {state.errors?.sharedWith ? (
+                <div id="sharedWith-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+                  {state.errors.sharedWith.map((error: string) => (
+                    <p key={error}>{error}</p>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
         <div>

@@ -1,5 +1,5 @@
 'use server'
-import { ExpensePaymentSummary, PaymentType } from '@prisma/client'
+import { CreditCardPaymentSummary, ExpensePaymentSummary, PaymentType } from '@prisma/client'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth'
@@ -220,6 +220,11 @@ export async function fetchCreditCardSummariesForMonth(date: string) {
   const userId = await getAuthUserId()
   try {
     const data = await prisma.creditCardPaymentSummary.findMany({
+      orderBy: {
+        creditCard: {
+          name: 'asc',
+        },
+      },
       where: {
         userId,
         date,
@@ -306,6 +311,36 @@ export const setExpensePaymentSummaryPaid = async (expenseItem: ExpensePaymentSu
   }
   revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${expenseItem.date}`)
+}
+
+export const setCreditCardPaymentSummaryPaid = async (creditCardExpense: CreditCardPaymentSummary) => {
+  try {
+    await prisma.creditCardPaymentSummary.update({
+      data: {
+        paid: true,
+        amount: creditCardExpense.amount,
+        paymentSourceId: creditCardExpense.paymentSourceId,
+        paymentTypeId: creditCardExpense.paymentTypeId,
+      },
+      where: {
+        id: creditCardExpense.id,
+      },
+    })
+    await prisma.creditCard.update({
+      data: {
+        paymentSourceId: creditCardExpense.paymentSourceId,
+        paymentTypeId: creditCardExpense.paymentTypeId,
+      },
+      where: {
+        id: creditCardExpense.creditCardId,
+      },
+    })
+  } catch (error) {
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
+  }
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
 }
 
 // export async function updateInvoice(
