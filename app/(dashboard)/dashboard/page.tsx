@@ -1,13 +1,8 @@
 import { Metadata } from 'next'
-import { fetchPaymentSource } from '@/services/settings/payment-source'
-import { fetchPaymentType } from '@/services/settings/payment-type'
-import DashboardPage from './_components/dashboard-page'
-import {
-  fetchCreditCardSummariesForMonth,
-  fetchExpenseSummariesForMonth,
-  fetchPaymentSourceBalance,
-} from '@/services/summary'
 import { getToday } from '@/lib/utils'
+import DashboardTemplate from './_components/dashboard-template'
+import { Suspense } from 'react'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -20,22 +15,13 @@ export default async function Page({
     date: string
   }
 }) {
-  const now = searchParams.date || getToday()
-  const paymentSources = await fetchPaymentSource()
-  const paymentTypes = await fetchPaymentType()
-  const expenseSummaries = await fetchExpenseSummariesForMonth(now)
-  const creditCardExpenseSummaries = await fetchCreditCardSummariesForMonth(now)
-  const paymentSourceBalance = await fetchPaymentSourceBalance(now)
-
   return (
-    <main>
-      <DashboardPage
-        expenseSummaries={expenseSummaries}
-        creditCardExpenseSummaries={creditCardExpenseSummaries}
-        paymentSources={paymentSources}
-        paymentTypes={paymentTypes}
-        paymentSourceBalance={paymentSourceBalance}
-      />
-    </main>
+    <Suspense key={`date=${searchParams.date}`} fallback={<LoadingSpinner />}>
+      <main>
+        <div className="flex flex-col gap-4">
+          <DashboardTemplate date={searchParams.date || getToday()} />
+        </div>
+      </main>
+    </Suspense>
   )
 }
