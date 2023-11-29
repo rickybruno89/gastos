@@ -343,6 +343,81 @@ export const setCreditCardPaymentSummaryPaid = async (creditCardExpense: CreditC
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
 }
 
+export const updateAmountExpenseSummary = async (
+  expenseSummary: ExpensePaymentSummary,
+  amount: number,
+  date: string
+) => {
+  await prisma.expensePaymentSummary.update({
+    data: {
+      amount,
+    },
+    where: {
+      id: expenseSummary.id,
+    },
+  })
+  await prisma.expense.update({
+    data: {
+      amount,
+    },
+    where: {
+      id: expenseSummary.expenseId,
+    },
+  })
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
+}
+
+export const updatePaymentTypeExpenseSummary = async (
+  expenseSummary: ExpensePaymentSummary,
+  paymentTypeId: string,
+  date: string
+) => {
+  await prisma.expensePaymentSummary.update({
+    data: {
+      paymentTypeId,
+    },
+    where: {
+      id: expenseSummary.id,
+    },
+  })
+  await prisma.expense.update({
+    data: {
+      paymentTypeId,
+    },
+    where: {
+      id: expenseSummary.expenseId,
+    },
+  })
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
+}
+
+export const updatePaymentSourceExpenseSummary = async (
+  expenseSummary: ExpensePaymentSummary,
+  paymentSourceId: string,
+  date: string
+) => {
+  await prisma.expensePaymentSummary.update({
+    data: {
+      paymentSourceId,
+    },
+    where: {
+      id: expenseSummary.id,
+    },
+  })
+  await prisma.expense.update({
+    data: {
+      paymentSourceId,
+    },
+    where: {
+      id: expenseSummary.expenseId,
+    },
+  })
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
+}
+
 // export async function updateInvoice(
 //   id: string,
 //   prevState: State,

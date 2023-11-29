@@ -5,6 +5,9 @@ import {
   generateExpenseSummaryForMonth,
   setExpensePaymentSummaryPaid,
   setCreditCardPaymentSummaryPaid,
+  updateAmountExpenseSummary,
+  updatePaymentTypeExpenseSummary,
+  updatePaymentSourceExpenseSummary,
 } from '@/services/summary'
 import { CreditCardPaymentSummary, ExpensePaymentSummary, PaymentSource, PaymentType, Prisma } from '@prisma/client'
 import Link from 'next/link'
@@ -12,6 +15,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useFormState } from 'react-dom'
 import { NumericFormat } from 'react-number-format'
+import { debounce } from 'lodash'
 
 type ExpensesWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -42,6 +46,15 @@ type CreditCardExpensesWithInclude = Prisma.CreditCardPaymentSummaryGetPayload<{
   }
 }>
 
+type ExpensesByPerson = {
+  sharedWithName: string
+  items: {
+    totalAmount: number
+    description: string
+    mustPay: number
+  }[]
+}
+
 export default function DashboardPage({
   paymentTypes,
   paymentSources,
@@ -59,11 +72,72 @@ export default function DashboardPage({
   const date = searchParams.get('date') || getToday()
   const [expenseItems, setExpenseItems] = useState(expenseSummaries)
   const [creditCardExpenseItems, setCreditCardExpenseItems] = useState(creditCardExpenseSummaries)
+  const [sharedExpenses, setSharedExpenses] = useState<ExpensesByPerson[]>()
+
+  const calcSharedExpenses = () => {
+    const expensesByPerson: ExpensesByPerson[] = []
+    expenseItems.forEach((item) => {
+      item.expense.sharedWith.forEach((person) => {
+        const amountPerPerson = item.expense.amount / (item.expense.sharedWith.length + 1)
+
+        let existingPerson = expensesByPerson.find((p) => p.sharedWithName === person.name)
+
+        if (!existingPerson) {
+          existingPerson = {
+            sharedWithName: person.name,
+            items: [],
+          }
+          expensesByPerson.push(existingPerson)
+        }
+
+        existingPerson.items.push({
+          totalAmount: item.expense.amount,
+          description: item.expense.description,
+          mustPay: amountPerPerson,
+        })
+      })
+    })
+
+    creditCardExpenseItems.forEach((summary) => {
+      summary.itemHistoryPayment.forEach((payment) => {
+        payment.creditCardExpenseItem.sharedWith.forEach((person) => {
+          const amountPerPerson =
+            payment.creditCardExpenseItem.installmentsAmount / (payment.creditCardExpenseItem.sharedWith.length + 1)
+
+          let existingPerson = expensesByPerson.find((p) => p.sharedWithName === person.name)
+
+          if (!existingPerson) {
+            existingPerson = {
+              sharedWithName: person.name,
+              items: [],
+            }
+            expensesByPerson.push(existingPerson)
+          }
+
+          existingPerson.items.push({
+            totalAmount: payment.creditCardExpenseItem.installmentsAmount,
+            description: payment.creditCardExpenseItem.description,
+            mustPay: amountPerPerson,
+          })
+        })
+      })
+    })
+
+    // Ahora expensesByPerson contiene la estructura deseada con la información agrupada por persona
+    setSharedExpenses(expensesByPerson)
+  }
 
   useEffect(() => {
     setExpenseItems(expenseSummaries)
     setCreditCardExpenseItems(creditCardExpenseSummaries)
+    calcSharedExpenses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expenseSummaries, creditCardExpenseSummaries])
+
+  useEffect(() => {
+    calcSharedExpenses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expenseItems, creditCardExpenseItems])
 
   useEffect(() => {
     router.push(pathname + '?' + createQueryString('date', date))
@@ -84,34 +158,37 @@ export default function DashboardPage({
     router.push(pathname + '?' + createQueryString('date', date))
   }
 
-  const handleExpenseAmountChange = (inputAmount: string, id: string) => {
+  const handleExpenseAmountChange = debounce((expenseSummary: ExpensePaymentSummary, inputAmount: string) => {
     const amount = removeCurrencyMaskFromInput(inputAmount)
     const newSelectedItems = expenseSummaries!.map((item) => {
-      if (item.id === id) {
+      if (item.id === expenseSummary.id) {
         return { ...item, amount }
       }
       return item
     })
     setExpenseItems(newSelectedItems)
-  }
+    updateAmountExpenseSummary(expenseSummary, amount, date)
+  }, 1000)
 
-  const handleExpenseChangePaymentType = (paymentTypeId: string, id: string) => {
+  const handleExpenseChangePaymentType = (expenseSummary: ExpensePaymentSummary, paymentTypeId: string) => {
     const newSelectedItems = expenseItems.map((item) => {
-      if (item.id === id) {
+      if (item.id === expenseSummary.id) {
         return { ...item, paymentTypeId }
       }
       return item
     })
     setExpenseItems(newSelectedItems)
+    updatePaymentTypeExpenseSummary(expenseSummary, paymentTypeId, date)
   }
-  const handleExpenseChangePaymentSource = (paymentSourceId: string, id: string) => {
+  const handleExpenseChangePaymentSource = (expenseSummary: ExpensePaymentSummary, paymentSourceId: string) => {
     const newSelectedItems = expenseItems.map((item) => {
-      if (item.id === id) {
+      if (item.id === expenseSummary.id) {
         return { ...item, paymentSourceId }
       }
       return item
     })
     setExpenseItems(newSelectedItems)
+    updatePaymentSourceExpenseSummary(expenseSummary, paymentSourceId, date)
   }
 
   const payExpense = (item: ExpensePaymentSummary) => {
@@ -163,7 +240,7 @@ export default function DashboardPage({
           onChange={(e) => handleChangeDate(e.target.value)}
         />
       </section>
-      {expenseItems?.length ? (
+      {expenseSummaries?.length ? (
         <section className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col gap-4">
           <p className="font-bold">Gastos fijos</p>
           <div className="flex flex-col gap-4">
@@ -177,7 +254,7 @@ export default function DashboardPage({
                       className="rounded-md text-sm w-full md:w-fit"
                       aria-describedby="paymentTypeId"
                       defaultValue={item.paymentTypeId}
-                      onChange={(e) => handleExpenseChangePaymentType(e.target.value, item.id)}
+                      onChange={(e) => handleExpenseChangePaymentType(item, e.target.value)}
                     >
                       {paymentTypes.map((paymentType) => (
                         <option key={paymentType.id} value={paymentType.id}>
@@ -194,7 +271,7 @@ export default function DashboardPage({
                       className="rounded-md text-sm w-full md:w-fit"
                       aria-describedby="paymentSourceId"
                       defaultValue={item.paymentSourceId}
-                      onChange={(e) => handleExpenseChangePaymentSource(e.target.value, item.id)}
+                      onChange={(e) => handleExpenseChangePaymentSource(item, e.target.value)}
                     >
                       {paymentSources.map((paymentSource) => (
                         <option key={paymentSource.id} value={paymentSource.id}>
@@ -217,7 +294,7 @@ export default function DashboardPage({
                       <NumericFormat
                         className="rounded-md text-sm w-full md:w-28"
                         value={item.amount}
-                        onChange={(e) => handleExpenseAmountChange(e.target.value, item.id)}
+                        onChange={(e) => handleExpenseAmountChange(item, e.target.value)}
                         prefix={'$ '}
                         thousandSeparator="."
                         decimalScale={2}
