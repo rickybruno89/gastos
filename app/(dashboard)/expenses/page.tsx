@@ -11,20 +11,8 @@ export const metadata: Metadata = {
   title: 'Gastos',
 }
 
-const GenerateSummaryButton = () => (
-  <Link
-    href={PAGES_URL.EXPENSES.SUMMARY.CREATE}
-    className="p-4 md:p-6 flex flex-col  mb-4 whitespace-nowrap w-56 h-32  rounded-md border border-dashed border-blue-400 items-center justify-center gap-1 text-blue-400 cursor-pointer"
-  >
-    <PlusIcon className="w-12" />
-    Generar resumen
-  </Link>
-)
-
 export default async function Page() {
   const expenses = await fetchExpenses()
-  const paymentSummaries = await fetchExpensePaymentSummaries()
-  console.log('🚀 ~ file: page.tsx:27 ~ Page ~ paymentSummaries:', paymentSummaries)
 
   return (
     <main>

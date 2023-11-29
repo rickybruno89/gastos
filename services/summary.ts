@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
-import { removeCurrencyMaskFromInput } from '@/lib/utils'
+import { getToday, removeCurrencyMaskFromInput } from '@/lib/utils'
 
 type CreateExpenseSummaryState = {
   errors?: {
@@ -212,6 +212,7 @@ export const createSummaryForCreditCard = async (
     }
   }
   revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
   redirect(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
 }
 
@@ -350,7 +351,7 @@ export const updateAmountExpenseSummary = async (
 ) => {
   await prisma.expensePaymentSummary.update({
     data: {
-      amount,
+      amount: amount || 0,
     },
     where: {
       id: expenseSummary.id,
@@ -358,7 +359,7 @@ export const updateAmountExpenseSummary = async (
   })
   await prisma.expense.update({
     data: {
-      amount,
+      amount: amount || 0,
     },
     where: {
       id: expenseSummary.expenseId,
@@ -416,6 +417,94 @@ export const updatePaymentSourceExpenseSummary = async (
   })
   revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
+}
+
+export const updateAmountCreditCardPaymentSummary = async (
+  creditCardExpenseSummary: CreditCardPaymentSummary,
+  amount: number,
+  date: string
+) => {
+  await prisma.creditCardPaymentSummary.update({
+    data: {
+      amount: amount || 0,
+    },
+    where: {
+      id: creditCardExpenseSummary.id,
+    },
+  })
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
+}
+
+export const updatePaymentTypeCreditCardPaymentSummary = async (
+  creditCardExpenseSummary: CreditCardPaymentSummary,
+  paymentTypeId: string,
+  date: string
+) => {
+  await prisma.creditCardPaymentSummary.update({
+    data: {
+      paymentTypeId,
+    },
+    where: {
+      id: creditCardExpenseSummary.id,
+    },
+  })
+  await prisma.creditCard.update({
+    data: {
+      paymentTypeId,
+    },
+    where: {
+      id: creditCardExpenseSummary.creditCardId,
+    },
+  })
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
+}
+
+export const updatePaymentSourceCreditCardPaymentSummary = async (
+  creditCardExpenseSummary: CreditCardPaymentSummary,
+  paymentSourceId: string,
+  date: string
+) => {
+  await prisma.creditCardPaymentSummary.update({
+    data: {
+      paymentSourceId,
+    },
+    where: {
+      id: creditCardExpenseSummary.id,
+    },
+  })
+  await prisma.creditCard.update({
+    data: {
+      paymentSourceId,
+    },
+    where: {
+      id: creditCardExpenseSummary.creditCardId,
+    },
+  })
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
+}
+
+export const fetchPaymentSourceBalance = async (date: string) => {
+  const userId = await getAuthUserId()
+  return await prisma.paymentSource.findMany({
+    where: {
+      userId,
+    },
+    include: {
+      expensePaymentSummaries: {
+        where: {
+          date,
+        },
+      },
+      creditCardPaymentSummaries: {
+        where: {
+          date,
+        },
+      },
+    },
+  })
 }
 
 // export async function updateInvoice(
