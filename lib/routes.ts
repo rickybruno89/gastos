@@ -1,27 +1,33 @@
-export const BASE_PATH = "/dashboard";
-
 export const PAGES_URL = {
+  DASHBOARD: {
+    BASE_PATH: `/dashboard`,
+  },
   CREDIT_CARDS: {
-    BASE_PATH: `${BASE_PATH}/credit-cards`,
-    CREATE: `${BASE_PATH}/credit-cards/create`,
-    DETAILS: (id: string) => `${BASE_PATH}/credit-cards/${id}`,
+    BASE_PATH: `/credit-cards`,
+    CREATE: `/credit-cards/create`,
+    DETAILS: (id: string) => `/credit-cards/${id}`,
     EXPENSE_ITEM: {
-      CREATE: (id: string) =>
-        `${BASE_PATH}/credit-cards/${id}/expense-item/create`,
+      CREATE: (id: string) => `/credit-cards/${id}/expense-item/create`,
     },
     SUMMARY: {
-      BASE_PATH: (id: string) => `${BASE_PATH}/credit-cards/${id}/summary`,
-      CREATE: (id: string) => `${BASE_PATH}/credit-cards/${id}/summary/create`,
+      BASE_PATH: (id: string) => `/credit-cards/${id}/summaries`,
+      CREATE: (id: string) => `/credit-cards/${id}/summaries/create`,
+      DETAIL: (id: string, summaryId: string) => `/credit-cards/${id}/summaries/${summaryId}`,
     },
   },
   SETTINGS: {
-    BASE_PATH: `${BASE_PATH}/settings`,
-    PAYMENT_TYPE_CREATE: `${BASE_PATH}/settings/payment-type/create`,
-    PAYMENT_SOURCE_CREATE: `${BASE_PATH}/settings/payment-source/create`,
-    PERSON_TO_SHARE_EXPENSE: `${BASE_PATH}/settings/person-to-share-expense/create`,
-    CURRENCY_CREATE: `${BASE_PATH}/settings/currency/create`,
+    BASE_PATH: `/settings`,
+    PAYMENT_TYPE_CREATE: `/settings/payment-type/create`,
+    PAYMENT_SOURCE_CREATE: `/settings/payment-source/create`,
+    PERSON_TO_SHARE_EXPENSE: `/settings/person-to-share-expense/create`,
+    CURRENCY_CREATE: `/settings/currency/create`,
   },
   EXPENSES: {
-    BASE_PATH: `${BASE_PATH}/expenses`,
+    BASE_PATH: `/expenses`,
+    CREATE: `/expenses/create`,
+    SUMMARY: {
+      CREATE: `/expenses/summaries/create`,
+      DETAIL: (summaryId: string) => `/expenses/summaries/${summaryId}`,
+    },
   },
-};
+}

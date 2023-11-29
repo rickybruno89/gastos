@@ -68,6 +68,7 @@ export const createPaymentSource = async (
   }
   revalidatePath(PAGES_URL.SETTINGS.BASE_PATH);
   revalidatePath(PAGES_URL.CREDIT_CARDS.CREATE);
+  revalidatePath(PAGES_URL.EXPENSES.CREATE);
   redirect(callbackUrl);
 };
 
