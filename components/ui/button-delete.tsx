@@ -18,16 +18,9 @@ export default function ButtonDelete({ action, id }: any) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <TooltipProvider delayDuration={100}>
-          <Tooltip>
-            <TooltipTrigger>
-              <Button variant={'link'} size={'sm'} className="p-0">
-                <TrashIcon className="w-5 h-5 text-red-500" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Eliminar item</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Button variant={'link'} size={'sm'} className="p-0">
+          <TrashIcon className="w-5 h-5 text-red-500" />
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
