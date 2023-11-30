@@ -89,32 +89,33 @@ export default async function Page({ params }: { params: { id: string } }) {
           {creditCard?.creditCardExpenseItems.length ? (
             creditCard.creditCardExpenseItems.map((item) => (
               <div key={item.id} className="flex flex-col gap-4">
-                <div className="flex flex-col lg:grid lg:grid-cols-6 gap-2">
+                <div className="flex flex-col xl:grid lg:grid-cols-8 gap-2">
                   <p className="self-center">{item.description}</p>
                   <p className="self-center">
                     {item.recurrent ? formatCurrency(item.installmentsAmount) : formatCurrency(item.amount)}
                   </p>
-                  {item.recurrent ? (
-                    <p className="self-center">Pago recurrente</p>
-                  ) : (
-                    <p className="self-center">
-                      {item.installmentsPaid} de {item.installmentsQuantity} cuotas de{' '}
-                      {formatCurrency(item.installmentsAmount)}
-                    </p>
-                  )}
-                  <p className="self-center">
-                    Primer pago <span className="font-bold">{formatLocaleDate(item.paymentBeginning)}</span>{' '}
-                  </p>
-                  {item.sharedWith.length ? (
-                    <p className="self-center">
-                      Compartido con{' '}
-                      <span className="">{item.sharedWith.map((person) => person.name).join(' - ')}</span>{' '}
-                    </p>
-                  ) : (
-                    <p className="self-center">
-                      <span className="font-bold">NO</span> compartirdo
-                    </p>
-                  )}
+                  <div className="self-center col-span-2">
+                    {item.recurrent ? (
+                      <p>Pago recurrente</p>
+                    ) : (
+                      <p>
+                        {item.installmentsQuantity} cuotas de {formatCurrency(item.installmentsAmount)} - Pagadas:{' '}
+                        {item.installmentsPaid}
+                      </p>
+                    )}
+                  </div>
+                  <p className="self-center">{formatLocaleDate(item.paymentBeginning)}</p>
+                  <div className="self-center col-span-2">
+                    {item.sharedWith.length ? (
+                      <p>
+                        Compartido con{' '}
+                        <span className="">{item.sharedWith.map((person) => person.name).join(' - ')}</span>{' '}
+                      </p>
+                    ) : (
+                      <p className="self-center">NO compartirdo</p>
+                    )}
+                  </div>
+
                   <div className="flex items-center gap-2 justify-self-end self-center">
                     <TooltipProvider delayDuration={100}>
                       <Tooltip>

@@ -10,7 +10,7 @@ export const formatCurrency = (amount: number | Decimal) =>
   new Intl.NumberFormat('es-AR', {
     style: 'currency',
     currency: 'ARS',
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 0,
   }).format(amount as number)
 
 export const removeCurrencyMaskFromInput = (amount: string) =>
