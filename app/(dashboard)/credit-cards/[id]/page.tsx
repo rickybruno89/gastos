@@ -77,7 +77,7 @@ export default async function Page({ params }: { params: { id: string } }) {
           </div>
         </section>
         <section>
-          <div className="flex flex-col gap-4 w-full rounded-md bg-white p-4 md:p-6">
+          <div className="flex flex-col gap-1 w-full rounded-md bg-white p-4 md:p-6">
             <div className="flex gap-4 items-center mb-2">
               <h1 className="text-xl font-bold">Items</h1>
               <LinkButton href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.CREATE(id)}>
@@ -87,9 +87,9 @@ export default async function Page({ params }: { params: { id: string } }) {
             </div>
             {creditCard?.creditCardExpenseItems.length ? (
               creditCard.creditCardExpenseItems.map((item) => (
-                <div key={item.id} className="flex flex-col gap-4">
-                  <div className="flex flex-col xl:grid lg:grid-cols-8 gap-1 xl:gap-2">
-                    <p className="self-center">{item.description}</p>
+                <div key={item.id} className="flex flex-col">
+                  <div className="flex flex-col xl:grid lg:grid-cols-9 gap-2">
+                    <p className="self-center col-span-2">{item.description}</p>
                     <p className="self-center">
                       {item.recurrent ? formatCurrency(item.installmentsAmount) : formatCurrency(item.amount)}
                     </p>
@@ -98,8 +98,8 @@ export default async function Page({ params }: { params: { id: string } }) {
                         <p>Pago recurrente</p>
                       ) : (
                         <p>
-                          {item.installmentsQuantity} cuotas de {formatCurrency(item.installmentsAmount)} - Pagadas:{' '}
-                          {item.installmentsPaid}
+                          {item.installmentsPaid}/{item.installmentsQuantity} cuotas de{' '}
+                          {formatCurrency(item.installmentsAmount)}
                         </p>
                       )}
                     </div>

@@ -30,7 +30,7 @@ export default async function Page() {
       />
 
       <section>
-        <div className="flex flex-col gap-4 w-full rounded-md bg-white p-4 md:p-6">
+        <div className="flex flex-col gap-1 w-full rounded-md bg-white p-4 md:p-6">
           <div className="flex gap-4 items-center mb-2">
             <h1 className="text-xl font-bold">Items</h1>
             <LinkButton href={PAGES_URL.EXPENSES.CREATE}>
@@ -40,14 +40,14 @@ export default async function Page() {
           </div>
           {expenses.length ? (
             expenses.map((item) => (
-              <div key={item.id} className="flex flex-col gap-4">
-                <div className="flex flex-wrap md:grid lg:grid-cols-5 gap-2">
-                  <p className="self-center">{item.description}</p>
+              <div key={item.id} className="flex flex-col">
+                <div className="flex flex-wrap md:grid lg:grid-cols-7 gap-2">
+                  <p className="self-center col-span-2">{item.description}</p>
                   <p className="self-center">{formatCurrency(item.amount)}</p>
-                  <p className="self-center ">
+                  <p className="self-center">
                     {item.paymentType.name} - {item.paymentSource.name}
                   </p>
-                  <div className="self-center ">
+                  <div className="self-center">
                     {item.sharedWith.length ? (
                       <p>
                         Compartido con <span>{item.sharedWith.map((person) => person.name).join(' - ')}</span>
@@ -56,7 +56,7 @@ export default async function Page() {
                       <p className="self-center">No compartido</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 justify-self-end self-center">
+                  <div className="flex items-center gap-2 justify-self-end self-center col-span-2">
                     <TooltipProvider delayDuration={100}>
                       <Tooltip>
                         <TooltipTrigger>
