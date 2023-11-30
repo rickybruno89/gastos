@@ -1,8 +1,10 @@
 import Breadcrumbs from '@/components/ui/breadcrumbs'
+import { Button } from '@/components/ui/button'
+import ButtonDelete from '@/components/ui/button-delete'
 import LinkButton from '@/components/ui/link-button'
 import { PAGES_URL } from '@/lib/routes'
-import { formatCurrency, formatLocaleDate, getToday } from '@/lib/utils'
-import { fetchCreditCardById } from '@/services/credit-card'
+import { formatCurrency, formatLocaleDate } from '@/lib/utils'
+import { deleteCreditCardExpenseItem, fetchCreditCardById } from '@/services/credit-card'
 import { PlusIcon } from '@radix-ui/react-icons'
 import { Metadata } from 'next'
 import Link from 'next/link'
@@ -25,7 +27,6 @@ const GenerateSummaryButton = ({ creditCardId }: { creditCardId: string }) => (
 export default async function Page({ params }: { params: { id: string } }) {
   const { id } = params
   const creditCard = await fetchCreditCardById(id)
-
   return (
     <main>
       <Breadcrumbs
@@ -84,34 +85,38 @@ export default async function Page({ params }: { params: { id: string } }) {
         <div className="flex flex-col gap-4">
           {creditCard?.creditCardExpenseItems.length ? (
             creditCard.creditCardExpenseItems.map((item) => (
-              <div key={item.id} className="rounded-md bg-white ">
-                <div className="p-4 md:p-6">
-                  <p className="font-bold">
-                    {item.description} -{' '}
-                    {item.recurrent
-                      ? formatCurrency(item.installmentsAmount) + ' (PAGO RECURRENTE)'
-                      : formatCurrency(item.amount)}
-                  </p>
-                  {!item.recurrent ? (
-                    <p>
-                      <span className="font-bold">
-                        {item.installmentsPaid} de {item.installmentsQuantity} cuotas de{' '}
-                        {formatCurrency(item.installmentsAmount)}
-                      </span>{' '}
-                    </p>
-                  ) : null}
+              <div key={item.id} className="rounded-md bg-white p-4 md:p-6">
+                <p className="font-bold">
+                  {item.description} -{' '}
+                  {item.recurrent
+                    ? formatCurrency(item.installmentsAmount) + ' (PAGO RECURRENTE)'
+                    : formatCurrency(item.amount)}
+                </p>
+                {!item.recurrent ? (
                   <p>
-                    Primer pago <span className="font-bold">{formatLocaleDate(item.paymentBeginning)}</span>{' '}
+                    <span className="font-bold">
+                      {item.installmentsPaid} de {item.installmentsQuantity} cuotas de{' '}
+                      {formatCurrency(item.installmentsAmount)}
+                    </span>{' '}
                   </p>
-                  {item.sharedWith.length ? (
-                    <p>
-                      Gasto compartido con{' '}
-                      <span className="font-bold">{item.sharedWith.map((person) => person.name).join(' - ')}</span>{' '}
-                    </p>
-                  ) : null}
+                ) : null}
+                <p>
+                  Primer pago <span className="font-bold">{formatLocaleDate(item.paymentBeginning)}</span>{' '}
+                </p>
+                {item.sharedWith.length ? (
                   <p>
-                    Notas: <span className="font-bold">{item.notes || '-'}</span>{' '}
+                    Gasto compartido con{' '}
+                    <span className="font-bold">{item.sharedWith.map((person) => person.name).join(' - ')}</span>{' '}
                   </p>
+                ) : null}
+                <p>
+                  Notas: <span className="font-bold">{item.notes || '-'}</span>{' '}
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <Button variant={'outline'} size={'sm'}>
+                    <Link href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.EDIT(id, item.id)}>Editar</Link>
+                  </Button>
+                  <ButtonDelete action={deleteCreditCardExpenseItem} id={item.id} />
                 </div>
               </div>
             ))

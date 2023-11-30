@@ -1,5 +1,4 @@
 'use client'
-
 import { Button } from '@/components/ui/button'
 import { PAGES_URL } from '@/lib/routes'
 import Link from 'next/link'
@@ -8,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { createSummaryForCreditCard } from '@/services/summary'
 import { PaymentSource, PaymentType, Prisma } from '@prisma/client'
 import { formatCurrency, getToday, removeCurrencyMaskFromInput } from '@/lib/utils'
-import { FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NumericFormat } from 'react-number-format'
 
 type CreditCardWithItems = Prisma.CreditCardGetPayload<{
@@ -41,6 +40,7 @@ export default function SummaryCreateForm({
     creditCard.creditCardExpenseItems.map((item) => ({ ...item, checked: true }))
   )
   const [total, setTotal] = useState(0)
+  const [subtotal, setSubtotal] = useState(0)
 
   const handleItemChecked = (checked: boolean, id: string) => {
     const newSelectedItems = selectedItems.map((item) => {
@@ -70,6 +70,7 @@ export default function SummaryCreateForm({
     }, 0)
 
     setTotal(total + (total * creditCard.taxesPercent) / 100)
+    setSubtotal(total)
   }, [selectedItems])
 
   const handleSubmit = (e: any) => {
@@ -229,14 +230,17 @@ export default function SummaryCreateForm({
               ) : null}
             </div>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 text-right">
             <div>
-              <p className="font-bold text-right">
+              <span className="font-bold">Subtotal: {formatCurrency(subtotal)}</span>
+            </div>
+            <div>
+              <p className="font-bold">
                 Impuestos y sellados: <span>{getTaxesAmout()}</span>
               </p>
             </div>
             <div className="flex gap-2 justify-end items-center">
-              <p className="font-bold text-right">Total</p>
+              <p className="font-bold">Total</p>
               <NumericFormat
                 className="rounded-md w-36 px-2 py-1"
                 name="totalAmount"

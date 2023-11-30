@@ -208,28 +208,99 @@ export const createCreditCardExpenseItem = async (
   redirect(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
 }
 
+export const updateCreditCardExpenseItem = async (
+  id: string,
+  _prevState: CreateCreditCardExpenseItemState,
+  formData: FormData
+) => {
+  const existingCreditCardExpenseItem = await prisma.creditCardExpenseItem.findUnique({
+    where: {
+      id,
+    },
+  })
+
+  if (!existingCreditCardExpenseItem) {
+    return {
+      errors: { description: ['El Item no existe'] },
+      message: 'Error',
+    }
+  }
+  try {
+    const validatedFields = CreateCreditCardExpenseItemSchema.safeParse({
+      description: formData.get('description'),
+      notes: formData.get('notes'),
+      amount: formData.get('amount'),
+      sharedWith: formData.getAll('sharedWith'),
+      recurrent: formData.get('recurrent') === 'true',
+      installmentsQuantity: formData.get('installmentsQuantity'),
+      installmentsPaid: formData.get('installmentsPaid'),
+      paymentBeginning: formData.get('paymentBeginning'),
+      currencyId: formData.get('currencyId'),
+    })
+
+    if (!validatedFields.success) {
+      return {
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: 'Error',
+      }
+    }
+
+    const {
+      description,
+      notes,
+      amount,
+      sharedWith,
+      recurrent,
+      installmentsQuantity,
+      installmentsPaid,
+      paymentBeginning,
+      currencyId,
+    } = validatedFields.data
+
+    await prisma.creditCardExpenseItem.update({
+      data: {
+        description,
+        notes,
+        amount: recurrent ? 0 : removeCurrencyMaskFromInput(amount),
+        sharedWith: {
+          set: [],
+          connect: sharedWith.map((personId) => ({ id: personId })),
+        },
+        recurrent,
+        installmentsQuantity,
+        installmentsPaid,
+        installmentsAmount: recurrent
+          ? removeCurrencyMaskFromInput(amount)
+          : removeCurrencyMaskFromInput(amount) / installmentsQuantity,
+        paymentBeginning,
+        currencyId,
+      },
+      where: {
+        id,
+      },
+    })
+  } catch (error) {
+    return {
+      message: 'Error en base de datos',
+    }
+  }
+  revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(existingCreditCardExpenseItem.creditCardId))
+  redirect(PAGES_URL.CREDIT_CARDS.DETAILS(existingCreditCardExpenseItem.creditCardId))
+}
+
 export async function fetchCreditCards() {
   noStore()
   // Add noStore() here prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
-  const currentDate = new Date().toISOString().split('-').slice(0, 2).join('-')
-
   try {
     const data = await prisma.creditCard.findMany({
       where: {
         userId: await getAuthUserId(),
       },
       include: {
-        paymentSource: true,
-        paymentType: true,
-        paymentSummaries: {
+        creditCardExpenseItems: {
           where: {
-            date: {
-              equals: currentDate,
-            },
-          },
-          orderBy: {
-            date: 'desc',
+            finished: false,
           },
         },
       },
@@ -300,6 +371,54 @@ export async function fetchCreditCardName(id: string) {
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
   }
+}
+
+export async function fetchCreditCardExpenseItem(id: string) {
+  noStore()
+  // Add noStore() here prevent the response from being cached.
+  // This is equivalent to in fetch(..., {cache: 'no-store'}).
+  try {
+    const data = await prisma.creditCardExpenseItem.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        sharedWith: true,
+      },
+    })
+    return data
+  } catch (error) {
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
+  }
+}
+
+export const deleteCreditCardExpenseItem = async (id: string) => {
+  const existingCreditCardExpenseItem = await prisma.creditCardExpenseItem.findUnique({
+    where: {
+      id,
+    },
+  })
+
+  if (!existingCreditCardExpenseItem) {
+    return {
+      errors: { description: ['El Item no existe'] },
+      message: 'Error',
+    }
+  }
+  try {
+    await prisma.creditCardExpenseItem.delete({
+      where: {
+        id,
+      },
+    })
+  } catch (error) {
+    return {
+      message: 'Error en base de datos',
+    }
+  }
+  revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(existingCreditCardExpenseItem.creditCardId))
+  redirect(PAGES_URL.CREDIT_CARDS.DETAILS(existingCreditCardExpenseItem.creditCardId))
 }
 
 // export async function updateInvoice(
