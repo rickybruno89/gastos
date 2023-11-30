@@ -13,10 +13,7 @@ import {
   updatePaymentSourceCreditCardPaymentSummary,
 } from '@/services/summary'
 import { CreditCardPaymentSummary, ExpensePaymentSummary, PaymentSource, PaymentType, Prisma } from '@prisma/client'
-import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import React, { useCallback, useEffect, useState } from 'react'
-import { useFormState } from 'react-dom'
+import React, { useEffect, useState } from 'react'
 import { NumericFormat } from 'react-number-format'
 import { debounce } from 'lodash'
 
@@ -72,45 +69,55 @@ type PaymentSourceBalance = {
   totalAmount: number
 }
 
-export default function DashboardPage({
-  paymentTypes,
-  paymentSources,
-  expenseSummaries,
-  creditCardExpenseSummaries,
-  paymentSourceBalance,
-}: {
-  paymentTypes: PaymentType[]
-  paymentSources: PaymentSource[]
-  expenseSummaries: ExpensesWithInclude[]
+const calcPaymentSourceBalance = (paymentSourceBalance: PaymentSourceBalanceWithInclude[]) => {
+  const totalsByName = paymentSourceBalance.map((obj) => {
+    const totalExpense = obj.expensePaymentSummaries.reduce((acc, curr) => acc + curr.amount, 0)
+    const totalCreditCard = obj.creditCardPaymentSummaries.reduce((acc, curr) => acc + curr.amount, 0)
+    const total = totalExpense + totalCreditCard
+
+    return {
+      name: obj.name,
+      totalAmount: total,
+    }
+  })
+  return totalsByName
+}
+
+const calcSharedExpenses = (
+  expenseSummaries: ExpensesWithInclude[],
   creditCardExpenseSummaries: CreditCardExpensesWithInclude[]
-  paymentSourceBalance: PaymentSourceBalanceWithInclude[]
-}) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const date = searchParams.get('date') || getToday()
-  const [sharedExpenses, setSharedExpenses] = useState<ExpensesByPerson[]>()
-  const [paymentSourceItems, setPaymentSourceItems] = useState<PaymentSourceBalance[]>()
+) => {
+  const expensesByPerson: ExpensesByPerson[] = []
+  expenseSummaries.forEach((item) => {
+    item.expense.sharedWith.forEach((person) => {
+      const amountPerPerson = item.expense.amount / (item.expense.sharedWith.length + 1)
 
-  const calcPaymentSourceBalance = () => {
-    const totalsByName = paymentSourceBalance.map((obj) => {
-      const totalExpense = obj.expensePaymentSummaries.reduce((acc, curr) => acc + curr.amount, 0)
-      const totalCreditCard = obj.creditCardPaymentSummaries.reduce((acc, curr) => acc + curr.amount, 0)
-      const total = totalExpense + totalCreditCard
+      let existingPerson = expensesByPerson.find((p) => p.id === person.id)
 
-      return {
-        name: obj.name,
-        totalAmount: total,
+      if (!existingPerson) {
+        existingPerson = {
+          id: person.id,
+          total: 0,
+          name: person.name,
+          items: [],
+        }
+        expensesByPerson.push(existingPerson)
       }
-    })
-    setPaymentSourceItems(totalsByName)
-  }
+      existingPerson.total += amountPerPerson
 
-  const calcSharedExpenses = () => {
-    const expensesByPerson: ExpensesByPerson[] = []
-    expenseSummaries.forEach((item) => {
-      item.expense.sharedWith.forEach((person) => {
-        const amountPerPerson = item.expense.amount / (item.expense.sharedWith.length + 1)
+      existingPerson.items.push({
+        id: item.id,
+        description: item.expense.description,
+        amountToPay: amountPerPerson,
+      })
+    })
+  })
+
+  creditCardExpenseSummaries.forEach((summary) => {
+    summary.itemHistoryPayment.forEach((payment) => {
+      payment.creditCardExpenseItem.sharedWith.forEach((person) => {
+        const amountPerPerson =
+          payment.creditCardExpenseItem.installmentsAmount / (payment.creditCardExpenseItem.sharedWith.length + 1)
 
         let existingPerson = expensesByPerson.find((p) => p.id === person.id)
 
@@ -123,73 +130,37 @@ export default function DashboardPage({
           }
           expensesByPerson.push(existingPerson)
         }
+
         existingPerson.total += amountPerPerson
 
         existingPerson.items.push({
-          id: item.id,
-          description: item.expense.description,
+          id: payment.id,
+          description: `${payment.creditCardExpenseItem.description} - cuota ${payment.creditCardExpenseItem.installmentsPaid} de ${payment.creditCardExpenseItem.installmentsQuantity}`,
           amountToPay: amountPerPerson,
         })
       })
     })
+  })
+  return expensesByPerson
+}
 
-    creditCardExpenseSummaries.forEach((summary) => {
-      summary.itemHistoryPayment.forEach((payment) => {
-        payment.creditCardExpenseItem.sharedWith.forEach((person) => {
-          const amountPerPerson =
-            payment.creditCardExpenseItem.installmentsAmount / (payment.creditCardExpenseItem.sharedWith.length + 1)
-
-          let existingPerson = expensesByPerson.find((p) => p.id === person.id)
-
-          if (!existingPerson) {
-            existingPerson = {
-              id: person.id,
-              total: 0,
-              name: person.name,
-              items: [],
-            }
-            expensesByPerson.push(existingPerson)
-          }
-
-          existingPerson.total += amountPerPerson
-
-          existingPerson.items.push({
-            id: payment.id,
-            description: `${payment.creditCardExpenseItem.description} - cuota ${payment.creditCardExpenseItem.installmentsPaid} de ${payment.creditCardExpenseItem.installmentsQuantity}`,
-            amountToPay: amountPerPerson,
-          })
-        })
-      })
-    })
-
-    // Ahora expensesByPerson contiene la estructura deseada con la información agrupada por persona
-    setSharedExpenses(expensesByPerson)
-  }
-
-  useEffect(() => {
-    calcSharedExpenses()
-    calcPaymentSourceBalance()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expenseSummaries, creditCardExpenseSummaries])
-
-  useEffect(() => {
-    router.push(pathname + '?' + createQueryString('date', date))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams)
-      params.set(name, value)
-
-      return params.toString()
-    },
-    [searchParams]
-  )
-
-  const handleChangeDate = (date: string) => {
-    router.push(pathname + '?' + createQueryString('date', date))
-  }
+export default function DashboardPage({
+  paymentTypes,
+  paymentSources,
+  expenseSummaries,
+  creditCardExpenseSummaries,
+  paymentSourceBalance,
+  date,
+}: {
+  paymentTypes: PaymentType[]
+  paymentSources: PaymentSource[]
+  expenseSummaries: ExpensesWithInclude[]
+  creditCardExpenseSummaries: CreditCardExpensesWithInclude[]
+  paymentSourceBalance: PaymentSourceBalanceWithInclude[]
+  date: string
+}) {
+  const sharedExpenses = calcSharedExpenses(expenseSummaries, creditCardExpenseSummaries)
+  const paymentSourceItems = calcPaymentSourceBalance(paymentSourceBalance)
 
   const handleExpenseAmountChange = debounce((expenseSummary: ExpensePaymentSummary, inputAmount: string) => {
     const amount = removeCurrencyMaskFromInput(inputAmount)
@@ -233,16 +204,7 @@ export default function DashboardPage({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <section className="rounded-md bg-white p-4 md:p-6 w-fit flex gap-4">
-        <h1>Seleccione el mes para ver los resumenes</h1>
-        <input
-          type="month"
-          value={date}
-          className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
-          onChange={(e) => handleChangeDate(e.target.value)}
-        />
-      </section>
+    <>
       <p className="font-bold">Gastos fijos</p>
       {expenseSummaries?.length ? (
         <section className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col gap-4">
@@ -431,6 +393,6 @@ export default function DashboardPage({
           </div>
         ))}
       </div>
-    </div>
+    </>
   )
 }
