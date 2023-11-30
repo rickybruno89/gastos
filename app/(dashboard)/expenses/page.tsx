@@ -41,10 +41,10 @@ export default async function Page() {
           {expenses.length ? (
             expenses.map((item) => (
               <div key={item.id} className="flex flex-col">
-                <div className="flex flex-wrap md:grid lg:grid-cols-7 gap-2">
+                <div className="flex flex-wrap md:grid lg:grid-cols-8 gap-2">
                   <p className="self-center col-span-2">{item.description}</p>
                   <p className="self-center">{formatCurrency(item.amount)}</p>
-                  <p className="self-center">
+                  <p className="self-center col-span-2">
                     {item.paymentType.name} - {item.paymentSource.name}
                   </p>
                   <div className="self-center">
