@@ -2,10 +2,13 @@ import Breadcrumbs from '@/components/ui/breadcrumbs'
 import { Button } from '@/components/ui/button'
 import ButtonDelete from '@/components/ui/button-delete'
 import LinkButton from '@/components/ui/link-button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { PAGES_URL } from '@/lib/routes'
 import { formatCurrency, formatLocaleDate } from '@/lib/utils'
 import { deleteCreditCardExpenseItem, fetchCreditCardById } from '@/services/credit-card'
+import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import { PlusIcon } from '@radix-ui/react-icons'
+import { EditIcon } from 'lucide-react'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import React from 'react'
@@ -82,11 +85,11 @@ export default async function Page({ params }: { params: { id: string } }) {
             Agregar
           </LinkButton>
         </div>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 rounded-md bg-white p-4 md:p-6">
           {creditCard?.creditCardExpenseItems.length ? (
             creditCard.creditCardExpenseItems.map((item) => (
-              <div key={item.id} className="rounded-md bg-white p-4 md:p-6">
-                <p className="font-bold">
+              <div key={item.id} className="flex flex-wrap gap-4 items-center">
+                <p className="">
                   {item.description} -{' '}
                   {item.recurrent
                     ? formatCurrency(item.installmentsAmount) + ' (PAGO RECURRENTE)'
@@ -94,28 +97,51 @@ export default async function Page({ params }: { params: { id: string } }) {
                 </p>
                 {!item.recurrent ? (
                   <p>
-                    <span className="font-bold">
+                    <span className="">
                       {item.installmentsPaid} de {item.installmentsQuantity} cuotas de{' '}
                       {formatCurrency(item.installmentsAmount)}
                     </span>{' '}
                   </p>
                 ) : null}
                 <p>
-                  Primer pago <span className="font-bold">{formatLocaleDate(item.paymentBeginning)}</span>{' '}
+                  Primer pago <span className="">{formatLocaleDate(item.paymentBeginning)}</span>{' '}
                 </p>
                 {item.sharedWith.length ? (
                   <p>
                     Gasto compartido con{' '}
-                    <span className="font-bold">{item.sharedWith.map((person) => person.name).join(' - ')}</span>{' '}
+                    <span className="">{item.sharedWith.map((person) => person.name).join(' - ')}</span>{' '}
                   </p>
                 ) : null}
-                <p>
-                  Notas: <span className="font-bold">{item.notes || '-'}</span>{' '}
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <Button variant={'outline'} size={'sm'}>
-                    <Link href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.EDIT(id, item.id)}>Editar</Link>
-                  </Button>
+
+                <div className="flex items-center gap-2">
+                  <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <InformationCircleIcon className="w-6 h-6 text-blue-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div>
+                          Notas:{' '}
+                          {item.notes ? (
+                            <span className="">{item.notes}</span>
+                          ) : (
+                            <span className="italic">No hay notas</span>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Link href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.EDIT(id, item.id)}>
+                          <EditIcon className="w-5 h-5" />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>Editar item</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
                   <ButtonDelete action={deleteCreditCardExpenseItem} id={item.id} />
                 </div>
               </div>
