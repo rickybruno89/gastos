@@ -1,12 +1,11 @@
 'use client'
-
 import { Button } from '@/components/ui/button'
 import { PAGES_URL } from '@/lib/routes'
 import { createCreditCardExpenseItem, updateCreditCardExpenseItem } from '@/services/credit-card'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useFormState } from 'react-dom'
-import { Currency, Person, Prisma } from '@prisma/client'
+import { Person, Prisma } from '@prisma/client'
 import LinkButton from '@/components/ui/link-button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -24,12 +23,10 @@ export default function UpsertCreditCardExpenseItemForm({
   creditCardId,
   creditCardExpenseItem,
   personsToShare,
-  currencies,
 }: {
   creditCardId: string
   creditCardExpenseItem?: CreditCardExpenseItemWithSharedPerson
   personsToShare: Person[]
-  currencies: Currency[]
 }) {
   const initialState = { message: null, errors: {} }
   const upsertCreditCardExpenseItemWithId = creditCardExpenseItem
@@ -48,6 +45,7 @@ export default function UpsertCreditCardExpenseItemForm({
     } else {
       setTotalAmount(creditCardExpenseItem?.amount || totalAmount)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecurrent])
 
   return (
@@ -114,33 +112,6 @@ export default function UpsertCreditCardExpenseItemForm({
             </div>
           </div>
         </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium">Seleccione tipo de moneda</label>
-          <div>
-            {
-              <select
-                name="currencyId"
-                aria-describedby="currencyId"
-                className="w-full rounded-md"
-                defaultValue={creditCardExpenseItem?.currencyId}
-              >
-                {currencies.map((currency) => (
-                  <option key={currency.id} value={currency.id}>
-                    {currency.name}
-                  </option>
-                ))}
-              </select>
-            }
-          </div>
-          {state.errors?.currencyId ? (
-            <div id="currencyId-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-              {state.errors.currencyId.map((error: string) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
         <div>
           <label htmlFor="amount" className="mb-2 block text-sm font-medium">
             Monto total

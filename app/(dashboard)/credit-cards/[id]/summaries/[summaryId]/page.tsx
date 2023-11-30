@@ -1,9 +1,7 @@
-'use server'
 import Breadcrumbs from '@/components/ui/breadcrumbs'
 import { PAGES_URL } from '@/lib/routes'
 import { formatCurrency, formatLocaleDate } from '@/lib/utils'
 import { fetchCreditCardSummaryById } from '@/services/summary'
-import React from 'react'
 
 export default async function Page({ params }: { params: { id: string; summaryId: string } }) {
   const { id, summaryId } = params

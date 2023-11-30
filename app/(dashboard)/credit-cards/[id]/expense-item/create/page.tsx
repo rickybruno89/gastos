@@ -4,7 +4,6 @@ import { fetchCreditCardName } from '@/services/credit-card'
 import { Metadata } from 'next'
 import React from 'react'
 import { fetchPersonToShare } from '@/services/settings/person-to-share-expense'
-import { fetchCurrency } from '@/services/settings/currency'
 import UpsertCreditCardExpenseItemForm from '../_components/upsert-form'
 
 export const metadata: Metadata = {
@@ -16,7 +15,6 @@ export default async function Page({ params }: { params: { id: string } }) {
 
   const creditCard = await fetchCreditCardName(id)
   const personsToShare = await fetchPersonToShare()
-  const currencies = await fetchCurrency()
 
   return (
     <main>
@@ -34,7 +32,7 @@ export default async function Page({ params }: { params: { id: string } }) {
           },
         ]}
       />
-      <UpsertCreditCardExpenseItemForm creditCardId={id} personsToShare={personsToShare} currencies={currencies} />
+      <UpsertCreditCardExpenseItemForm creditCardId={id} personsToShare={personsToShare} />
     </main>
   )
 }

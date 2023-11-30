@@ -71,6 +71,7 @@ export default function SummaryCreateForm({
 
     setTotal(total + (total * creditCard.taxesPercent) / 100)
     setSubtotal(total)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedItems])
 
   const handleSubmit = (e: any) => {

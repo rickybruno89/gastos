@@ -377,8 +377,6 @@ export async function fetchCreditCardName(id: string) {
 
 export async function fetchCreditCardExpenseItem(id: string) {
   noStore()
-  // Add noStore() here prevent the response from being cached.
-  // This is equivalent to in fetch(..., {cache: 'no-store'}).
   try {
     const data = await prisma.creditCardExpenseItem.findUnique({
       where: {
@@ -419,7 +417,6 @@ export const deleteCreditCardExpenseItem = async (id: string) => {
       },
     })
   } catch (error) {
-    console.log('🚀 ~ file: credit-card.ts:416 ~ deleteCreditCardExpenseItem ~ error:', error)
     return {
       message: 'Error en base de datos',
     }

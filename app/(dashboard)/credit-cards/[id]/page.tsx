@@ -1,5 +1,4 @@
 import Breadcrumbs from '@/components/ui/breadcrumbs'
-import { Button } from '@/components/ui/button'
 import ButtonDelete from '@/components/ui/button-delete'
 import LinkButton from '@/components/ui/link-button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -112,7 +111,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                           <span className="">{item.sharedWith.map((person) => person.name).join(' - ')}</span>
                         </p>
                       ) : (
-                        <p className="self-center">NO compartirdo</p>
+                        <p className="self-center">No compartido</p>
                       )}
                     </div>
 

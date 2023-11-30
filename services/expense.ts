@@ -90,14 +90,80 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
   redirect(PAGES_URL.EXPENSES.BASE_PATH)
 }
 
+export const updateExpense = async (id: string, _prevState: CreateExpenseState, formData: FormData) => {
+  try {
+    const validatedFields = CreateExpenseSchema.safeParse({
+      description: formData.get('description'),
+      notes: formData.get('notes'),
+      amount: formData.get('amount'),
+      sharedWith: formData.getAll('sharedWith'),
+      currencyId: formData.get('currencyId'),
+      paymentTypeId: formData.get('paymentTypeId'),
+      paymentSourceId: formData.get('paymentSourceId'),
+    })
+
+    if (!validatedFields.success) {
+      return {
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: 'Error',
+      }
+    }
+
+    const { description, notes, amount, sharedWith, currencyId, paymentTypeId, paymentSourceId } = validatedFields.data
+
+    await prisma.expense.update({
+      data: {
+        description,
+        notes,
+        amount: removeCurrencyMaskFromInput(amount),
+        sharedWith: {
+          set: [],
+          connect: sharedWith.map((personId) => ({ id: personId })),
+        },
+        currencyId,
+        paymentTypeId,
+        paymentSourceId,
+      },
+      where: {
+        id,
+      },
+    })
+  } catch (error) {
+    return {
+      message: 'Error en base de datos',
+    }
+  }
+  revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
+  redirect(PAGES_URL.EXPENSES.BASE_PATH)
+}
+
+export async function fetchExpenseItem(id: string) {
+  noStore()
+  try {
+    const data = await prisma.expense.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        paymentSource: true,
+        paymentType: true,
+        sharedWith: true,
+      },
+    })
+    return data
+  } catch (error) {
+    console.error('Error:', error)
+    throw new Error('Error al cargar gasto')
+  }
+}
+
 export async function fetchExpenses() {
   noStore()
-  // Add noStore() here prevent the response from being cached.
-  // This is equivalent to in fetch(..., {cache: 'no-store'}).
   try {
     const data = await prisma.expense.findMany({
       where: {
         userId: await getAuthUserId(),
+        deleted: false,
       },
       include: {
         paymentSource: true,
@@ -128,6 +194,38 @@ export async function fetchExpensePaymentSummaries() {
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
   }
+}
+
+export const deleteExpenseItem = async (id: string) => {
+  const existingExpenseItem = await prisma.expense.findUnique({
+    where: {
+      id,
+    },
+  })
+
+  if (!existingExpenseItem) {
+    return {
+      errors: { description: ['El Item no existe'] },
+      message: 'Error',
+    }
+  }
+  try {
+    await prisma.expense.update({
+      data: {
+        deleted: true,
+        deletedAt: new Date(),
+      },
+      where: {
+        id,
+      },
+    })
+  } catch (error) {
+    return {
+      message: 'Error en base de datos',
+    }
+  }
+  revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
+  redirect(PAGES_URL.EXPENSES.BASE_PATH)
 }
 
 // export async function updateInvoice(
