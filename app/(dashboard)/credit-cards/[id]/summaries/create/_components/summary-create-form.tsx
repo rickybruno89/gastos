@@ -81,8 +81,8 @@ export default function SummaryCreateForm({
     const selectedItemsToSend = selectedItems
       .filter((item) => item.checked)
       .map((item) => {
-        const { id, installmentsAmount, installmentsPaid } = item
-        return { id, installmentsAmount, installmentsPaid }
+        const { id, installmentsAmount, installmentsPaid, installmentsQuantity } = item
+        return { id, installmentsAmount, installmentsPaid, installmentsQuantity }
       })
 
     formData.set('totalAmount', total.toString())

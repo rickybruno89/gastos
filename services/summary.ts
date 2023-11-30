@@ -82,6 +82,7 @@ const CreditCardPaymentSummarySchema = z.object({
       id: z.string().cuid(),
       installmentsAmount: z.number(),
       installmentsPaid: z.number(),
+      installmentsQuantity: z.number(),
     })
     .array(),
   date: z.string().min(1, { message: 'Ingrese una fecha' }),
@@ -156,6 +157,7 @@ export const createSummaryForCreditCard = async (
               creditCardExpenseItemId: item.id,
               installmentsPaid: item.installmentsPaid + 1,
               installmentsAmount: item.installmentsAmount,
+              installmentsQuantity: item.installmentsQuantity,
             })),
           },
         },

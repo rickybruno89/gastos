@@ -41,7 +41,7 @@ export default async function Page({ params }: { params: { id: string; summaryId
                 <span>{item.creditCardExpenseItem.description}</span>
                 {!item.creditCardExpenseItem.recurrent ? (
                   <span>
-                    {item.installmentsPaid} de {item.creditCardExpenseItem.installmentsQuantity}{' '}
+                    {item.installmentsPaid} de {item.installmentsQuantity}
                     {formatCurrency(item.installmentsAmount)}
                   </span>
                 ) : (

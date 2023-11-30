@@ -155,6 +155,7 @@ model CreditCardSummaryExpenseItem {
   creditCardPaymentSummaryId String
   installmentsPaid           Int                      @default(0)
   installmentsAmount         Float                    @default(0)
+  installmentsQuantity       Int                      @default(0)
 }
 
 model CreditCardPaymentSummary {
