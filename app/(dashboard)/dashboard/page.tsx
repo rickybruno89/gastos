@@ -18,12 +18,10 @@ export default async function Page({
 }) {
   return (
     <main>
-      <div className="flex flex-col gap-4">
-        <MonthSelector />
-        <Suspense key={`date=${searchParams.date}`} fallback={<LoadingSpinner />}>
-          <DashboardTemplate date={searchParams.date || getToday()} />
-        </Suspense>
-      </div>
+      <MonthSelector />
+      <Suspense key={`date=${searchParams.date}`} fallback={<LoadingSpinner />}>
+        <DashboardTemplate date={searchParams.date || getToday()} />
+      </Suspense>
     </main>
   )
 }
