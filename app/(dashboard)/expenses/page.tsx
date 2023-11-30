@@ -41,9 +41,12 @@ export default async function Page() {
           {expenses.length ? (
             expenses.map((item) => (
               <div key={item.id} className="flex flex-col gap-4">
-                <div className="flex flex-wrap md:grid lg:grid-cols-4 gap-2">
+                <div className="flex flex-wrap md:grid lg:grid-cols-5 gap-2">
                   <p className="self-center">{item.description}</p>
                   <p className="self-center">{formatCurrency(item.amount)}</p>
+                  <p className="self-center ">
+                    {item.paymentType.name} - {item.paymentSource.name}
+                  </p>
                   <div className="self-center ">
                     {item.sharedWith.length ? (
                       <p>

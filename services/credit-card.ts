@@ -30,7 +30,6 @@ type CreateCreditCardExpenseItemState = {
     installmentsPaid?: string[]
     installmentsAmount?: string[]
     paymentBeginning?: string[]
-    currencyId?: string[]
     creditCardId?: string[]
   }
   message?: string | null
@@ -46,11 +45,6 @@ const CreditCardExpenseItemSchema = z.object({
   installmentsQuantity: z.coerce.number(),
   installmentsPaid: z.coerce.number(),
   paymentBeginning: z.string().min(1, { message: 'Ingrese una fecha' }),
-  currencyId: z
-    .string({
-      invalid_type_error: 'Seleccione una moneda',
-    })
-    .cuid(),
 })
 
 const CreateCreditCardExpenseItemSchema = CreditCardExpenseItemSchema.omit({
@@ -141,7 +135,6 @@ export const createCreditCardExpenseItem = async (
       installmentsQuantity: formData.get('installmentsQuantity'),
       installmentsPaid: formData.get('installmentsPaid'),
       paymentBeginning: formData.get('paymentBeginning'),
-      currencyId: formData.get('currencyId'),
     })
 
     if (!validatedFields.success) {
@@ -160,7 +153,6 @@ export const createCreditCardExpenseItem = async (
       installmentsQuantity,
       installmentsPaid,
       paymentBeginning,
-      currencyId,
     } = validatedFields.data
 
     const userId = await getAuthUserId()
@@ -194,7 +186,6 @@ export const createCreditCardExpenseItem = async (
           ? removeCurrencyMaskFromInput(amount)
           : removeCurrencyMaskFromInput(amount) / installmentsQuantity,
         paymentBeginning,
-        currencyId,
         creditCardId,
         userId,
       },
@@ -235,7 +226,6 @@ export const updateCreditCardExpenseItem = async (
       installmentsQuantity: formData.get('installmentsQuantity'),
       installmentsPaid: formData.get('installmentsPaid'),
       paymentBeginning: formData.get('paymentBeginning'),
-      currencyId: formData.get('currencyId'),
     })
 
     if (!validatedFields.success) {
@@ -254,7 +244,6 @@ export const updateCreditCardExpenseItem = async (
       installmentsQuantity,
       installmentsPaid,
       paymentBeginning,
-      currencyId,
     } = validatedFields.data
 
     await prisma.creditCardExpenseItem.update({
@@ -273,7 +262,6 @@ export const updateCreditCardExpenseItem = async (
           ? removeCurrencyMaskFromInput(amount)
           : removeCurrencyMaskFromInput(amount) / installmentsQuantity,
         paymentBeginning,
-        currencyId,
       },
       where: {
         id,

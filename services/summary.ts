@@ -1,5 +1,5 @@
 'use server'
-import { CreditCardPaymentSummary, ExpensePaymentSummary, PaymentType } from '@prisma/client'
+import { CreditCardPaymentSummary, ExpensePaymentSummary } from '@prisma/client'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth'
@@ -7,20 +7,6 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
-import { getToday, removeCurrencyMaskFromInput } from '@/lib/utils'
-
-type CreateExpenseSummaryState = {
-  errors?: {
-    expenseItems?: string[]
-    date?: string[]
-    totalAmount?: string[]
-  }
-  message?: string | null
-}
-
-const ExpenseSummarySchema = z.object({
-  date: z.string().min(1, { message: 'Ingrese una fecha' }),
-})
 
 export const generateExpenseSummaryForMonth = async (date: string) => {
   try {
@@ -55,8 +41,6 @@ export const generateExpenseSummaryForMonth = async (date: string) => {
 
 export async function fetchCreditCardSummaryById(id: string) {
   noStore()
-  // Add noStore() here prevent the response from being cached.
-  // This is equivalent to in fetch(..., {cache: 'no-store'}).
   try {
     const data = await prisma.creditCardPaymentSummary.findUnique({
       where: {
@@ -506,60 +490,3 @@ export const fetchPaymentSourceBalance = async (date: string) => {
     },
   })
 }
-
-// export async function updateInvoice(
-//   id: string,
-//   prevState: State,
-//   formData: FormData
-// ) {
-//   const validatedFields = UpdateInvoice.safeParse({
-//     customerId: formData.get("customerId"),
-//     amount: formData.get("amount"),
-//     status: formData.get("status"),
-//   });
-
-//   if (!validatedFields.success) {
-//     return {
-//       errors: validatedFields.error.flatten().fieldErrors,
-//       message: "Missing Fields. Failed to Update Invoice.",
-//     };
-//   }
-
-//   const { customerId, amount, status } = validatedFields.data;
-//   const amountInCents = amount * 100;
-
-//   try {
-//     await sql`
-//       UPDATE invoices
-//       SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-//       WHERE id = ${id}
-//     `;
-//   } catch (error) {
-//     return { message: "Database Error: Failed to Update Invoice." };
-//   }
-
-//   revalidatePath("/dashboard/invoices");
-//   redirect("/dashboard/invoices");
-// }
-
-// export async function deleteInvoice(id: string) {
-//   try {
-//     await sql`DELETE FROM invoices WHERE id = ${id}`;
-//   } catch (error) {
-//     return {
-//       message: "Database Error: Failed to Create Invoice.",
-//     };
-//   }
-//   revalidatePath("/dashboard/invoices");
-// }
-
-// export async function authenticate() {
-//   try {
-//     await signIn("google");
-//   } catch (error) {
-//     if ((error as Error).message.includes("CredentialsSignin")) {
-//       return "CredentialSignin";
-//     }
-//     throw error;
-//   }
-// }
