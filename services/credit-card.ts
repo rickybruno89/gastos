@@ -301,6 +301,7 @@ export async function fetchCreditCards() {
         creditCardExpenseItems: {
           where: {
             finished: false,
+            deleted: false,
           },
         },
       },
@@ -333,6 +334,7 @@ export async function fetchCreditCardById(id: string) {
         creditCardExpenseItems: {
           where: {
             finished: false,
+            deleted: false,
           },
           orderBy: [
             {
@@ -407,12 +409,17 @@ export const deleteCreditCardExpenseItem = async (id: string) => {
     }
   }
   try {
-    await prisma.creditCardExpenseItem.delete({
+    await prisma.creditCardExpenseItem.update({
+      data: {
+        deleted: true,
+        deletedAt: new Date(),
+      },
       where: {
         id,
       },
     })
   } catch (error) {
+    console.log('🚀 ~ file: credit-card.ts:416 ~ deleteCreditCardExpenseItem ~ error:', error)
     return {
       message: 'Error en base de datos',
     }

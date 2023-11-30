@@ -152,6 +152,8 @@ model CreditCardExpenseItem {
   paymentHistory       CreditCardSummaryExpenseItem[]
   user                 User                           @relation(fields: [userId], references: [id])
   userId               String
+  deleted              Boolean                        @default(false)
+  deletedAt            DateTime?
   createdAt            DateTime                       @default(now())
   updatedAt            DateTime                       @updatedAt
 
