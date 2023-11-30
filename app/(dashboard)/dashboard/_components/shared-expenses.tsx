@@ -115,20 +115,24 @@ export default function SharedExpenses({
     <>
       <p className="font-bold">Gastos compartidos</p>
       <div className="flex flex-wrap gap-4">
-        {sharedExpenses?.map((shared) => (
-          <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col" key={shared.id}>
-            <p className="font-bold">{shared.name}</p>
-            {shared.items.map((item) => (
-              <div key={item.id}>
-                <div className="flex flex-wrap justify-between gap-2">
-                  <span className="md:mr-6">{item.description}</span>
-                  <span className="font-bold">{formatCurrency(item.amountToPay)}</span>
+        {sharedExpenses.length ? (
+          sharedExpenses.map((shared) => (
+            <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col" key={shared.id}>
+              <p className="font-bold">{shared.name}</p>
+              {shared.items.map((item) => (
+                <div key={item.id}>
+                  <div className="flex flex-wrap justify-between gap-2">
+                    <span className="md:mr-6">{item.description}</span>
+                    <span className="font-bold">{formatCurrency(item.amountToPay)}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-            <p className="font-bold text-right mt-2">TOTAL {formatCurrency(shared.total)}</p>
-          </div>
-        ))}
+              ))}
+              <p className="font-bold text-right mt-2">TOTAL {formatCurrency(shared.total)}</p>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col">No hay datos para mostrar</div>
+        )}
       </div>
     </>
   )
