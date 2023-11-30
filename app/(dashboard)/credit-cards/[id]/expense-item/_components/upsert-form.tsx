@@ -2,36 +2,53 @@
 
 import { Button } from '@/components/ui/button'
 import { PAGES_URL } from '@/lib/routes'
-import { createCreditCardExpenseItem } from '@/services/credit-card'
+import { createCreditCardExpenseItem, updateCreditCardExpenseItem } from '@/services/credit-card'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useFormState } from 'react-dom'
-import { Currency, Person } from '@prisma/client'
+import { Currency, Person, Prisma } from '@prisma/client'
 import LinkButton from '@/components/ui/link-button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatCurrency, getNextMonthDate, removeCurrencyMaskFromInput } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { NumericFormat } from 'react-number-format'
 
-export default function CreditCardExpenseItemCreateForm({
+type CreditCardExpenseItemWithSharedPerson = Prisma.CreditCardExpenseItemGetPayload<{
+  include: {
+    sharedWith: true
+  }
+}>
+export default function UpsertCreditCardExpenseItemForm({
   creditCardId,
+  creditCardExpenseItem,
   personsToShare,
   currencies,
 }: {
   creditCardId: string
+  creditCardExpenseItem?: CreditCardExpenseItemWithSharedPerson
   personsToShare: Person[]
   currencies: Currency[]
 }) {
   const initialState = { message: null, errors: {} }
-  const createCreditCardExpenseItemWithId = createCreditCardExpenseItem.bind(null, creditCardId)
+  const upsertCreditCardExpenseItemWithId = creditCardExpenseItem
+    ? updateCreditCardExpenseItem.bind(null, creditCardExpenseItem.id)
+    : createCreditCardExpenseItem.bind(null, creditCardId)
 
-  const [state, dispatch] = useFormState(createCreditCardExpenseItemWithId, initialState)
+  const [state, dispatch] = useFormState(upsertCreditCardExpenseItemWithId, initialState)
 
-  const [isRecurrent, setIsRecurrent] = useState(false)
-  const [totalAmount, setTotalAmount] = useState(0)
-  const [installmentsQuantity, setInstallmentsQuantity] = useState(1)
+  const [isRecurrent, setIsRecurrent] = useState<boolean>(creditCardExpenseItem?.recurrent || false)
+  const [totalAmount, setTotalAmount] = useState(creditCardExpenseItem?.amount || 0)
+  const [installmentsQuantity, setInstallmentsQuantity] = useState(creditCardExpenseItem?.installmentsQuantity || 1)
+
+  useEffect(() => {
+    if (isRecurrent) {
+      setTotalAmount(creditCardExpenseItem?.installmentsAmount || totalAmount)
+    } else {
+      setTotalAmount(creditCardExpenseItem?.amount || totalAmount)
+    }
+  }, [isRecurrent])
 
   return (
     <form action={dispatch}>
@@ -44,6 +61,7 @@ export default function CreditCardExpenseItemCreateForm({
                 id="description"
                 name="description"
                 type="text"
+                defaultValue={creditCardExpenseItem?.description}
                 aria-describedby="description-error"
                 className="peer block w-full rounded-md border border-gray-200 text-sm outline-2 placeholder:text-gray-500"
               />
@@ -64,7 +82,12 @@ export default function CreditCardExpenseItemCreateForm({
             <div className="flex flex-wrap gap-4">
               {personsToShare.map((person) => (
                 <div key={person.id} className="flex items-center justify-center gap-x-1">
-                  <Checkbox id={`sharedWith[${person.id}]`} name="sharedWith" value={person.id} />
+                  <Checkbox
+                    id={`sharedWith[${person.id}]`}
+                    name="sharedWith"
+                    value={person.id}
+                    defaultChecked={creditCardExpenseItem?.sharedWith.some((sharedWith) => sharedWith.id === person.id)}
+                  />
                   <label
                     htmlFor={`sharedWith[${person.id}]`}
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -99,7 +122,7 @@ export default function CreditCardExpenseItemCreateForm({
                 name="currencyId"
                 aria-describedby="currencyId"
                 className="w-full rounded-md"
-                defaultValue={currencies.find((currency) => currency.useAsDefault)?.id}
+                defaultValue={creditCardExpenseItem?.currencyId}
               >
                 {currencies.map((currency) => (
                   <option key={currency.id} value={currency.id}>
@@ -133,6 +156,11 @@ export default function CreditCardExpenseItemCreateForm({
                 decimalSeparator=","
                 name="amount"
                 id="amount"
+                defaultValue={
+                  creditCardExpenseItem?.recurrent
+                    ? creditCardExpenseItem?.installmentsAmount
+                    : creditCardExpenseItem?.amount
+                }
               />
             </div>
             {state.errors?.amount ? (
@@ -150,7 +178,7 @@ export default function CreditCardExpenseItemCreateForm({
           <div>
             <RadioGroup
               name="recurrent"
-              defaultValue="false"
+              defaultValue={creditCardExpenseItem?.recurrent.toString() || 'false'}
               className="flex"
               onValueChange={(e) => setIsRecurrent(e === 'true')}
             >
@@ -183,6 +211,7 @@ export default function CreditCardExpenseItemCreateForm({
                   aria-describedby="installmentsQuantity"
                   className="w-full rounded-md"
                   onChange={(e) => setInstallmentsQuantity(parseInt(e.target.value))}
+                  defaultValue={creditCardExpenseItem?.installmentsQuantity}
                 >
                   {Array.from(Array(24)).map((_, index) => (
                     <option key={index + 1} value={(index + 1).toString()}>
@@ -216,7 +245,12 @@ export default function CreditCardExpenseItemCreateForm({
             <div>
               <label className="mb-2 block text-sm font-medium">Cuotas pagadas</label>
               <div>
-                <select name="installmentsPaid" aria-describedby="installmentsPaid" className="w-full rounded-md">
+                <select
+                  name="installmentsPaid"
+                  aria-describedby="installmentsPaid"
+                  className="w-full rounded-md"
+                  defaultValue={creditCardExpenseItem?.installmentsPaid}
+                >
                   {Array.from(Array(installmentsQuantity + 1)).map((_, index) => (
                     <option key={index} value={index.toString()}>
                       {index}
@@ -241,8 +275,8 @@ export default function CreditCardExpenseItemCreateForm({
               id="paymentBeginning"
               name="paymentBeginning"
               type="month"
-              defaultValue={getNextMonthDate()}
               className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
+              defaultValue={creditCardExpenseItem?.paymentBeginning || getNextMonthDate()}
             />
           </div>
           {state.errors?.paymentBeginning ? (
@@ -264,6 +298,7 @@ export default function CreditCardExpenseItemCreateForm({
                 name="notes"
                 aria-describedby="name-error"
                 className="peer block w-full rounded-md border border-gray-200 text-sm outline-2 placeholder:text-gray-500"
+                defaultValue={creditCardExpenseItem?.notes}
               />
             </div>
             {state.errors?.notes ? (
@@ -283,7 +318,7 @@ export default function CreditCardExpenseItemCreateForm({
           >
             Cancel
           </Link>
-          <Button type="submit">Guardar</Button>
+          <Button type="submit">Guardar cambios</Button>
         </div>
       </div>
     </form>
