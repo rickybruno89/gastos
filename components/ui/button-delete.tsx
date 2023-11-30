@@ -11,13 +11,15 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { TrashIcon } from '@heroicons/react/24/outline'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
 
 export default function ButtonDelete({ action, id }: any) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant={'destructive'} size={'sm'}>
-          Eliminar
+        <Button variant={'link'} size={'sm'} className="p-0">
+          <TrashIcon className="w-5 h-5 text-red-500" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

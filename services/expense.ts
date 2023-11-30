@@ -14,7 +14,6 @@ type CreateExpenseState = {
     notes?: string[]
     amount?: string[]
     sharedWith?: string[]
-    currencyId?: string[]
     paymentTypeId?: string[]
     paymentSourceId?: string[]
   }
@@ -27,11 +26,6 @@ const ExpenseSchema = z.object({
   notes: z.string().toUpperCase(),
   amount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
   sharedWith: z.string().array(),
-  currencyId: z
-    .string({
-      invalid_type_error: 'Seleccione una moneda',
-    })
-    .cuid(),
   paymentTypeId: z.string({
     invalid_type_error: 'Por favor seleccione una forma de pago',
   }),
@@ -51,7 +45,6 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
       notes: formData.get('notes'),
       amount: formData.get('amount'),
       sharedWith: formData.getAll('sharedWith'),
-      currencyId: formData.get('currencyId'),
       paymentTypeId: formData.get('paymentTypeId'),
       paymentSourceId: formData.get('paymentSourceId'),
     })
@@ -63,7 +56,7 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
       }
     }
 
-    const { description, notes, amount, sharedWith, currencyId, paymentTypeId, paymentSourceId } = validatedFields.data
+    const { description, notes, amount, sharedWith, paymentTypeId, paymentSourceId } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -75,7 +68,6 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
         sharedWith: {
           connect: sharedWith.map((personId) => ({ id: personId })),
         },
-        currencyId,
         paymentTypeId,
         paymentSourceId,
         userId,
@@ -90,14 +82,78 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
   redirect(PAGES_URL.EXPENSES.BASE_PATH)
 }
 
+export const updateExpense = async (id: string, _prevState: CreateExpenseState, formData: FormData) => {
+  try {
+    const validatedFields = CreateExpenseSchema.safeParse({
+      description: formData.get('description'),
+      notes: formData.get('notes'),
+      amount: formData.get('amount'),
+      sharedWith: formData.getAll('sharedWith'),
+      paymentTypeId: formData.get('paymentTypeId'),
+      paymentSourceId: formData.get('paymentSourceId'),
+    })
+
+    if (!validatedFields.success) {
+      return {
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: 'Error',
+      }
+    }
+
+    const { description, notes, amount, sharedWith, paymentTypeId, paymentSourceId } = validatedFields.data
+
+    await prisma.expense.update({
+      data: {
+        description,
+        notes,
+        amount: removeCurrencyMaskFromInput(amount),
+        sharedWith: {
+          set: [],
+          connect: sharedWith.map((personId) => ({ id: personId })),
+        },
+        paymentTypeId,
+        paymentSourceId,
+      },
+      where: {
+        id,
+      },
+    })
+  } catch (error) {
+    return {
+      message: 'Error en base de datos',
+    }
+  }
+  revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
+  redirect(PAGES_URL.EXPENSES.BASE_PATH)
+}
+
+export async function fetchExpenseItem(id: string) {
+  noStore()
+  try {
+    const data = await prisma.expense.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        paymentSource: true,
+        paymentType: true,
+        sharedWith: true,
+      },
+    })
+    return data
+  } catch (error) {
+    console.error('Error:', error)
+    throw new Error('Error al cargar gasto')
+  }
+}
+
 export async function fetchExpenses() {
   noStore()
-  // Add noStore() here prevent the response from being cached.
-  // This is equivalent to in fetch(..., {cache: 'no-store'}).
   try {
     const data = await prisma.expense.findMany({
       where: {
         userId: await getAuthUserId(),
+        deleted: false,
       },
       include: {
         paymentSource: true,
@@ -130,59 +186,34 @@ export async function fetchExpensePaymentSummaries() {
   }
 }
 
-// export async function updateInvoice(
-//   id: string,
-//   prevState: State,
-//   formData: FormData
-// ) {
-//   const validatedFields = UpdateInvoice.safeParse({
-//     customerId: formData.get("customerId"),
-//     amount: formData.get("amount"),
-//     status: formData.get("status"),
-//   });
+export const deleteExpenseItem = async (id: string) => {
+  const existingExpenseItem = await prisma.expense.findUnique({
+    where: {
+      id,
+    },
+  })
 
-//   if (!validatedFields.success) {
-//     return {
-//       errors: validatedFields.error.flatten().fieldErrors,
-//       message: "Missing Fields. Failed to Update Invoice.",
-//     };
-//   }
-
-//   const { customerId, amount, status } = validatedFields.data;
-//   const amountInCents = amount * 100;
-
-//   try {
-//     await sql`
-//       UPDATE invoices
-//       SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-//       WHERE id = ${id}
-//     `;
-//   } catch (error) {
-//     return { message: "Database Error: Failed to Update Invoice." };
-//   }
-
-//   revalidatePath("/dashboard/invoices");
-//   redirect("/dashboard/invoices");
-// }
-
-// export async function deleteInvoice(id: string) {
-//   try {
-//     await sql`DELETE FROM invoices WHERE id = ${id}`;
-//   } catch (error) {
-//     return {
-//       message: "Database Error: Failed to Create Invoice.",
-//     };
-//   }
-//   revalidatePath("/dashboard/invoices");
-// }
-
-// export async function authenticate() {
-//   try {
-//     await signIn("google");
-//   } catch (error) {
-//     if ((error as Error).message.includes("CredentialsSignin")) {
-//       return "CredentialSignin";
-//     }
-//     throw error;
-//   }
-// }
+  if (!existingExpenseItem) {
+    return {
+      errors: { description: ['El Item no existe'] },
+      message: 'Error',
+    }
+  }
+  try {
+    await prisma.expense.update({
+      data: {
+        deleted: true,
+        deletedAt: new Date(),
+      },
+      where: {
+        id,
+      },
+    })
+  } catch (error) {
+    return {
+      message: 'Error en base de datos',
+    }
+  }
+  revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
+  redirect(PAGES_URL.EXPENSES.BASE_PATH)
+}

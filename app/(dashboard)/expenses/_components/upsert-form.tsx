@@ -4,26 +4,36 @@ import { PAGES_URL } from '@/lib/routes'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useFormState } from 'react-dom'
-import { Currency, PaymentSource, PaymentType, Person } from '@prisma/client'
+import { PaymentSource, PaymentType, Person, Prisma } from '@prisma/client'
 import LinkButton from '@/components/ui/link-button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { createExpense } from '@/services/expense'
+import { createExpense, updateExpense } from '@/services/expense'
 import { NumericFormat } from 'react-number-format'
 
-export default function ExpenseCreateForm({
+type ExpenseItemWithInclude = Prisma.ExpenseGetPayload<{
+  include: {
+    paymentSource: true
+    paymentType: true
+    sharedWith: true
+  }
+}>
+
+export default function UpsertExpenseForm({
+  expenseItem,
   personsToShare,
-  currencies,
   paymentTypes,
   paymentSources,
 }: {
+  expenseItem?: ExpenseItemWithInclude
   personsToShare: Person[]
-  currencies: Currency[]
   paymentTypes: PaymentType[]
   paymentSources: PaymentSource[]
 }) {
   const initialState = { message: null, errors: {} }
 
-  const [state, dispatch] = useFormState(createExpense, initialState)
+  const upsertExpenseItemWithId = expenseItem ? updateExpense.bind(null, expenseItem.id) : createExpense
+
+  const [state, dispatch] = useFormState(upsertExpenseItemWithId, initialState)
 
   return (
     <form action={dispatch}>
@@ -40,6 +50,7 @@ export default function ExpenseCreateForm({
                 type="text"
                 aria-describedby="description-error"
                 className="peer block w-full rounded-md border border-gray-200 text-sm outline-2 placeholder:text-gray-500"
+                defaultValue={expenseItem?.description}
               />
             </div>
             {state.errors?.description ? (
@@ -58,7 +69,12 @@ export default function ExpenseCreateForm({
             <div className="flex flex-wrap gap-4">
               {personsToShare.map((person) => (
                 <div key={person.id} className="flex items-center justify-center gap-x-1">
-                  <Checkbox id={`sharedWith[${person.id}]`} name="sharedWith" value={person.id} />
+                  <Checkbox
+                    id={`sharedWith[${person.id}]`}
+                    name="sharedWith"
+                    value={person.id}
+                    defaultChecked={expenseItem?.sharedWith.some((sharedWith) => sharedWith.id === person.id)}
+                  />
                   <label
                     htmlFor={`sharedWith[${person.id}]`}
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -84,36 +100,6 @@ export default function ExpenseCreateForm({
           </div>
         </div>
         <div>
-          <label className="mb-2 block text-sm font-medium" htmlFor="currencyId">
-            Seleccione tipo de moneda
-          </label>
-          <div>
-            {
-              <select
-                name="currencyId"
-                id="currencyId"
-                aria-describedby="currencyId"
-                className="w-full rounded-md"
-                defaultValue={currencies.find((currency) => currency.useAsDefault)?.id}
-              >
-                {currencies.map((currency) => (
-                  <option key={currency.id} value={currency.id}>
-                    {currency.name}
-                  </option>
-                ))}
-              </select>
-            }
-          </div>
-          {state.errors?.currencyId ? (
-            <div id="currencyId-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-              {state.errors.currencyId.map((error: string) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div>
           <label htmlFor="amount" className="mb-2 block text-sm font-medium">
             Monto total
           </label>
@@ -127,6 +113,7 @@ export default function ExpenseCreateForm({
                 decimalSeparator=","
                 name="amount"
                 id="amount"
+                defaultValue={expenseItem?.amount}
               />
             </div>
             {state.errors?.amount ? (
@@ -155,7 +142,7 @@ export default function ExpenseCreateForm({
                 id="paymentTypeId"
                 aria-describedby="paymentTypeId"
                 className="w-full rounded-md"
-                defaultValue={''}
+                defaultValue={expenseItem?.paymentTypeId}
               >
                 <option disabled value="">
                   Seleccione una opción
@@ -193,7 +180,7 @@ export default function ExpenseCreateForm({
                 id="paymentSourceId"
                 aria-describedby="paymentSourceId"
                 className="w-full rounded-md"
-                defaultValue={''}
+                defaultValue={expenseItem?.paymentSourceId}
               >
                 <option disabled value="">
                   Seleccione una opción
@@ -222,6 +209,7 @@ export default function ExpenseCreateForm({
           <div className="relative mt-2 rounded-md">
             <div className="relative">
               <textarea
+                defaultValue={expenseItem?.notes}
                 id="notes"
                 name="notes"
                 aria-describedby="name-error"

@@ -50,7 +50,6 @@ model User {
   creditCards                CreditCard[]
   creditCardPaymentSummaries CreditCardPaymentSummary[]
   creditCardExpenseItems     CreditCardExpenseItem[]
-  currencies                 Currency[]
 }
 
 model VerificationToken {
@@ -72,16 +71,6 @@ model Person {
   deletedAt                    DateTime?
 
   @@unique([name, userId])
-}
-
-model Currency {
-  id                     String                  @id @default(cuid())
-  name                   String // ARS - USD 
-  useAsDefault           Boolean                 @default(false)
-  expenses               Expense[]
-  creditCardExpenseItems CreditCardExpenseItem[]
-  user                   User                    @relation(fields: [userId], references: [id])
-  userId                 String
 }
 
 model PaymentType {
@@ -138,8 +127,6 @@ model CreditCardExpenseItem {
   notes                String
   amount               Float                          @default(0) // only for items with installments (this is the total amount)
   sharedWith           Person[]
-  currency             Currency                       @relation(fields: [currencyId], references: [id])
-  currencyId           String
   recurrent            Boolean
   installmentsQuantity Int                            @default(0)
   installmentsPaid     Int                            @default(0)
@@ -152,6 +139,8 @@ model CreditCardExpenseItem {
   paymentHistory       CreditCardSummaryExpenseItem[]
   user                 User                           @relation(fields: [userId], references: [id])
   userId               String
+  deleted              Boolean                        @default(false)
+  deletedAt            DateTime?
   createdAt            DateTime                       @default(now())
   updatedAt            DateTime                       @updatedAt
 
@@ -166,6 +155,7 @@ model CreditCardSummaryExpenseItem {
   creditCardPaymentSummaryId String
   installmentsPaid           Int                      @default(0)
   installmentsAmount         Float                    @default(0)
+  installmentsQuantity       Int                      @default(0)
 }
 
 model CreditCardPaymentSummary {
@@ -192,8 +182,6 @@ model Expense {
   notes            String
   amount           Float
   sharedWith       Person[]
-  currency         Currency                @relation(fields: [currencyId], references: [id])
-  currencyId       String
   paymentType      PaymentType             @relation(fields: [paymentTypeId], references: [id])
   paymentTypeId    String
   paymentSource    PaymentSource           @relation(fields: [paymentSourceId], references: [id])

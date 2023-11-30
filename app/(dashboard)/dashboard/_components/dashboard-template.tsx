@@ -28,10 +28,10 @@ export default async function DashboardTemplate({ date }: { date: string }) {
         date={date}
         paymentSources={paymentSources}
       />
-      <Suspense key={`date=${date}`} fallback={<LoadingSpinner />}>
+      <Suspense fallback={<LoadingSpinner />}>
         <SourceBalance date={date} />
       </Suspense>
-      <Suspense key={`date=${date}`} fallback={<LoadingSpinner />}>
+      <Suspense fallback={<LoadingSpinner />}>
         <SharedExpenses expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} />
       </Suspense>
     </>

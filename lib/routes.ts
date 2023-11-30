@@ -8,7 +8,7 @@ export const PAGES_URL = {
     DETAILS: (id: string) => `/credit-cards/${id}`,
     EXPENSE_ITEM: {
       CREATE: (id: string) => `/credit-cards/${id}/expense-item/create`,
-      EDIT: (id: string, editxpenseItemId: string) => `/credit-cards/${id}/expense-item/edit/${editxpenseItemId}`,
+      EDIT: (id: string, editxpenseItemId: string) => `/credit-cards/${id}/expense-item/${editxpenseItemId}/edit`,
     },
     SUMMARY: {
       BASE_PATH: (id: string) => `/credit-cards/${id}/summaries`,
@@ -26,6 +26,7 @@ export const PAGES_URL = {
   EXPENSES: {
     BASE_PATH: `/expenses`,
     CREATE: `/expenses/create`,
+    EDIT: (id: string) => `/expenses/${id}/edit`,
     SUMMARY: {
       CREATE: `/expenses/summaries/create`,
       DETAIL: (summaryId: string) => `/expenses/summaries/${summaryId}`,

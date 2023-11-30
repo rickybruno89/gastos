@@ -1,9 +1,7 @@
-'use server'
 import Breadcrumbs from '@/components/ui/breadcrumbs'
 import { PAGES_URL } from '@/lib/routes'
 import { formatCurrency, formatLocaleDate } from '@/lib/utils'
 import { fetchCreditCardSummaryById } from '@/services/summary'
-import React from 'react'
 
 export default async function Page({ params }: { params: { id: string; summaryId: string } }) {
   const { id, summaryId } = params
@@ -43,7 +41,7 @@ export default async function Page({ params }: { params: { id: string; summaryId
                 <span>{item.creditCardExpenseItem.description}</span>
                 {!item.creditCardExpenseItem.recurrent ? (
                   <span>
-                    {item.installmentsPaid} de {item.creditCardExpenseItem.installmentsQuantity}{' '}
+                    {item.installmentsPaid} de {item.installmentsQuantity}
                     {formatCurrency(item.installmentsAmount)}
                   </span>
                 ) : (
