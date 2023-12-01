@@ -38,6 +38,7 @@ type ExpensesByPerson = {
     id: string
     description: string
     amountToPay: number
+    amount: number
   }[]
 }
 
@@ -67,6 +68,7 @@ const calcSharedExpenses = (
         id: item.id,
         description: item.expense.description,
         amountToPay: amountPerPerson,
+        amount: item.expense.amount,
       })
     })
   })
@@ -92,8 +94,13 @@ const calcSharedExpenses = (
 
         existingPerson.items.push({
           id: payment.id,
-          description: `${payment.creditCardExpenseItem.description} - cuota ${payment.installmentsPaid} de ${payment.installmentsQuantity}`,
+          description: `${payment.creditCardExpenseItem.description} ${
+            !payment.creditCardExpenseItem.recurrent
+              ? `- Cuota ${payment.installmentsPaid} de ${payment.installmentsQuantity}`
+              : '- Recurrente'
+          }`,
           amountToPay: amountPerPerson,
+          amount: payment.installmentsAmount,
         })
       })
     })
@@ -120,10 +127,13 @@ export default function SharedExpenses({
               <p className="font-bold">{shared.name}</p>
               {shared.items.map((item) => (
                 <div key={item.id}>
-                  <div className="flex flex-wrap justify-between gap-2">
-                    <span className="md:mr-6">{item.description}</span>
+                  <div className="flex flex-wrap justify-between">
+                    <span className="md:mr-6">
+                      {item.description} {`(${formatCurrency(item.amount)})`}
+                    </span>
                     <span className="font-bold">{formatCurrency(item.amountToPay)}</span>
                   </div>
+                  <div className="h-px bg-gray-300" />
                 </div>
               ))}
               <p className="font-bold text-right mt-2">TOTAL {formatCurrency(shared.total)}</p>
