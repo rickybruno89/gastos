@@ -7,13 +7,14 @@ import {
   updateAmountExpenseSummary,
   updatePaymentTypeExpenseSummary,
   updatePaymentSourceExpenseSummary,
+  addExpenseToSummary,
 } from '@/services/summary'
-import { ExpensePaymentSummary, PaymentSource, PaymentType, Prisma } from '@prisma/client'
+import { Expense, ExpensePaymentSummary, PaymentSource, PaymentType, Prisma } from '@prisma/client'
 import React from 'react'
 import { NumericFormat } from 'react-number-format'
 import { debounce } from 'lodash'
 
-type ExpensesWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
+type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
     paymentSource: true
     paymentType: true
@@ -25,15 +26,25 @@ type ExpensesWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   }
 }>
 
+type ExpensesWithInclude = Prisma.ExpenseGetPayload<{
+  include: {
+    paymentSource: true
+    paymentType: true
+    sharedWith: true
+  }
+}>
+
 export default function ExpensesSummary({
   paymentTypes,
   paymentSources,
   expenseSummaries,
+  expenses,
   date,
 }: {
   paymentTypes: PaymentType[]
   paymentSources: PaymentSource[]
-  expenseSummaries: ExpensesWithInclude[]
+  expenseSummaries: ExpensesPaymentSummaryWithInclude[]
+  expenses: ExpensesWithInclude[]
   date: string
 }) {
   const handleExpenseAmountChange = debounce((expenseSummary: ExpensePaymentSummary, inputAmount: string) => {
@@ -54,13 +65,13 @@ export default function ExpensesSummary({
 
   return (
     <>
-      <p className="font-bold">Gastos fijos</p>
       {expenseSummaries?.length ? (
-        <section className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col gap-4">
-          <div className="flex flex-col gap-4">
-            {expenseSummaries.map((item) => (
-              <div key={item.expenseId} className="flex flex-wrap items-center justify-between gap-4">
-                <p className="font-bold w-full md:w-fit">{item.expense.description}</p>
+        <section className="rounded-md bg-white p-4 md:p-6 w-full lg:w-fit flex flex-col gap-2">
+          <p className="font-bold">Gastos fijos</p>
+          {expenseSummaries.map((item) => (
+            <div key={item.expenseId} className="flex flex-col gap-2">
+              <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4">
+                <p className="font-bold lg:self-center">{item.expense.description}</p>
                 <div>
                   <div>
                     <select
@@ -96,10 +107,10 @@ export default function ExpensesSummary({
                 </div>
                 {item.paid ? (
                   <>
-                    <div className="flex justify-end items-center gap-4">
-                      <span className="text-sm">{formatCurrency(item.amount)}</span>
-                      <span className="text-green-500">PAGADO</span>
-                    </div>
+                    <span className="text-sm  lg:justify-self-center lg:self-center">
+                      {formatCurrency(item.amount)}
+                    </span>
+                    <span className="text-green-500  lg:justify-self-center lg:self-center">PAGADO</span>
                   </>
                 ) : (
                   <>
@@ -120,8 +131,22 @@ export default function ExpensesSummary({
                   </>
                 )}
               </div>
+              <div className="h-px bg-gray-300" />
+            </div>
+          ))}
+          {expenses
+            .filter((expense) => !expenseSummaries.some((expenseSummary) => expenseSummary.expenseId === expense.id))
+            .map((expense) => (
+              <div key={expense.id} className="flex gap-4 items-center">
+                <p className="font-bold">{expense.description}</p>
+                <p>{expense.paymentType.name}</p>
+                <p>{expense.paymentSource.name}</p>
+                <p>{formatCurrency(expense.amount)}</p>
+                <Button size={'sm'} onClick={() => addExpenseToSummary(date, expense)}>
+                  Agregar a este resumen
+                </Button>
+              </div>
             ))}
-          </div>
         </section>
       ) : (
         <section className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col gap-4">

@@ -67,13 +67,13 @@ export default function CreditCardExpensesSummary({
 
   return (
     <>
-      <p className="font-bold">Tarjetas de Crédito</p>
       {creditCardExpenseSummaries?.length ? (
-        <section className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col gap-4">
-          <div className="flex flex-col gap-4">
-            {creditCardExpenseSummaries.map((item) => (
-              <div key={item.id} className="flex flex-wrap items-center justify-between gap-4">
-                <p className="font-bold w-full md:w-fit">{item.creditCard.name}</p>
+        <section className="rounded-md bg-white p-4 md:p-6 w-full lg:w-fit flex flex-col gap-2">
+          <p className="font-bold">Tarjetas de Crédito</p>
+          {creditCardExpenseSummaries.map((item) => (
+            <div key={item.id} className="flex flex-col gap-2">
+              <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4">
+                <p className="font-bold lg:self-center">{item.creditCard.name}</p>
                 <div>
                   <div>
                     <select
@@ -109,10 +109,10 @@ export default function CreditCardExpensesSummary({
                 </div>
                 {item.paid ? (
                   <>
-                    <div className="flex justify-end items-center gap-4">
-                      <span className="text-sm">{formatCurrency(item.amount)}</span>
-                      <span className="text-green-500">PAGADO</span>
-                    </div>
+                    <span className="text-sm  lg:justify-self-center lg:self-center">
+                      {formatCurrency(item.amount)}
+                    </span>
+                    <span className="text-green-500  lg:justify-self-center lg:self-center">PAGADO</span>
                   </>
                 ) : (
                   <>
@@ -133,8 +133,9 @@ export default function CreditCardExpensesSummary({
                   </>
                 )}
               </div>
-            ))}
-          </div>
+              <div className="h-px bg-gray-300" />
+            </div>
+          ))}
         </section>
       ) : (
         <section className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col gap-4">

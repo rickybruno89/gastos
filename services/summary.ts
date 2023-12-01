@@ -1,5 +1,5 @@
 'use server'
-import { CreditCardPaymentSummary, ExpensePaymentSummary } from '@prisma/client'
+import { CreditCardPaymentSummary, Expense, ExpensePaymentSummary } from '@prisma/client'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth'
@@ -7,6 +7,29 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
+
+export const addExpenseToSummary = async (date: string, expense: Expense) => {
+  try {
+    const userId = await getAuthUserId()
+    await prisma.expensePaymentSummary.create({
+      data: {
+        expenseId: expense.id,
+        date,
+        amount: expense.amount,
+        paid: false,
+        paymentTypeId: expense.paymentTypeId,
+        paymentSourceId: expense.paymentSourceId,
+        userId,
+      },
+    })
+  } catch (error) {
+    return {
+      message: 'Error en base de datos',
+    }
+  }
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
+}
 
 export const generateExpenseSummaryForMonth = async (date: string) => {
   try {
