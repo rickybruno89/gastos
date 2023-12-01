@@ -94,11 +94,7 @@ export default function UpsertCreditCardExpenseItemForm({
                   </label>
                 </div>
               ))}
-              <LinkButton
-                href={`${
-                  PAGES_URL.SETTINGS.PERSON_TO_SHARE_EXPENSE
-                }?callbackUrl=${PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.CREATE(creditCardId)}`}
-              >
+              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
                 <PlusIcon className="w-4" />
                 Crear persona
               </LinkButton>

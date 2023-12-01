@@ -3,9 +3,9 @@ import { PAGES_URL } from '@/lib/routes'
 import { Metadata } from 'next'
 import React from 'react'
 import UpsertExpenseForm from '../_components/upsert-form'
-import { fetchPersonToShare } from '@/services/settings/person-to-share-expense'
-import { fetchPaymentSource } from '@/services/settings/payment-source'
-import { fetchPaymentType } from '@/services/settings/payment-type'
+import { fetchPersonToShare } from '@/services/settings'
+import { fetchPaymentSource } from '@/services/settings'
+import { fetchPaymentType } from '@/services/settings'
 
 export const metadata: Metadata = {
   title: 'Nuevo Item',

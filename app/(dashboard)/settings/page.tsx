@@ -1,21 +1,17 @@
 import Breadcrumbs from '@/components/ui/breadcrumbs'
-import LinkButton from '@/components/ui/link-button'
 import { PAGES_URL } from '@/lib/routes'
-import { fetchPaymentSource } from '@/services/settings/payment-source'
-import { fetchPaymentType } from '@/services/settings/payment-type'
-import { fetchPersonToShare } from '@/services/settings/person-to-share-expense'
-import { PlusIcon } from '@heroicons/react/24/outline'
 import { Metadata } from 'next'
+import PaymentTypeWrapper from './_components/payment-type/payment-type-wrapper'
+import PaymentSourceWrapper from './_components/payment-source/payment-source-wrapper'
+import PersonToShareWrapper from './_components/person-to-share/person-to-share-wrapper'
+import { Suspense } from 'react'
+import SkeletonLoadingSettings from './_components/skeleton-loading'
 
 export const metadata: Metadata = {
   title: 'Configuración',
 }
 
 export default async function Page() {
-  const paymentTypes = await fetchPaymentType()
-  const paymentSources = await fetchPaymentSource()
-  const personToShareExpenses = await fetchPersonToShare()
-
   return (
     <main className="flex gap-4 flex-wrap flex-col">
       <Breadcrumbs
@@ -27,49 +23,17 @@ export default async function Page() {
           },
         ]}
       />
-      <section className="bg-white rounded-lg p-4 md:p-6">
-        <div className="flex justify-between gap-4 items-center">
-          <h1 className="text-xl">Forma de pago</h1>
-          <LinkButton href={PAGES_URL.SETTINGS.PAYMENT_TYPE_CREATE}>
-            <PlusIcon className="h-5 " />
-            <span className="hidden md:block">Crear Forma de pago</span>
-          </LinkButton>
-        </div>
-        {paymentTypes.length ? (
-          paymentTypes.map((paymentType) => <p key={paymentType.id}>&bull; {paymentType.name}</p>)
-        ) : (
-          <h2>No se crearon formas de pago</h2>
-        )}
-      </section>
-      <section className="bg-white rounded-lg p-4 md:p-6">
-        <div className="flex justify-between gap-4 items-center">
-          <h1 className="text-xl">Canales de pago</h1>
-          <LinkButton href={PAGES_URL.SETTINGS.PAYMENT_SOURCE_CREATE}>
-            <PlusIcon className="h-5" />
-            <span className="hidden md:block">Crear Canal de pago</span>
-          </LinkButton>
-        </div>
-        {paymentSources.length ? (
-          paymentSources.map((paymentSource) => <p key={paymentSource.id}>&bull; {paymentSource.name}</p>)
-        ) : (
-          <h2>No se crearon canales de pago</h2>
-        )}
-      </section>
-
-      <section className="bg-white rounded-lg p-4 md:p-6">
-        <div className="flex justify-between gap-4 items-center">
-          <h1 className="text-xl">Personas para compartir gastos</h1>
-          <LinkButton href={PAGES_URL.SETTINGS.PERSON_TO_SHARE_EXPENSE}>
-            <PlusIcon className="h-5" />
-            <span className="hidden md:block">Crear persona</span>
-          </LinkButton>
-        </div>
-        {personToShareExpenses.length ? (
-          personToShareExpenses.map((person) => <p key={person.id}>&bull; {person.name}</p>)
-        ) : (
-          <h2>No se crearon personas</h2>
-        )}
-      </section>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Suspense fallback={<SkeletonLoadingSettings />}>
+          <PaymentTypeWrapper />
+        </Suspense>
+        <Suspense fallback={<SkeletonLoadingSettings />}>
+          <PaymentSourceWrapper />
+        </Suspense>
+        <Suspense fallback={<SkeletonLoadingSettings />}>
+          <PersonToShareWrapper />
+        </Suspense>
+      </div>
     </main>
   )
 }
