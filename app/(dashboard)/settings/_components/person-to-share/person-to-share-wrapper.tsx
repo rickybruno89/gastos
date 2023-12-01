@@ -1,4 +1,4 @@
-import { fetchPersonToShare } from '@/services/settings/person-to-share-expense'
+import { fetchPersonToShare } from '@/services/settings'
 import PersonToShareForm from './person-to-share-form'
 
 export default async function PersonToShareWrapper() {

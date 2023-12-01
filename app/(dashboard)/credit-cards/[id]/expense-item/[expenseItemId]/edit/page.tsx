@@ -3,7 +3,7 @@ import { PAGES_URL } from '@/lib/routes'
 import { fetchCreditCardExpenseItem, fetchCreditCardName } from '@/services/credit-card'
 import { Metadata } from 'next'
 import React from 'react'
-import { fetchPersonToShare } from '@/services/settings/person-to-share-expense'
+import { fetchPersonToShare } from '@/services/settings'
 import UpsertCreditCardExpenseItemForm from '../../_components/upsert-form'
 
 export const metadata: Metadata = {

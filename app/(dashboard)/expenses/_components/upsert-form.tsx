@@ -83,9 +83,7 @@ export default function UpsertExpenseForm({
                   </label>
                 </div>
               ))}
-              <LinkButton
-                href={`${PAGES_URL.SETTINGS.PERSON_TO_SHARE_EXPENSE}?callbackUrl=${PAGES_URL.EXPENSES.CREATE}`}
-              >
+              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
                 <PlusIcon className="w-4" />
                 Crear persona
               </LinkButton>
@@ -132,7 +130,7 @@ export default function UpsertExpenseForm({
           </label>
           <div>
             {!paymentTypes.length ? (
-              <LinkButton href={`${PAGES_URL.SETTINGS.PAYMENT_TYPE_CREATE}?callbackUrl=${PAGES_URL.EXPENSES.CREATE}`}>
+              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
                 <PlusIcon className="w-5" />
                 Crear nueva forma de pago
               </LinkButton>
@@ -170,7 +168,7 @@ export default function UpsertExpenseForm({
           </label>
           <div>
             {!paymentSources.length ? (
-              <LinkButton href={`${PAGES_URL.SETTINGS.PAYMENT_SOURCE_CREATE}?callbackUrl=${PAGES_URL.EXPENSES.CREATE}`}>
+              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
                 <PlusIcon className="w-5" />
                 Crear nueva canal de pago
               </LinkButton>

@@ -1,5 +1,5 @@
-import { fetchPaymentSource } from '@/services/settings/payment-source'
-import { fetchPaymentType } from '@/services/settings/payment-type'
+import { fetchPaymentSource } from '@/services/settings'
+import { fetchPaymentType } from '@/services/settings'
 import { fetchCreditCardSummariesForMonth, fetchExpenseSummariesForMonth } from '@/services/summary'
 import { Suspense } from 'react'
 import LoadingSpinner from '@/components/ui/loading-spinner'

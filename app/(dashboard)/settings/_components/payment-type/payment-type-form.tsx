@@ -1,6 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { createPaymentType } from '@/services/settings/payment-type'
+import { createPaymentType } from '@/services/settings'
 import { useRef, useState } from 'react'
 
 type State = {

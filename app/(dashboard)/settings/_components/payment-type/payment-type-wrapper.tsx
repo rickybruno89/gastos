@@ -1,4 +1,4 @@
-import { fetchPaymentType } from '@/services/settings/payment-type'
+import { fetchPaymentType } from '@/services/settings'
 import PaymentTypeForm from './payment-type-form'
 
 export default async function PaymentTypeWrapper() {

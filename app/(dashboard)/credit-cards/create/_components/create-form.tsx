@@ -78,9 +78,7 @@ export default function CreditCardCreateForm({
           </label>
           <div>
             {!paymentTypes.length ? (
-              <LinkButton
-                href={`${PAGES_URL.SETTINGS.PAYMENT_TYPE_CREATE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.CREATE}`}
-              >
+              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
                 <PlusIcon className="w-5" />
                 Crear nueva forma de pago
               </LinkButton>
@@ -118,9 +116,7 @@ export default function CreditCardCreateForm({
           </label>
           <div>
             {!paymentSources.length ? (
-              <LinkButton
-                href={`${PAGES_URL.SETTINGS.PAYMENT_SOURCE_CREATE}?callbackUrl=${PAGES_URL.CREDIT_CARDS.CREATE}`}
-              >
+              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
                 <PlusIcon className="w-5" />
                 Crear nueva canal de pago
               </LinkButton>

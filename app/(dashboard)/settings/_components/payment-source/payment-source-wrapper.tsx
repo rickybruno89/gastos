@@ -1,5 +1,5 @@
+import { fetchPaymentSource } from '@/services/settings'
 import PaymentSourceForm from './payment-source-form'
-import { fetchPaymentSource } from '@/services/settings/payment-source'
 
 export default async function PaymentSourceWrapper() {
   const paymentSources = await fetchPaymentSource()

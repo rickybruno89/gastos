@@ -1,16 +1,16 @@
-import { Metadata } from 'next';
-import Breadcrumbs from '@/components/ui/breadcrumbs';
-import CreditCardCreateForm from './_components/create-form';
-import { fetchPaymentSource } from '@/services/settings/payment-source';
-import { fetchPaymentType } from '@/services/settings/payment-type';
-import { PAGES_URL } from '@/lib/routes';
+import { Metadata } from 'next'
+import Breadcrumbs from '@/components/ui/breadcrumbs'
+import CreditCardCreateForm from './_components/create-form'
+import { fetchPaymentSource } from '@/services/settings'
+import { fetchPaymentType } from '@/services/settings'
+import { PAGES_URL } from '@/lib/routes'
 
 export const metadata: Metadata = {
   title: 'Crear Tarjeta de Crédito',
-};
+}
 export default async function Page() {
-  const paymentSources = await fetchPaymentSource();
-  const paymentType = await fetchPaymentType();
+  const paymentSources = await fetchPaymentSource()
+  const paymentType = await fetchPaymentType()
   return (
     <main>
       <Breadcrumbs
@@ -25,5 +25,5 @@ export default async function Page() {
       />
       <CreditCardCreateForm paymentSources={paymentSources} paymentTypes={paymentType} />
     </main>
-  );
+  )
 }
