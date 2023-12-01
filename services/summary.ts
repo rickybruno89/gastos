@@ -496,6 +496,7 @@ export const updatePaymentSourceCreditCardPaymentSummary = async (
 }
 
 export const fetchPaymentSourceBalance = async (date: string) => {
+  noStore()
   const userId = await getAuthUserId()
   return await prisma.paymentSource.findMany({
     where: {
