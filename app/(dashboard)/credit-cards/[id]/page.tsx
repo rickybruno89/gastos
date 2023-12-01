@@ -1,12 +1,12 @@
 import Breadcrumbs from '@/components/ui/breadcrumbs'
 import ButtonDelete from '@/components/ui/button-delete'
+import ButtonTooltip from '@/components/ui/button-tooltip'
 import LinkButton from '@/components/ui/link-button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { PAGES_URL } from '@/lib/routes'
 import { formatCurrency, formatLocaleDate } from '@/lib/utils'
 import { deleteCreditCardExpenseItem, fetchCreditCardById } from '@/services/credit-card'
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
-import { PlusIcon } from '@radix-ui/react-icons'
+import { PlusIcon } from '@heroicons/react/24/outline'
 import { EditIcon } from 'lucide-react'
 import { Metadata } from 'next'
 import Link from 'next/link'
@@ -88,8 +88,8 @@ export default async function Page({ params }: { params: { id: string } }) {
             {creditCard?.creditCardExpenseItems.length ? (
               creditCard.creditCardExpenseItems.map((item) => (
                 <div key={item.id} className="flex flex-col">
-                  <div className="flex flex-col xl:grid lg:grid-cols-9 gap-2">
-                    <p className="self-center col-span-2">{item.description}</p>
+                  <div className="flex flex-col xl:grid lg:grid-cols-9 ">
+                    <p className="self-center col-span-2 font-bold">{item.description}</p>
                     <p className="self-center">
                       {item.recurrent ? formatCurrency(item.installmentsAmount) : formatCurrency(item.amount)}
                     </p>
@@ -116,37 +116,32 @@ export default async function Page({ params }: { params: { id: string } }) {
                     </div>
 
                     <div className="flex items-center gap-2 justify-self-end self-center">
-                      <TooltipProvider delayDuration={100}>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <InformationCircleIcon className="w-6 h-6 text-blue-500" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div>
-                              Notas:{' '}
-                              {item.notes ? (
-                                <span className="">{item.notes}</span>
-                              ) : (
-                                <span className="italic">No hay notas</span>
-                              )}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider delayDuration={100}>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Link href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.EDIT(id, item.id)}>
-                              <EditIcon className="w-5 h-5" />
-                            </Link>
-                          </TooltipTrigger>
-                          <TooltipContent>Editar item</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <ButtonTooltip
+                        action="click"
+                        content={
+                          <div>
+                            Notas:{' '}
+                            {item.notes ? (
+                              <span className="">{item.notes}</span>
+                            ) : (
+                              <span className="italic">No hay notas</span>
+                            )}
+                          </div>
+                        }
+                        trigger={<InformationCircleIcon className="w-6 h-6 text-blue-500" />}
+                      />
+                      <ButtonTooltip
+                        content="Editar item"
+                        trigger={
+                          <Link href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.EDIT(id, item.id)}>
+                            <EditIcon className="w-5 h-5" />
+                          </Link>
+                        }
+                      />
                       <ButtonDelete action={deleteCreditCardExpenseItem} id={item.id} />
                     </div>
                   </div>
-                  <div className="h-px w-full bg-gray-300" />
+                  <div className="my-2 h-px w-full bg-gray-300" />
                 </div>
               ))
             ) : (

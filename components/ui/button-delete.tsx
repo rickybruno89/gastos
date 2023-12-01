@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { TrashIcon } from '@heroicons/react/24/outline'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
 
 export default function ButtonDelete({ action, id }: any) {
   return (

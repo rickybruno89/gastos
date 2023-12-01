@@ -4,11 +4,12 @@ import LinkButton from '@/components/ui/link-button'
 import { PAGES_URL } from '@/lib/routes'
 import { formatCurrency } from '@/lib/utils'
 import { deleteExpenseItem, fetchExpenses } from '@/services/expense'
-import { InformationCircleIcon, PlusIcon } from '@heroicons/react/24/outline'
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { PlusIcon } from '@heroicons/react/24/outline'
+import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { EditIcon } from 'lucide-react'
+import ButtonTooltip from '@/components/ui/button-tooltip'
 
 export const metadata: Metadata = {
   title: 'Gastos',
@@ -41,8 +42,8 @@ export default async function Page() {
           {expenses.length ? (
             expenses.map((item) => (
               <div key={item.id} className="flex flex-col">
-                <div className="flex flex-wrap md:grid lg:grid-cols-8 gap-2">
-                  <p className="self-center col-span-2">{item.description}</p>
+                <div className="flex flex-col md:grid lg:grid-cols-8">
+                  <p className="self-center col-span-2 font-bold">{item.description}</p>
                   <p className="self-center">{formatCurrency(item.amount)}</p>
                   <p className="self-center col-span-2">
                     {item.paymentType.name} - {item.paymentSource.name}
@@ -57,37 +58,33 @@ export default async function Page() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 justify-self-end self-center col-span-2">
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <InformationCircleIcon className="w-6 h-6 text-blue-500" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div>
-                            Notas:{' '}
-                            {item.notes ? (
-                              <span className="">{item.notes}</span>
-                            ) : (
-                              <span className="italic">No hay notas</span>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Link href={PAGES_URL.EXPENSES.EDIT(item.id)}>
-                            <EditIcon className="w-5 h-5" />
-                          </Link>
-                        </TooltipTrigger>
-                        <TooltipContent>Editar item</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <ButtonTooltip
+                      action="click"
+                      content={
+                        <div>
+                          Notas:{' '}
+                          {item.notes ? (
+                            <span className="">{item.notes}</span>
+                          ) : (
+                            <span className="italic">No hay notas</span>
+                          )}
+                        </div>
+                      }
+                      trigger={<InformationCircleIcon className="w-6 h-6 text-blue-500" />}
+                    />
+                    <ButtonTooltip
+                      action="click"
+                      content="Editar item"
+                      trigger={
+                        <Link href={PAGES_URL.EXPENSES.EDIT(item.id)}>
+                          <EditIcon className="w-5 h-5" />
+                        </Link>
+                      }
+                    />
                     <ButtonDelete action={deleteExpenseItem} id={item.id} />
                   </div>
                 </div>
-                <div className="h-px w-full bg-gray-300" />
+                <div className="my-2 h-px w-full bg-gray-300" />
               </div>
             ))
           ) : (
