@@ -7,13 +7,6 @@ import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
 
-type State = {
-  errors?: {
-    name?: string[]
-  }
-  message?: string | null
-}
-
 const PersonToShareExpenseSchema = z.object({
   id: z.string().cuid(),
   name: z.string().min(1, { message: 'El nombre es requerido' }).toUpperCase(),
@@ -23,7 +16,7 @@ const CreatePersonToShareExpenseSchema = PersonToShareExpenseSchema.omit({
   id: true,
 })
 
-export const createPersonToShare = async (callbackUrl: string, _prevState: State, formData: FormData) => {
+export const createPersonToShare = async (formData: FormData) => {
   try {
     const validatedFields = CreatePersonToShareExpenseSchema.safeParse({
       name: formData.get('name'),
@@ -65,7 +58,8 @@ export const createPersonToShare = async (callbackUrl: string, _prevState: State
   }
   revalidatePath(PAGES_URL.SETTINGS.BASE_PATH)
   revalidatePath(PAGES_URL.CREDIT_CARDS.CREATE)
-  redirect(callbackUrl)
+  revalidatePath(PAGES_URL.EXPENSES.CREATE)
+  redirect(PAGES_URL.SETTINGS.BASE_PATH)
 }
 
 export async function fetchPersonToShare() {

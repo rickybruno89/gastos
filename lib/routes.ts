@@ -18,10 +18,6 @@ export const PAGES_URL = {
   },
   SETTINGS: {
     BASE_PATH: `/settings`,
-    PAYMENT_TYPE_CREATE: `/settings/payment-type/create`,
-    PAYMENT_SOURCE_CREATE: `/settings/payment-source/create`,
-    PERSON_TO_SHARE_EXPENSE: `/settings/person-to-share-expense/create`,
-    CURRENCY_CREATE: `/settings/currency/create`,
   },
   EXPENSES: {
     BASE_PATH: `/expenses`,

@@ -1,5 +1,4 @@
 'use server'
-import { PaymentType } from '@prisma/client'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth'
@@ -8,13 +7,6 @@ import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
 
-type State = {
-  errors?: {
-    name?: string[]
-  }
-  message?: string | null
-}
-
 const PaymentSourceSchema = z.object({
   id: z.string().cuid(),
   name: z.string().min(1, { message: 'El nombre es requerido' }).toUpperCase(),
@@ -22,7 +14,7 @@ const PaymentSourceSchema = z.object({
 
 const CreatePaymentSourceSchema = PaymentSourceSchema.omit({ id: true })
 
-export const createPaymentSource = async (callbackUrl: string, _prevState: State, formData: FormData) => {
+export const createPaymentSource = async (formData: FormData) => {
   try {
     const validatedFields = CreatePaymentSourceSchema.safeParse({
       name: formData.get('name'),
@@ -65,7 +57,7 @@ export const createPaymentSource = async (callbackUrl: string, _prevState: State
   revalidatePath(PAGES_URL.SETTINGS.BASE_PATH)
   revalidatePath(PAGES_URL.CREDIT_CARDS.CREATE)
   revalidatePath(PAGES_URL.EXPENSES.CREATE)
-  redirect(callbackUrl)
+  redirect(PAGES_URL.SETTINGS.BASE_PATH)
 }
 
 export async function fetchPaymentSource() {
