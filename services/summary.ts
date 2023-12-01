@@ -349,7 +349,7 @@ export const setCreditCardPaymentSummaryPaid = async (creditCardExpense: CreditC
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
   }
-  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
 }
 
@@ -374,7 +374,7 @@ export const updateAmountExpenseSummary = async (
       id: expenseSummary.expenseId,
     },
   })
-  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
 }
 
@@ -399,7 +399,7 @@ export const updatePaymentTypeExpenseSummary = async (
       id: expenseSummary.expenseId,
     },
   })
-  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
 }
 
@@ -424,7 +424,7 @@ export const updatePaymentSourceExpenseSummary = async (
       id: expenseSummary.expenseId,
     },
   })
-  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
 }
 
@@ -441,7 +441,7 @@ export const updateAmountCreditCardPaymentSummary = async (
       id: creditCardExpenseSummary.id,
     },
   })
-  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
 }
 
@@ -466,7 +466,7 @@ export const updatePaymentTypeCreditCardPaymentSummary = async (
       id: creditCardExpenseSummary.creditCardId,
     },
   })
-  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
 }
 
@@ -491,7 +491,7 @@ export const updatePaymentSourceCreditCardPaymentSummary = async (
       id: creditCardExpenseSummary.creditCardId,
     },
   })
-  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
 }
 
