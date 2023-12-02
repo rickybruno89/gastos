@@ -124,6 +124,7 @@ export default function CreditCardExpensesSummary({
                         <>
                           <div className="flex justify-end items-center gap-2">
                             <NumericFormat
+                              inputMode="decimal"
                               className="rounded-md text-sm w-full md:w-28"
                               value={item.amount}
                               onChange={(e) => handleCreditCardAmountChange(item, e.target.value)}

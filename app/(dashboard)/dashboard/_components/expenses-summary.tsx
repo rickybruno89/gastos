@@ -124,6 +124,7 @@ export default function ExpensesSummary({
                             <div className="flex justify-end items-center gap-2">
                               <NumericFormat
                                 className="rounded-md text-sm w-full md:w-28"
+                                inputMode="decimal"
                                 value={item.amount}
                                 onChange={(e) => handleExpenseAmountChange(item, e.target.value)}
                                 prefix={'$ '}

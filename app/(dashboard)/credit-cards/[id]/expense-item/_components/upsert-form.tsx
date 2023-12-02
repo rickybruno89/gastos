@@ -115,6 +115,7 @@ export default function UpsertCreditCardExpenseItemForm({
           <div className="relative rounded-md">
             <div className="relative ">
               <NumericFormat
+                inputMode="decimal"
                 className="rounded-md w-full"
                 onChange={(e) => setTotalAmount(removeCurrencyMaskFromInput(e.target.value))}
                 prefix={'$ '}

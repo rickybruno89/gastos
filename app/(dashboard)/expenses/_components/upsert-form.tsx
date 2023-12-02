@@ -104,6 +104,7 @@ export default function UpsertExpenseForm({
           <div className="relative rounded-md">
             <div className="relative ">
               <NumericFormat
+                inputMode="decimal"
                 className="rounded-md w-full"
                 prefix={'$ '}
                 thousandSeparator="."
