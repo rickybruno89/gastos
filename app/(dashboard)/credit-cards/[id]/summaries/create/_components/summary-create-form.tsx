@@ -203,6 +203,7 @@ export default function SummaryCreateForm({
                   </label>
                   <div className="flex justify-end items-center gap-2">
                     <NumericFormat
+                      inputMode="decimal"
                       className="rounded-md w-36 px-2 py-1"
                       value={item.installmentsAmount}
                       onChange={(e) => handleItemAmountChange(e.target.value, item.id)}
@@ -243,6 +244,7 @@ export default function SummaryCreateForm({
             <div className="flex gap-2 justify-end items-center">
               <p className="font-bold">Total</p>
               <NumericFormat
+                inputMode="decimal"
                 className="rounded-md w-36 px-2 py-1"
                 name="totalAmount"
                 id="totalAmount"

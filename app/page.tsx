@@ -16,7 +16,7 @@ export default async function Page() {
   if (session?.user.id) return redirect(PAGES_URL.DASHBOARD.BASE_PATH)
   return (
     <main className="flex min-h-screen flex-col p-6">
-      <div className="flex h-20 shrink-0 items-end rounded-lg bg-blue-500 p-4 md:h-52">
+      <div className="flex shrink-0 items-end rounded-lg bg-blue-500 p-4 md:h-52">
         <h1 className="font-bold text-white text-4xl">Bienvenido a Gastos</h1>
       </div>
       <div className="mt-4 flex grow flex-col gap-4 md:flex-row">
