@@ -10,6 +10,10 @@ export const metadata: Metadata = {
     default: 'Inicio',
   },
   description: 'Lleva la cuenta de tus gastos mensuales',
+  manifest: '/manifest.json',
+  icons: {
+    apple: '/icon.png',
+  },
 }
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
