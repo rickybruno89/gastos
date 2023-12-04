@@ -1,28 +1,22 @@
-import "@/app/globals.css"
+import '@/app/globals.css'
 
-import { Metadata } from 'next';
-import { NextAuthProvider } from "./Providers";
-import { inter } from "@/components/ui/fonts";
+import { Metadata } from 'next'
+import { NextAuthProvider } from './Providers'
+import { inter } from '@/components/ui/fonts'
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Gastos',
-    default: 'Gastos',
+    template: '%s | GastosApp',
+    default: 'Inicio',
   },
   description: 'Lleva la cuenta de tus gastos mensuales',
-};
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+}
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased bg-gray-100`}>
-        <NextAuthProvider>
-          {children}
-        </NextAuthProvider>
+        <NextAuthProvider>{children}</NextAuthProvider>
       </body>
     </html>
-  );
+  )
 }
