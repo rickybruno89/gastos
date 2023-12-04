@@ -69,7 +69,7 @@ export default function CreditCardExpensesSummary({
   return (
     <>
       {creditCardExpenseSummaries?.length ? (
-        <section className="rounded-md bg-white p-4 md:p-6 w-full lg:w-fit flex flex-col gap-2">
+        <section className="rounded-md bg-white p-4 md:p-6 w-full lg:w-fit flex flex-col">
           <Accordion type="single" collapsible>
             <AccordionItem value="item-1">
               <AccordionTrigger>
@@ -140,7 +140,7 @@ export default function CreditCardExpensesSummary({
                         </>
                       )}
                     </div>
-                    <div className="h-px bg-gray-300" />
+                    <div className="h-px mb-2 bg-gray-300" />
                   </div>
                 ))}
               </AccordionContent>
