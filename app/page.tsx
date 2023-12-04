@@ -8,7 +8,7 @@ import { Metadata } from 'next'
 import { PAGES_URL } from '@/lib/routes'
 
 export const metadata: Metadata = {
-  title: 'Login',
+  title: 'Bienvenidos | GastosApp',
 }
 
 export default async function Page() {

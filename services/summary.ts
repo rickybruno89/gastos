@@ -74,6 +74,18 @@ export async function fetchCreditCardSummaryById(id: string) {
         paymentSource: true,
         paymentType: true,
         itemHistoryPayment: {
+          orderBy: [
+            {
+              creditCardExpenseItem: {
+                recurrent: 'desc',
+              },
+            },
+            {
+              creditCardExpenseItem: {
+                createdAt: 'asc',
+              },
+            },
+          ],
           include: {
             creditCardExpenseItem: true,
           },
@@ -200,6 +212,7 @@ export const createSummaryForCreditCard = async (
         },
       },
     })
+
     await prisma.creditCardExpenseItem.updateMany({
       data: {
         finished: true,
@@ -215,6 +228,19 @@ export const createSummaryForCreditCard = async (
         },
       },
     })
+
+    const promises = creditCardExpenseItems.map((item) =>
+      prisma.creditCardExpenseItem.update({
+        data: {
+          installmentsAmount: item.installmentsAmount,
+        },
+        where: {
+          id: item.id,
+        },
+      })
+    )
+
+    await Promise.all(promises)
   } catch (error) {
     return {
       message: 'Error en base de datos',

@@ -326,7 +326,10 @@ export async function fetchCreditCardById(id: string) {
           },
           orderBy: [
             {
-              paymentBeginning: 'asc',
+              recurrent: 'desc',
+            },
+            {
+              createdAt: 'asc',
             },
           ],
           include: {
