@@ -37,10 +37,19 @@ export default function SummaryCreateForm({
 
   const [state, dispatch] = useFormState(createSummaryForCreditCardWithId, initialState)
   const [selectedItems, setSelectedItems] = useState(
-    creditCard.creditCardExpenseItems.map((item) => ({ ...item, checked: true }))
+    creditCard.creditCardExpenseItems.map((item) => ({ ...item, checked: getToday() >= item.paymentBeginning }))
   )
   const [total, setTotal] = useState(0)
   const [subtotal, setSubtotal] = useState(0)
+  const [datePicker, setDatePicker] = useState(getToday())
+
+  const handleChangeDatePicker = (date: string) => {
+    setDatePicker(date)
+    const newSelectedItems = selectedItems.map((item) => {
+      return { ...item, checked: date >= item.paymentBeginning }
+    })
+    setSelectedItems(newSelectedItems)
+  }
 
   const handleItemChecked = (checked: boolean, id: string) => {
     const newSelectedItems = selectedItems.map((item) => {
@@ -165,7 +174,8 @@ export default function SummaryCreateForm({
           <div>
             <input
               id="date"
-              defaultValue={getToday()}
+              value={datePicker}
+              onChange={(e) => handleChangeDatePicker(e.target.value)}
               name="date"
               type="month"
               className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
