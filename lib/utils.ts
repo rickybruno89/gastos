@@ -26,6 +26,17 @@ export const formatLocaleDate = (date: string) => {
   })
 }
 
+export const formatLocaleDueDate = (date: string) => {
+  const [year, month, day] = date.split('-')
+  const adjustedDate = new Date(`${year}-${month}-${day}T00:00:00`)
+
+  return adjustedDate.toLocaleDateString('es-AR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 export const getToday = () => {
   const now = new Date()
   const year = now.getFullYear()

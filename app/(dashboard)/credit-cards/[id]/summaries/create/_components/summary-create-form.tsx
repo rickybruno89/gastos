@@ -189,6 +189,26 @@ export default function SummaryCreateForm({
             </div>
           ) : null}
         </div>
+        <div>
+          <label className="mb-2 block text-sm font-medium" htmlFor="date">
+            Fecha de vencimiento
+          </label>
+          <div>
+            <input
+              id="dueDate"
+              name="dueDate"
+              type="date"
+              className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
+            />
+          </div>
+          {state.errors?.dueDate ? (
+            <div id="dueDate-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+              {state.errors.dueDate.map((error: string) => (
+                <p key={error}>{error}</p>
+              ))}
+            </div>
+          ) : null}
+        </div>
 
         <div className="flex flex-col gap-4">
           <p className="mb-2 block text-sm font-medium">Seleccione los items a pagar</p>

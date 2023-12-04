@@ -3,7 +3,7 @@ import ButtonDelete from '@/components/ui/button-delete'
 import ButtonTooltip from '@/components/ui/button-tooltip'
 import LinkButton from '@/components/ui/link-button'
 import { PAGES_URL } from '@/lib/routes'
-import { formatCurrency, formatLocaleDate } from '@/lib/utils'
+import { formatCurrency, formatLocaleDate, formatLocaleDueDate } from '@/lib/utils'
 import { deleteCreditCardExpenseItem, fetchCreditCardById } from '@/services/credit-card'
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import { PlusIcon } from '@heroicons/react/24/outline'
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 const GenerateSummaryButton = ({ creditCardId }: { creditCardId: string }) => (
   <Link
     href={PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE(creditCardId)}
-    className="p-4 md:p-6 flex flex-col whitespace-nowrap w-56 h-32  rounded-md border border-dashed border-blue-400 items-center justify-center gap-1 text-blue-400 cursor-pointer"
+    className="p-4 md:p-6 flex flex-col whitespace-nowrap w-40 h-32  rounded-md border border-dashed border-blue-400 items-center justify-center gap-1 text-blue-400 cursor-pointer"
   >
     <PlusIcon className="w-12" />
     Generar resumen
@@ -67,9 +67,10 @@ export default async function Page({ params }: { params: { id: string } }) {
               <Link
                 href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(id, summary.id)}
                 key={summary.id}
-                className="rounded-md bg-white p-4 md:p-6 flex flex-col justify-center  mb-4 whitespace-nowrap w-56 h-32"
+                className="rounded-md bg-white p-4 md:p-6 flex flex-col justify-center  mb-4 whitespace-nowrap h-32"
               >
                 <p className="uppercase font-bold">{formatLocaleDate(summary.date)}</p>
+                <p>Vence el {formatLocaleDueDate(summary.dueDate)}</p>
                 <p>{formatCurrency(summary.amount)} </p>
                 {summary.paid ? <p className="text-green-500">PAGADO</p> : <p className="text-red-500">NO PAGADO</p>}
               </Link>

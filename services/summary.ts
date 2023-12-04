@@ -103,6 +103,7 @@ type CreateCreditCardPaymentSummaryState = {
   errors?: {
     creditCardExpenseItems?: string[]
     date?: string[]
+    dueDate?: string[]
     paymentTypeId?: string[]
     paymentSourceId?: string[]
     totalAmount?: string[]
@@ -120,7 +121,8 @@ const CreditCardPaymentSummarySchema = z.object({
       installmentsQuantity: z.number(),
     })
     .array(),
-  date: z.string().min(1, { message: 'Ingrese una fecha' }),
+  date: z.string().min(1, { message: 'Ingrese la fecha del resumen' }),
+  dueDate: z.string().min(1, { message: 'Ingrese una fecha de vencimiento' }),
   paymentTypeId: z.string({
     invalid_type_error: 'Por favor seleccione una forma de pago',
   }),
@@ -145,6 +147,7 @@ export const createSummaryForCreditCard = async (
     const validatedFields = CreateCreditCardPaymentSummarySchema.safeParse({
       creditCardExpenseItems: creditCardExpenseItemsParsed,
       date: formData.get('date'),
+      dueDate: formData.get('dueDate'),
       paymentTypeId: formData.get('paymentTypeId'),
       paymentSourceId: formData.get('paymentSourceId'),
       totalAmount: formData.get('totalAmount'),
@@ -159,7 +162,7 @@ export const createSummaryForCreditCard = async (
 
     const userId = await getAuthUserId()
 
-    const { creditCardExpenseItems, date, paymentTypeId, paymentSourceId, totalAmount } = validatedFields.data
+    const { creditCardExpenseItems, date, paymentTypeId, paymentSourceId, totalAmount, dueDate } = validatedFields.data
 
     const existingSummaryForCreditCard = await prisma.creditCardPaymentSummary.findFirst({
       where: {
@@ -181,6 +184,7 @@ export const createSummaryForCreditCard = async (
       data: {
         amount: parseFloat(totalAmount),
         date,
+        dueDate,
         paid: false,
         paymentTypeId,
         paymentSourceId,

@@ -29,12 +29,12 @@ export default function MonthSelector() {
   }
 
   return (
-    <section className="rounded-md bg-white p-4 md:p-6 w-fit flex gap-4">
-      <h1>Seleccione el mes para ver los resumenes</h1>
+    <section className="w-full flex gap-x-4 flex-col md:flex-row items-center">
+      <p className="font-bold text-center">Seleccione el mes para ver los resumenes</p>
       <input
         type="month"
         value={date}
-        className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
+        className="peer block rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500 w-full md:max-w-[250px]"
         onChange={(e) => handleChangeDate(e.target.value)}
       />
     </section>
