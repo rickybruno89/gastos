@@ -67,7 +67,7 @@ export default function ExpensesSummary({
   return (
     <>
       {expenseSummaries?.length ? (
-        <section className="rounded-md bg-white p-4 md:p-6 w-full lg:w-fit flex flex-col gap-2">
+        <section className="rounded-md bg-white px-4 md:px-6 w-full lg:w-fit flex flex-col gap-2">
           <Accordion type="single" collapsible>
             <AccordionItem value="item-1">
               <AccordionTrigger>
