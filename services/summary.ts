@@ -203,36 +203,6 @@ export const createSummaryForCreditCard = async (
       },
     })
 
-    await prisma.creditCardExpenseItem.updateMany({
-      data: {
-        installmentsPaid: {
-          increment: 1,
-        },
-      },
-      where: {
-        recurrent: false,
-        id: {
-          in: creditCardExpenseItems.map((item) => item.id),
-        },
-      },
-    })
-
-    await prisma.creditCardExpenseItem.updateMany({
-      data: {
-        finished: true,
-        finishedAt: new Date(),
-      },
-      where: {
-        id: {
-          in: creditCardExpenseItems.map((item) => item.id),
-        },
-        recurrent: false,
-        installmentsPaid: {
-          equals: prisma.creditCardExpenseItem.fields.installmentsQuantity,
-        },
-      },
-    })
-
     const promises = creditCardExpenseItems.map((item) =>
       prisma.creditCardExpenseItem.update({
         data: {
@@ -354,27 +324,63 @@ export const setExpensePaymentSummaryPaid = async (expenseItem: ExpensePaymentSu
 }
 
 export const setCreditCardPaymentSummaryPaid = async (creditCardExpense: CreditCardPaymentSummary) => {
+  const creditCardPaymentSummaryExpenseItems = await prisma.creditCardSummaryExpenseItem.findMany({
+    where: {
+      creditCardPaymentSummaryId: creditCardExpense.id,
+    },
+  })
+
   try {
-    await prisma.creditCardPaymentSummary.update({
-      data: {
-        paid: true,
-        amount: creditCardExpense.amount,
-        paymentSourceId: creditCardExpense.paymentSourceId,
-        paymentTypeId: creditCardExpense.paymentTypeId,
-      },
-      where: {
-        id: creditCardExpense.id,
-      },
-    })
-    await prisma.creditCard.update({
-      data: {
-        paymentSourceId: creditCardExpense.paymentSourceId,
-        paymentTypeId: creditCardExpense.paymentTypeId,
-      },
-      where: {
-        id: creditCardExpense.creditCardId,
-      },
-    })
+    await prisma.$transaction([
+      prisma.creditCardPaymentSummary.update({
+        data: {
+          paid: true,
+          amount: creditCardExpense.amount,
+          paymentSourceId: creditCardExpense.paymentSourceId,
+          paymentTypeId: creditCardExpense.paymentTypeId,
+        },
+        where: {
+          id: creditCardExpense.id,
+        },
+      }),
+      prisma.creditCard.update({
+        data: {
+          paymentSourceId: creditCardExpense.paymentSourceId,
+          paymentTypeId: creditCardExpense.paymentTypeId,
+        },
+        where: {
+          id: creditCardExpense.creditCardId,
+        },
+      }),
+      prisma.creditCardExpenseItem.updateMany({
+        data: {
+          installmentsPaid: {
+            increment: 1,
+          },
+        },
+        where: {
+          recurrent: false,
+          id: {
+            in: creditCardPaymentSummaryExpenseItems.map((item) => item.creditCardExpenseItemId),
+          },
+        },
+      }),
+      prisma.creditCardExpenseItem.updateMany({
+        data: {
+          finished: true,
+          finishedAt: new Date(),
+        },
+        where: {
+          id: {
+            in: creditCardPaymentSummaryExpenseItems.map((item) => item.creditCardExpenseItemId),
+          },
+          recurrent: false,
+          installmentsPaid: {
+            equals: prisma.creditCardExpenseItem.fields.installmentsQuantity,
+          },
+        },
+      }),
+    ])
   } catch (error) {
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
