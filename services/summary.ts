@@ -1,5 +1,5 @@
 'use server'
-import { CreditCardPaymentSummary, Expense, ExpensePaymentSummary } from '@prisma/client'
+import { CreditCardPaymentSummary, Expense, ExpensePaymentSummary, Prisma } from '@prisma/client'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth'
@@ -65,6 +65,19 @@ export const generateExpenseSummaryForMonth = async (date: string) => {
 
 export async function fetchCreditCardSummaryById(id: string) {
   noStore()
+  type DataWithInclude = Prisma.CreditCardPaymentSummaryGetPayload<{
+    include: {
+      creditCard: true
+      paymentSource: true
+      paymentType: true
+      itemHistoryPayment: {
+        include: {
+          creditCardExpenseItem: true
+        }
+      }
+    }
+  }>
+
   try {
     const data = await prisma.creditCardPaymentSummary.findUnique({
       where: {
@@ -93,7 +106,16 @@ export async function fetchCreditCardSummaryById(id: string) {
         },
       },
     })
-    return data
+    return {
+      ...data,
+      itemHistoryPayment: data!.itemHistoryPayment.map((item) => ({
+        ...item,
+        creditCardExpenseItem: {
+          ...item.creditCardExpenseItem,
+          description: decryptString(item.creditCardExpenseItem.description),
+        },
+      })),
+    } as DataWithInclude
   } catch (error) {
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
@@ -229,6 +251,24 @@ export const createSummaryForCreditCard = async (
 export async function fetchCreditCardSummariesForMonth(date: string) {
   noStore()
   const userId = await getAuthUserId()
+
+  type DataWithInclude = Prisma.CreditCardPaymentSummaryGetPayload<{
+    include: {
+      creditCard: true
+      paymentSource: true
+      paymentType: true
+      itemHistoryPayment: {
+        include: {
+          creditCardExpenseItem: {
+            include: {
+              sharedWith: true
+            }
+          }
+        }
+      }
+    }
+  }>
+
   try {
     const data = await prisma.creditCardPaymentSummary.findMany({
       orderBy: {
@@ -255,7 +295,16 @@ export async function fetchCreditCardSummariesForMonth(date: string) {
         },
       },
     })
-    return data
+    return data.map((summary) => ({
+      ...summary,
+      itemHistoryPayment: summary.itemHistoryPayment.map((item) => ({
+        ...item,
+        creditCardExpenseItem: {
+          ...item.creditCardExpenseItem,
+          description: decryptString(item.creditCardExpenseItem.description),
+        },
+      })),
+    })) as DataWithInclude[]
   } catch (error) {
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
@@ -265,6 +314,19 @@ export async function fetchCreditCardSummariesForMonth(date: string) {
 export async function fetchExpenseSummariesForMonth(date: string) {
   noStore()
   const userId = await getAuthUserId()
+
+  type DataWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
+    include: {
+      paymentSource: true
+      paymentType: true
+      expense: {
+        include: {
+          sharedWith: true
+        }
+      }
+    }
+  }>
+
   try {
     const data = await prisma.expensePaymentSummary.findMany({
       where: {
@@ -292,7 +354,7 @@ export async function fetchExpenseSummariesForMonth(date: string) {
         ...item.expense,
         description: decryptString(item.expense.description),
       },
-    }))
+    })) as DataWithInclude[]
   } catch (error) {
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')

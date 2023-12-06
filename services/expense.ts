@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
 import { decryptString, encryptString, removeCurrencyMaskFromInput } from '@/lib/utils'
-import { Expense } from '@prisma/client'
+import { Expense, Prisma } from '@prisma/client'
 
 type CreateExpenseState = {
   errors?: {
@@ -130,6 +130,15 @@ export const updateExpense = async (id: string, _prevState: CreateExpenseState, 
 
 export async function fetchExpenseItem(id: string) {
   noStore()
+
+  type DataWithInclude = Prisma.ExpenseGetPayload<{
+    include: {
+      paymentSource: true
+      paymentType: true
+      sharedWith: true
+    }
+  }>
+
   try {
     const data = (await prisma.expense.findUnique({
       where: {
@@ -141,7 +150,7 @@ export async function fetchExpenseItem(id: string) {
         sharedWith: true,
       },
     })) as Expense
-    return { ...data, description: decryptString(data.description) }
+    return { ...data, description: decryptString(data.description) } as DataWithInclude
   } catch (error) {
     console.error('Error:', error)
     throw new Error('Error al cargar gasto')
@@ -150,6 +159,14 @@ export async function fetchExpenseItem(id: string) {
 
 export async function fetchExpenses() {
   noStore()
+  type DataWithInclude = Prisma.ExpenseGetPayload<{
+    include: {
+      paymentSource: true
+      paymentType: true
+      sharedWith: true
+    }
+  }>
+
   try {
     const data = await prisma.expense.findMany({
       where: {
@@ -162,11 +179,10 @@ export async function fetchExpenses() {
         sharedWith: true,
       },
     })
-    const decryptedData = data.map((expense) => ({
+    return data.map((expense) => ({
       ...expense,
       description: decryptString(expense.description),
-    }))
-    return decryptedData
+    })) as DataWithInclude[]
   } catch (error) {
     console.error('Error:', error)
     throw new Error('Error al cargar Gastos')

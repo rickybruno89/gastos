@@ -16,6 +16,19 @@ export async function GET() {
       })
     )
   }
+  const creditCardExpenses = await prisma.creditCardExpenseItem.findMany()
+  for (const creditCardExpense of creditCardExpenses) {
+    transactions.push(
+      prisma.creditCardExpenseItem.update({
+        data: {
+          description: encryptString(creditCardExpense.description),
+        },
+        where: {
+          id: creditCardExpense.id,
+        },
+      })
+    )
+  }
   await Promise.all(transactions)
   return new Response('OK', {
     status: 200,
