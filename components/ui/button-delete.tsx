@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { TrashIcon } from '@heroicons/react/24/outline'
 
-export default function ButtonDelete({ action, id }: any) {
+export default function ButtonDelete({ action, id }: { action: (id: string) => void; id: string }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>

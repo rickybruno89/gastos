@@ -9,11 +9,13 @@ import {
   updatePaymentSourceExpenseSummary,
   addExpenseToSummary,
 } from '@/services/summary'
-import { Expense, ExpensePaymentSummary, PaymentSource, PaymentType, Prisma } from '@prisma/client'
-import React from 'react'
+import { ExpensePaymentSummary, PaymentSource, PaymentType, Prisma } from '@prisma/client'
+import React, { useState } from 'react'
 import { NumericFormat } from 'react-number-format'
 import { debounce } from 'lodash'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import Link from 'next/link'
+import { PAGES_URL } from '@/lib/routes'
 
 type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -48,6 +50,8 @@ export default function ExpensesSummary({
   expenses: ExpensesWithInclude[]
   date: string
 }) {
+  const [isLoading, setIsLoading] = useState(false)
+
   const handleExpenseAmountChange = debounce((expenseSummary: ExpensePaymentSummary, inputAmount: string) => {
     const amount = removeCurrencyMaskFromInput(inputAmount)
     updateAmountExpenseSummary(expenseSummary, amount, date)
@@ -60,8 +64,10 @@ export default function ExpensesSummary({
     updatePaymentSourceExpenseSummary(expenseSummary, paymentSourceId, date)
   }
 
-  const payExpense = (item: ExpensePaymentSummary) => {
-    setExpensePaymentSummaryPaid(item)
+  const payExpense = async (item: ExpensePaymentSummary) => {
+    setIsLoading(true)
+    await setExpensePaymentSummaryPaid(item)
+    setIsLoading(false)
   }
 
   return (
@@ -78,7 +84,9 @@ export default function ExpensesSummary({
                   {expenseSummaries.map((item) => (
                     <div key={item.expenseId} className="flex flex-col gap-2">
                       <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4">
-                        <p className="font-bold lg:self-center">{item.expense.description}</p>
+                        <Link className="font-bold lg:self-center" href={PAGES_URL.EXPENSES.BASE_PATH}>
+                          {item.expense.description}
+                        </Link>
                         <div>
                           <div>
                             <select
@@ -133,7 +141,7 @@ export default function ExpensesSummary({
                                 decimalSeparator=","
                               />
                             </div>
-                            <Button size={'sm'} onClick={() => payExpense(item)}>
+                            <Button disabled={isLoading} size={'sm'} onClick={() => payExpense(item)}>
                               Pagar
                             </Button>
                           </>

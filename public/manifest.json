@@ -5,7 +5,7 @@
     "scope": "/",
     "start_url": "/",
     "name": "GastosApp",
-    "short_name": "gastosapp",
+    "short_name": "GastosApp",
     "description": "Lleva tus gastos mensuales de pagos recurrentes y tarjeta de creditos",
     "icons": [
         {
