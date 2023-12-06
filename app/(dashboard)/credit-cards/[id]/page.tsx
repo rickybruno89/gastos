@@ -5,9 +5,10 @@ import LinkButton from '@/components/ui/link-button'
 import { PAGES_URL } from '@/lib/routes'
 import { formatCurrency, formatLocaleDate, formatLocaleDueDate } from '@/lib/utils'
 import { deleteCreditCardExpenseItem, fetchCreditCardById } from '@/services/credit-card'
+import { deleteCreditCardPaymentSummary } from '@/services/summary'
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import { PlusIcon } from '@heroicons/react/24/outline'
-import { EditIcon } from 'lucide-react'
+import { EditIcon, EyeIcon } from 'lucide-react'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import React from 'react'
@@ -63,17 +64,24 @@ export default async function Page({ params }: { params: { id: string } }) {
           <h1 className="text-xl font-bold mb-2">Resúmenes</h1>
           <div className="flex flex-row flex-nowrap overflow-x-auto gap-x-4">
             <GenerateSummaryButton creditCardId={id} />
-            {creditCard!.paymentSummaries.map((summary) => (
-              <Link
-                href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(id, summary.id)}
+            {creditCard!.paymentSummaries.map((summary, index) => (
+              <div
                 key={summary.id}
                 className="rounded-md bg-white p-4 md:p-6 flex flex-col justify-center  mb-4 whitespace-nowrap h-32"
               >
                 <p className="uppercase font-bold">{formatLocaleDate(summary.date)}</p>
                 <p>Vence el {formatLocaleDueDate(summary.dueDate)}</p>
                 <p>{formatCurrency(summary.amount)} </p>
-                {summary.paid ? <p className="text-green-500">PAGADO</p> : <p className="text-red-500">NO PAGADO</p>}
-              </Link>
+                <div className="flex flex-wrap justify-between items-center">
+                  {summary.paid ? <p className="text-green-500">PAGADO</p> : <p className="text-red-500">NO PAGADO</p>}
+                  <div className="flex flex-row gap-2 justify-center items-center">
+                    {index === 0 ? <ButtonDelete action={deleteCreditCardPaymentSummary} id={summary.id} /> : null}
+                    <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(id, summary.id)}>
+                      <EyeIcon className="w-6 text-blue-500" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </section>

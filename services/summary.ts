@@ -389,6 +389,61 @@ export const setCreditCardPaymentSummaryPaid = async (creditCardExpense: CreditC
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
 }
 
+export const deleteCreditCardPaymentSummary = async (id: string) => {
+  const creditCardPaymentSummary = await prisma.creditCardPaymentSummary.findUnique({
+    where: {
+      id,
+    },
+    include: {
+      itemHistoryPayment: true,
+    },
+  })
+
+  const prismaTransactions = []
+
+  if (creditCardPaymentSummary?.paid)
+    prismaTransactions.push(
+      prisma.creditCardExpenseItem.updateMany({
+        data: {
+          installmentsPaid: {
+            decrement: 1,
+          },
+          finished: false,
+          finishedAt: null,
+        },
+        where: {
+          id: {
+            in: creditCardPaymentSummary.itemHistoryPayment.map((item) => item.creditCardExpenseItemId),
+          },
+          recurrent: false,
+        },
+      })
+    )
+
+  prismaTransactions.push(
+    prisma.creditCardSummaryExpenseItem.deleteMany({
+      where: {
+        creditCardPaymentSummaryId: id,
+      },
+    }),
+    prisma.creditCardPaymentSummary.delete({
+      where: {
+        id,
+      },
+    })
+  )
+
+  try {
+    await prisma.$transaction(prismaTransactions)
+  } catch (error) {
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
+  }
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardPaymentSummary!.date}`)
+  revalidatePath(`${PAGES_URL.CREDIT_CARDS.DETAILS(creditCardPaymentSummary!.creditCardId)}`)
+  redirect(`${PAGES_URL.CREDIT_CARDS.DETAILS(creditCardPaymentSummary!.creditCardId)}`)
+}
+
 export const updateAmountExpenseSummary = async (
   expenseSummary: ExpensePaymentSummary,
   amount: number,

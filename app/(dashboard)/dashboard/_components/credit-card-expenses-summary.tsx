@@ -8,7 +8,7 @@ import {
   updatePaymentSourceCreditCardPaymentSummary,
 } from '@/services/summary'
 import { CreditCardPaymentSummary, PaymentSource, PaymentType, Prisma } from '@prisma/client'
-import React from 'react'
+import React, { useState } from 'react'
 import { NumericFormat } from 'react-number-format'
 import { debounce } from 'lodash'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
@@ -41,6 +41,7 @@ export default function CreditCardExpensesSummary({
   creditCardExpenseSummaries: CreditCardExpensesWithInclude[]
   date: string
 }) {
+  const [isLoading, setIsLoading] = useState(false)
   const handleCreditCardAmountChange = debounce(
     (creditCardExpenseSummary: CreditCardPaymentSummary, inputAmount: string) => {
       const amount = removeCurrencyMaskFromInput(inputAmount)
@@ -62,8 +63,10 @@ export default function CreditCardExpensesSummary({
     updatePaymentSourceCreditCardPaymentSummary(creditCardExpenseSummary, paymentSourceId, date)
   }
 
-  const payCreditCardExpense = (item: CreditCardExpensesWithInclude) => {
-    setCreditCardPaymentSummaryPaid(item)
+  const payCreditCardExpense = async (item: CreditCardExpensesWithInclude) => {
+    setIsLoading(true)
+    await setCreditCardPaymentSummaryPaid(item)
+    setIsLoading(false)
   }
 
   return (
@@ -86,7 +89,7 @@ export default function CreditCardExpensesSummary({
                         </p>
                       </div>
 
-                      <div>
+                      <div className="lg:justify-self-center lg:self-center">
                         <div>
                           <select
                             className="rounded-md text-sm w-full md:w-fit"
@@ -103,7 +106,7 @@ export default function CreditCardExpensesSummary({
                         </div>
                       </div>
 
-                      <div>
+                      <div className="lg:justify-self-center lg:self-center">
                         <div>
                           <select
                             className="rounded-md text-sm w-full md:w-fit"
@@ -140,7 +143,12 @@ export default function CreditCardExpensesSummary({
                               decimalSeparator=","
                             />
                           </div>
-                          <Button size={'sm'} onClick={() => payCreditCardExpense(item)}>
+                          <Button
+                            className="lg:justify-self-center lg:self-center"
+                            disabled={isLoading}
+                            size={'sm'}
+                            onClick={() => payCreditCardExpense(item)}
+                          >
                             Pagar
                           </Button>
                         </>
