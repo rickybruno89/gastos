@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
+import { decryptString } from '@/lib/utils'
 
 export const addExpenseToSummary = async (date: string, expense: Expense) => {
   try {
@@ -285,7 +286,13 @@ export async function fetchExpenseSummariesForMonth(date: string) {
         },
       },
     })
-    return data
+    return data.map((item) => ({
+      ...item,
+      expense: {
+        ...item.expense,
+        description: decryptString(item.expense.description),
+      },
+    }))
   } catch (error) {
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')

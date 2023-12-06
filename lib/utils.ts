@@ -1,6 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/library'
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import crypto from 'crypto-js'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -56,4 +57,11 @@ export const getNextMonthDate = () => {
   const formattedMonth = month < 10 ? `0${month}` : `${month}`
 
   return `${year}-${formattedMonth}`
+}
+
+export const encryptString = (string: string) => crypto.AES.encrypt(string, process.env.CRYPTO_SECRET!).toString()
+
+export const decryptString = (string: string) => {
+  const bytes = crypto.AES.decrypt(string, process.env.CRYPTO_SECRET!)
+  return bytes.toString(crypto.enc.Utf8)
 }
