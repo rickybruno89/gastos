@@ -12,6 +12,8 @@ import React, { useState } from 'react'
 import { NumericFormat } from 'react-number-format'
 import { debounce } from 'lodash'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import Link from 'next/link'
+import { PAGES_URL } from '@/lib/routes'
 
 type CreditCardExpensesWithInclude = Prisma.CreditCardPaymentSummaryGetPayload<{
   include: {
@@ -82,12 +84,12 @@ export default function CreditCardExpensesSummary({
                 {creditCardExpenseSummaries.map((item) => (
                   <div key={item.id} className="flex flex-col gap-2">
                     <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4">
-                      <div>
+                      <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCard.id, item.id)}>
                         <p className="font-bold lg:self-center justify-self-start">{item.creditCard.name}</p>
                         <p className="lg:self-center justify-self-start">
                           Vence el {formatLocaleDueDate(item.dueDate)}
                         </p>
-                      </div>
+                      </Link>
 
                       <div className="lg:justify-self-center lg:self-center">
                         <div>

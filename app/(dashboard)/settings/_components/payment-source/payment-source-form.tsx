@@ -60,10 +60,10 @@ export default function PaymentSourceForm() {
               ) : null}
             </div>
             <div className="flex justify-end gap-4">
+              <Button type="submit">Guardar</Button>
               <Button variant={'outline'} onClick={handleCancel}>
                 Cancelar
               </Button>
-              <Button type="submit">Guardar</Button>
             </div>
           </div>
         </form>
