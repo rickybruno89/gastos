@@ -108,7 +108,7 @@ export default function ExpensesSummary({
                 <div className="rounded-md bg-white p-4 md:p-6 w-full lg:w-fit flex flex-col gap-2">
                   {expenseSummaries.map((item) => (
                     <div key={item.expenseId} className="flex flex-col gap-3">
-                      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-2 lg:items-center">
+                      <div className="flex flex-col lg:grid lg:grid-cols-4 gap-2 lg:items-center">
                         <div className="flex justify-start gap-2 items-center">
                           {item.paid ? (
                             <CheckCircle2 className="w-5 text-green-500" />
@@ -164,7 +164,7 @@ export default function ExpensesSummary({
                           </select>
                         </div>
                         {item.paid ? (
-                          <div className="text-right font-bold">
+                          <div className="text-right font-bold col-span-2 ">
                             {item.amount ? (
                               <span>Pagado {formatCurrency(item.amount)}</span>
                             ) : (
@@ -172,9 +172,9 @@ export default function ExpensesSummary({
                             )}
                           </div>
                         ) : (
-                          <div className="flex justify-between items-center gap-1">
+                          <div className="flex justify-between items-center gap-1 col-span-2">
                             <NumericFormat
-                              className="rounded-md text-xs w-full md:w-fit p-2"
+                              className="rounded-md text-xs p-2 w-1/2"
                               inputMode="decimal"
                               value={item.amount}
                               onChange={(e) => handleExpenseAmountChange(item, e.target.value)}
@@ -183,16 +183,22 @@ export default function ExpensesSummary({
                               decimalScale={2}
                               decimalSeparator=","
                             />
-                            <div>
+                            <div className="flex gap-2 w-1/2">
                               <Button
                                 disabled={isLoading}
                                 size={'sm'}
-                                variant={'ghost'}
+                                variant={'secondary'}
                                 onClick={() => dontPayExpense(item)}
+                                className="w-full"
                               >
-                                No se paga
+                                Omitir
                               </Button>
-                              <Button disabled={isLoading} size={'sm'} onClick={() => payExpense(item)}>
+                              <Button
+                                className="w-full"
+                                disabled={isLoading}
+                                size={'sm'}
+                                onClick={() => payExpense(item)}
+                              >
                                 Pagar
                               </Button>
                             </div>

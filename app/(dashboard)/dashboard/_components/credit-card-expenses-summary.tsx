@@ -147,7 +147,7 @@ export default function CreditCardExpensesSummary({
                           </select>
                         </div>
                         {item.paid ? (
-                          <span className="font-bold text-right">{formatCurrency(item.amount)}</span>
+                          <span className="font-bold text-right">Pagado {formatCurrency(item.amount)}</span>
                         ) : (
                           <div className="flex justify-between items-center gap-1">
                             <NumericFormat
