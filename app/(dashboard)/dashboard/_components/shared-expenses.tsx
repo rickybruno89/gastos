@@ -1,5 +1,6 @@
 import { formatCurrency } from '@/lib/utils'
 import { Prisma } from '@prisma/client'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 type ExpensesWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -118,31 +119,42 @@ export default function SharedExpenses({
   const sharedExpenses = calcSharedExpenses(expenseSummaries, creditCardExpenseSummaries)
 
   return (
-    <>
-      <p className="font-bold">Gastos compartidos</p>
-      <div className="flex flex-wrap gap-4">
-        {sharedExpenses.length ? (
-          sharedExpenses.map((shared) => (
-            <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col" key={shared.id}>
-              <p className="font-bold">{shared.name}</p>
-              {shared.items.map((item) => (
-                <div key={item.id}>
-                  <div className="flex flex-wrap justify-between">
-                    <span className="md:mr-6">
-                      {item.description} {`(${formatCurrency(item.amount)})`}
-                    </span>
-                    <span className="font-bold">{formatCurrency(item.amountToPay)}</span>
+    <section>
+      <Accordion type="single" collapsible>
+        <AccordionItem value="item-1">
+          <AccordionTrigger className="max-w-fit py-1">
+            <p className="font-bold mr-5">Gastos compartidos</p>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="flex flex-wrap gap-4">
+              {sharedExpenses.length ? (
+                sharedExpenses.map((shared) => (
+                  <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col" key={shared.id}>
+                    <p className="font-bold">{shared.name}</p>
+                    {shared.items.map((item) => (
+                      <div key={item.id}>
+                        <div className="flex gap-8 md:gap-20 justify-between items-center">
+                          <span>
+                            {item.description} {`(${formatCurrency(item.amount)})`}
+                          </span>
+                          <span className="font-bold text-right">{formatCurrency(item.amountToPay)}</span>
+                        </div>
+                        <div className="h-px bg-gray-500" />
+                      </div>
+                    ))}
+                    <div className="flex justify-end items-center gap-6 mt-4 font-bold">
+                      <span>TOTAL </span>
+                      <span>{formatCurrency(shared.total)}</span>
+                    </div>
                   </div>
-                  <div className="h-px bg-gray-300" />
-                </div>
-              ))}
-              <p className="font-bold text-right mt-2">TOTAL {formatCurrency(shared.total)}</p>
+                ))
+              ) : (
+                <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col">No hay datos para mostrar</div>
+              )}
             </div>
-          ))
-        ) : (
-          <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col">No hay datos para mostrar</div>
-        )}
-      </div>
-    </>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </section>
   )
 }
