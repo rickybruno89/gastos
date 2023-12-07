@@ -9,6 +9,7 @@ import LinkButton from '@/components/ui/link-button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { createExpense, updateExpense } from '@/services/expense'
 import { NumericFormat } from 'react-number-format'
+import { useSearchParams } from 'next/navigation'
 
 type ExpenseItemWithInclude = Prisma.ExpenseGetPayload<{
   include: {
@@ -29,9 +30,15 @@ export default function UpsertExpenseForm({
   paymentTypes: PaymentType[]
   paymentSources: PaymentSource[]
 }) {
+  const callbackUrl = useSearchParams().get('callbackUrl')
+  const showingAccordion = useSearchParams().get('showing')
+  const completeCallbackUrl = callbackUrl ? `${callbackUrl}&showing=${showingAccordion}` : PAGES_URL.EXPENSES.BASE_PATH
+
   const initialState = { message: null, errors: {} }
 
-  const upsertExpenseItemWithId = expenseItem ? updateExpense.bind(null, expenseItem.id) : createExpense
+  const upsertExpenseItemWithId = expenseItem
+    ? updateExpense.bind(null, expenseItem.id, completeCallbackUrl)
+    : createExpense
 
   const [state, dispatch] = useFormState(upsertExpenseItemWithId, initialState)
 
@@ -200,7 +207,27 @@ export default function UpsertExpenseForm({
             </div>
           ) : null}
         </div>
-
+        <div>
+          <label className="mb-2 block text-sm font-medium" htmlFor="dueDate">
+            Fecha de vencimiento
+          </label>
+          <div>
+            <input
+              id="dueDate"
+              name="dueDate"
+              type="date"
+              className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
+              defaultValue={expenseItem?.dueDate || ''}
+            />
+          </div>
+          {state.errors?.dueDate ? (
+            <div id="dueDate-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+              {state.errors.dueDate.map((error: string) => (
+                <p key={error}>{error}</p>
+              ))}
+            </div>
+          ) : null}
+        </div>
         <div>
           <label htmlFor="notes" className="mb-2 block text-sm font-medium">
             Notas
@@ -227,7 +254,7 @@ export default function UpsertExpenseForm({
 
         <div className="mt-6 flex justify-end gap-4">
           <Link
-            href={PAGES_URL.EXPENSES.BASE_PATH}
+            href={completeCallbackUrl}
             className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
           >
             Cancelar

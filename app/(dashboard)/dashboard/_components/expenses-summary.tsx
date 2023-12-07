@@ -1,6 +1,12 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { formatCurrency, formatLocaleDate, removeCurrencyMaskFromInput } from '@/lib/utils'
+import {
+  formatCurrency,
+  formatLocaleDate,
+  formatLocaleDueDate,
+  getTodayDueDate,
+  removeCurrencyMaskFromInput,
+} from '@/lib/utils'
 import {
   generateExpenseSummaryForMonth,
   setExpensePaymentSummaryPaid,
@@ -17,6 +23,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import Link from 'next/link'
 import { PAGES_URL } from '@/lib/routes'
 import { CheckCircle2, XCircleIcon } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 
 type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -51,6 +58,7 @@ export default function ExpensesSummary({
   expenses: ExpensesWithInclude[]
   date: string
 }) {
+  const isOpen = useSearchParams().get('showing') || ''
   const [isLoading, setIsLoading] = useState(false)
 
   const handleExpenseAmountChange = debounce((expenseSummary: ExpensePaymentSummary, inputAmount: string) => {
@@ -84,8 +92,8 @@ export default function ExpensesSummary({
     <>
       {expenseSummaries?.length ? (
         <section id="expense-content">
-          <Accordion type="single" collapsible onValueChange={handleScrollAccordion}>
-            <AccordionItem value="item-1">
+          <Accordion type="single" collapsible defaultValue={isOpen} onValueChange={handleScrollAccordion}>
+            <AccordionItem value="expense-content">
               <AccordionTrigger className="max-w-fit py-1">
                 <p className="mr-5 font-bold">Gastos fijos</p>
               </AccordionTrigger>
@@ -97,12 +105,28 @@ export default function ExpensesSummary({
                         <div className="flex justify-start gap-2 items-center">
                           {item.paid ? (
                             <CheckCircle2 className="w-5 text-green-500" />
+                          ) : item.dueDate === getTodayDueDate() ? (
+                            <span className="animate-ping h-5 w-5 rounded-full bg-red-500"></span>
                           ) : (
                             <XCircleIcon className="w-5 text-red-500" />
                           )}
-                          <Link className="font-bold lg:self-center" href={PAGES_URL.EXPENSES.BASE_PATH}>
-                            {item.expense.description}
-                          </Link>
+                          <div className="lg:self-center flex-col flex">
+                            <Link
+                              className={`font-bold ${item.dueDate === getTodayDueDate() ? 'text-red-500' : ''}`}
+                              href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=${
+                                PAGES_URL.DASHBOARD.BASE_PATH
+                              }?date=${date}&showing=expense-content`}
+                            >
+                              {item.expense.description}
+                            </Link>
+                            {item.dueDate ? (
+                              item.dueDate === getTodayDueDate() ? (
+                                <span className="text-xs text-red-500">VENCE HOY</span>
+                              ) : (
+                                <span className="text-xs">Vence el {formatLocaleDueDate(item.dueDate)}</span>
+                              )
+                            ) : null}
+                          </div>
                         </div>
                         <div className="flex justify-between gap-1">
                           <select

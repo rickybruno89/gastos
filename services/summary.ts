@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
-import { decryptString } from '@/lib/utils'
+import { decryptString, getNextMonthDueDate } from '@/lib/utils'
 
 export const addExpenseToSummary = async (date: string, expense: Expense) => {
   try {
@@ -16,6 +16,7 @@ export const addExpenseToSummary = async (date: string, expense: Expense) => {
       data: {
         expenseId: expense.id,
         date,
+        dueDate: expense.dueDate,
         amount: expense.amount,
         paid: false,
         paymentTypeId: expense.paymentTypeId,
@@ -43,10 +44,29 @@ export const generateExpenseSummaryForMonth = async (date: string) => {
       },
     })
 
+    const mappedExpenses = expenses.map((item) => ({
+      ...item,
+      dueDate: getNextMonthDueDate(item.dueDate),
+    }))
+
+    const transactions = mappedExpenses.map((item) =>
+      prisma.expense.update({
+        data: {
+          dueDate: item.dueDate,
+        },
+        where: {
+          id: item.id,
+        },
+      })
+    )
+
+    await Promise.all(transactions)
+
     await prisma.expensePaymentSummary.createMany({
-      data: expenses.map((expense) => ({
+      data: mappedExpenses.map((expense) => ({
         expenseId: expense.id,
         date,
+        dueDate: expense.dueDate,
         amount: expense.amount,
         paid: false,
         paymentTypeId: expense.paymentTypeId,
@@ -342,11 +362,15 @@ export async function fetchExpenseSummariesForMonth(date: string) {
           },
         },
       },
-      orderBy: {
-        expense: {
-          createdAt: 'asc',
+      orderBy: [
+        { paid: 'asc' },
+
+        {
+          expense: {
+            createdAt: 'asc',
+          },
         },
-      },
+      ],
     })
     return data.map((item) => ({
       ...item,

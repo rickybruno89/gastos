@@ -5,8 +5,6 @@ import {
   fetchExpenseSummariesForMonth,
   fetchPaymentSourceBalance,
 } from '@/services/summary'
-import { Suspense } from 'react'
-import LoadingSpinner from '@/components/ui/loading-spinner'
 import ExpensesSummary from './expenses-summary'
 import CreditCardExpensesSummary from './credit-card-expenses-summary'
 import SourceBalance from './source-balance'
