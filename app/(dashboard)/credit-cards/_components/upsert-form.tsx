@@ -2,21 +2,33 @@
 import Link from 'next/link'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import { useFormState } from 'react-dom'
-import { createCreditCard } from '@/services/credit-card'
+import { createCreditCard, updateCreditCard } from '@/services/credit-card'
 import { Button } from '@/components/ui/button'
-import { PaymentSource, PaymentType } from '@prisma/client'
+import { CreditCard, PaymentSource, PaymentType } from '@prisma/client'
 import { PAGES_URL } from '@/lib/routes'
 import LinkButton from '@/components/ui/link-button'
+import { useState } from 'react'
 
-export default function CreditCardCreateForm({
+const DEFAULT_COLOR = '#143273'
+const DEFAULT_TEXT_COLOR = '#FFFFFF'
+
+export default function CreditCardCreateUpsertForm({
+  creditCard,
   paymentTypes,
   paymentSources,
 }: {
+  creditCard?: CreditCard
   paymentTypes: PaymentType[]
   paymentSources: PaymentSource[]
 }) {
   const initialState = { message: null, errors: {} }
-  const [state, dispatch] = useFormState(createCreditCard, initialState)
+  const upsertCreditCardWithId = creditCard ? updateCreditCard.bind(null, creditCard.id) : createCreditCard
+  const [state, dispatch] = useFormState(upsertCreditCardWithId, initialState)
+
+  const [color, setColor] = useState(creditCard?.color || DEFAULT_COLOR)
+  const [textColor, setTextColor] = useState(creditCard?.textColor || DEFAULT_TEXT_COLOR)
+  const [name, setName] = useState(creditCard?.name || 'Nombre')
+
   return (
     <form action={dispatch}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6 w-fit flex flex-col gap-4">
@@ -27,12 +39,14 @@ export default function CreditCardCreateForm({
           <div className="relative rounded-md">
             <div className="relative w-full">
               <input
+                defaultValue={creditCard?.name}
                 id="creditCardName"
                 name="creditCardName"
                 type="text"
                 placeholder="Galicia - Visa"
                 aria-describedby="creditCardName-error"
                 className="peer block w-full rounded-md border border-gray-200 text-sm outline-2 placeholder:text-gray-500"
+                onChange={(e) => setName(e.target.value)}
               />
             </div>
             {state.errors?.creditCardName ? (
@@ -51,6 +65,7 @@ export default function CreditCardCreateForm({
           <div className="relative rounded-md">
             <div className="relative w-20">
               <input
+                defaultValue={creditCard?.taxesPercent}
                 id="taxesPercent"
                 name="taxesPercent"
                 type="number"
@@ -71,7 +86,6 @@ export default function CreditCardCreateForm({
             ) : null}
           </div>
         </div>
-
         <div>
           <label htmlFor="paymentTypeId" className="mb-2 block text-sm font-medium">
             Seleccione la forma de pago a usar
@@ -88,7 +102,7 @@ export default function CreditCardCreateForm({
                 id="paymentTypeId"
                 aria-describedby="paymentTypeId"
                 className="w-full rounded-md"
-                defaultValue={''}
+                defaultValue={creditCard?.paymentTypeId || ''}
               >
                 <option disabled value="">
                   Seleccione una opción
@@ -109,7 +123,6 @@ export default function CreditCardCreateForm({
             </div>
           ) : null}
         </div>
-
         <div>
           <label htmlFor="paymentSourceId" className="mb-2 block text-sm font-medium">
             Seleccione un canal de pago
@@ -126,7 +139,7 @@ export default function CreditCardCreateForm({
                 id="paymentSourceId"
                 aria-describedby="paymentSourceId"
                 className="w-full rounded-md"
-                defaultValue={''}
+                defaultValue={creditCard?.paymentSourceId || ''}
               >
                 <option disabled value="">
                   Seleccione una opción
@@ -147,7 +160,43 @@ export default function CreditCardCreateForm({
             </div>
           ) : null}
         </div>
-
+        <div className="flex justify-between gap-8">
+          <div>
+            <label htmlFor="color" className="mb-2 block text-sm font-medium">
+              Elija un color de tarjeta
+            </label>
+            <input
+              defaultValue={creditCard?.color || DEFAULT_COLOR}
+              type="color"
+              id="color"
+              name="color"
+              onChange={(e) => setColor(e.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="textColor" className="mb-2 block text-sm font-medium">
+              Elija un color de texto
+            </label>
+            <select
+              name="textColor"
+              id="textColor"
+              aria-describedby="textColor"
+              className="rounded-md w-full py-1"
+              defaultValue={creditCard?.textColor || DEFAULT_TEXT_COLOR}
+              onChange={(e) => setTextColor(e.target.value)}
+            >
+              <option value={'#FFFFFF'}>Blanco</option>
+              <option value={'#000000'}>Negro</option>
+            </select>
+          </div>
+        </div>
+        Tu tarjeta quedará asi
+        <div
+          style={{ backgroundColor: color, color: textColor }}
+          className="w-full md:w-[350px] aspect-video rounded-md shadow-xl p-4  flex flex-col justify-between"
+        >
+          <h1 className="font-bold">{name}</h1>
+        </div>
         <div className="mt-6 flex justify-end gap-4">
           <Link
             href={PAGES_URL.CREDIT_CARDS.BASE_PATH}
@@ -155,7 +204,7 @@ export default function CreditCardCreateForm({
           >
             Cancelar
           </Link>
-          <Button type="submit">Crear Tarjeta de Crédito</Button>
+          <Button type="submit">{creditCard ? 'Modificar' : 'Crear'}</Button>
         </div>
       </div>
     </form>

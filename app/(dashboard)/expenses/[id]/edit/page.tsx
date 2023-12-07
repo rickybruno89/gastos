@@ -29,8 +29,8 @@ export default async function Page({ params }: { params: { id: string } }) {
             active: false,
           },
           {
-            label: `Nuevo gasto`,
-            href: PAGES_URL.EXPENSES.CREATE,
+            label: `Editar gasto`,
+            href: PAGES_URL.EXPENSES.EDIT(id),
             active: true,
           },
         ]}
