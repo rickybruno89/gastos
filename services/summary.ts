@@ -526,14 +526,16 @@ export const updateAmountExpenseSummary = async (
       id: expenseSummary.id,
     },
   })
-  await prisma.expense.update({
-    data: {
-      amount: amount || 0,
-    },
-    where: {
-      id: expenseSummary.expenseId,
-    },
-  })
+  if (amount) {
+    await prisma.expense.update({
+      data: {
+        amount: amount,
+      },
+      where: {
+        id: expenseSummary.expenseId,
+      },
+    })
+  }
   revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
 }

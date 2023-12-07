@@ -1,6 +1,10 @@
 import { fetchPaymentSource } from '@/services/settings'
 import { fetchPaymentType } from '@/services/settings'
-import { fetchCreditCardSummariesForMonth, fetchExpenseSummariesForMonth } from '@/services/summary'
+import {
+  fetchCreditCardSummariesForMonth,
+  fetchExpenseSummariesForMonth,
+  fetchPaymentSourceBalance,
+} from '@/services/summary'
 import { Suspense } from 'react'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 import ExpensesSummary from './expenses-summary'
@@ -15,6 +19,7 @@ export default async function DashboardTemplate({ date }: { date: string }) {
   const expenseSummaries = await fetchExpenseSummariesForMonth(date)
   const creditCardExpenseSummaries = await fetchCreditCardSummariesForMonth(date)
   const expenses = await fetchExpenses()
+  const paymentSourceBalance = await fetchPaymentSourceBalance(date)
 
   return (
     <>
@@ -31,12 +36,8 @@ export default async function DashboardTemplate({ date }: { date: string }) {
         date={date}
         paymentSources={paymentSources}
       />
-      <Suspense fallback={<LoadingSpinner />}>
-        <SourceBalance date={date} />
-      </Suspense>
-      <Suspense fallback={<LoadingSpinner />}>
-        <SharedExpenses expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} />
-      </Suspense>
+      <SourceBalance paymentSourceBalance={paymentSourceBalance} />
+      <SharedExpenses expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} />
     </>
   )
 }

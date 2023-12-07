@@ -1,3 +1,4 @@
+'use client'
 import { formatCurrency } from '@/lib/utils'
 import { Prisma } from '@prisma/client'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
@@ -50,7 +51,7 @@ const calcSharedExpenses = (
   const expensesByPerson: ExpensesByPerson[] = []
   expenseSummaries.forEach((item) => {
     item.expense.sharedWith.forEach((person) => {
-      const amountPerPerson = item.expense.amount / (item.expense.sharedWith.length + 1)
+      const amountPerPerson = item.amount / (item.expense.sharedWith.length + 1)
 
       let existingPerson = expensesByPerson.find((p) => p.id === person.id)
 
@@ -69,7 +70,7 @@ const calcSharedExpenses = (
         id: item.id,
         description: item.expense.description,
         amountToPay: amountPerPerson,
-        amount: item.expense.amount,
+        amount: item.amount,
       })
     })
   })
@@ -118,9 +119,18 @@ export default function SharedExpenses({
 }) {
   const sharedExpenses = calcSharedExpenses(expenseSummaries, creditCardExpenseSummaries)
 
+  const handleScrollAccordion = (renderedItem: string) => {
+    setTimeout(() => {
+      if (renderedItem) {
+        const element = document.getElementById('shared-content') as HTMLElement
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }, 200)
+  }
+
   return (
-    <section>
-      <Accordion type="single" collapsible>
+    <section id="shared-content">
+      <Accordion type="single" collapsible onValueChange={handleScrollAccordion}>
         <AccordionItem value="item-1">
           <AccordionTrigger className="max-w-fit py-1">
             <p className="font-bold mr-5">Gastos compartidos</p>

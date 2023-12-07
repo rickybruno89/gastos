@@ -71,11 +71,20 @@ export default function ExpensesSummary({
     setIsLoading(false)
   }
 
+  const handleScrollAccordion = (renderedItem: string) => {
+    setTimeout(() => {
+      if (renderedItem) {
+        const element = document.getElementById('expense-content') as HTMLElement
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }, 200)
+  }
+
   return (
     <>
       {expenseSummaries?.length ? (
-        <section>
-          <Accordion type="single" collapsible>
+        <section id="expense-content">
+          <Accordion type="single" collapsible onValueChange={handleScrollAccordion}>
             <AccordionItem value="item-1">
               <AccordionTrigger className="max-w-fit py-1">
                 <p className="mr-5 font-bold">Gastos fijos</p>
