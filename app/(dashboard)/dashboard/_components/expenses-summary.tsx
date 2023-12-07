@@ -100,7 +100,12 @@ export default function ExpensesSummary({
                           ) : (
                             <XCircleIcon className="w-5 text-red-500" />
                           )}
-                          <Link className="font-bold lg:self-center" href={PAGES_URL.EXPENSES.BASE_PATH}>
+                          <Link
+                            className="font-bold lg:self-center"
+                            href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=${
+                              PAGES_URL.DASHBOARD.BASE_PATH
+                            }?date=${date}`}
+                          >
                             {item.expense.description}
                           </Link>
                         </div>

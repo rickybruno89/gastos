@@ -83,7 +83,12 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
   redirect(PAGES_URL.EXPENSES.BASE_PATH)
 }
 
-export const updateExpense = async (id: string, _prevState: CreateExpenseState, formData: FormData) => {
+export const updateExpense = async (
+  id: string,
+  callbackUrl: string,
+  _prevState: CreateExpenseState,
+  formData: FormData
+) => {
   try {
     const validatedFields = CreateExpenseSchema.safeParse({
       description: formData.get('description'),
@@ -125,7 +130,8 @@ export const updateExpense = async (id: string, _prevState: CreateExpenseState, 
     }
   }
   revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
-  redirect(PAGES_URL.EXPENSES.BASE_PATH)
+  revalidatePath(callbackUrl)
+  redirect(callbackUrl)
 }
 
 export async function fetchExpenseItem(id: string) {
