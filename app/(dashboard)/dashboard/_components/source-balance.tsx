@@ -1,5 +1,5 @@
+'use client'
 import { formatCurrency } from '@/lib/utils'
-import { fetchPaymentSourceBalance } from '@/services/summary'
 import { Prisma } from '@prisma/client'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
@@ -44,15 +44,29 @@ const calcItemsPaid = (paymentSourceBalance: PaymentSourceBalanceWithInclude[]) 
   return totalsByName
 }
 
-export default async function SourceBalance({ date }: { date: string }) {
-  const paymentSourceBalance = await fetchPaymentSourceBalance(date)
+type DataWithInclude = Prisma.PaymentSourceGetPayload<{
+  include: {
+    expensePaymentSummaries: true
+    creditCardPaymentSummaries: true
+  }
+}>
 
+export default function SourceBalance({ paymentSourceBalance }: { paymentSourceBalance: DataWithInclude[] }) {
   const paymentSourceItems = calcItemsToPay(paymentSourceBalance)
   const alreadyPaid = calcItemsPaid(paymentSourceBalance)
 
+  const handleScrollAccordion = (renderedItem: string) => {
+    setTimeout(() => {
+      if (renderedItem) {
+        const element = document.getElementById('source-balance-content') as HTMLElement
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }, 200)
+  }
+
   return (
-    <section>
-      <Accordion type="single" collapsible>
+    <section id="source-balance-content">
+      <Accordion type="single" collapsible onValueChange={handleScrollAccordion}>
         <AccordionItem value="item-1">
           <AccordionTrigger className="max-w-fit py-1">
             <p className="font-bold mr-5">Balance necesario en cuentas</p>

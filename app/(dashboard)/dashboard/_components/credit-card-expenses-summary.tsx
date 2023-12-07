@@ -72,11 +72,20 @@ export default function CreditCardExpensesSummary({
     setIsLoading(false)
   }
 
+  const handleScrollAccordion = (renderedItem: string) => {
+    setTimeout(() => {
+      if (renderedItem) {
+        const element = document.getElementById('credit-card-content') as HTMLElement
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }, 200)
+  }
+
   return (
     <>
       {creditCardExpenseSummaries?.length ? (
-        <section>
-          <Accordion type="single" collapsible>
+        <section id="credit-card-content">
+          <Accordion type="single" collapsible onValueChange={handleScrollAccordion}>
             <AccordionItem value="item-1">
               <AccordionTrigger className="max-w-fit py-1">
                 <p className="font-bold mr-5">Tarjetas de Crédito</p>
