@@ -14,6 +14,7 @@ import { debounce } from 'lodash'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import Link from 'next/link'
 import { PAGES_URL } from '@/lib/routes'
+import { CheckCircle2, XCircleIcon } from 'lucide-react'
 
 type CreditCardExpensesWithInclude = Prisma.CreditCardPaymentSummaryGetPayload<{
   include: {
@@ -74,27 +75,33 @@ export default function CreditCardExpensesSummary({
   return (
     <>
       {creditCardExpenseSummaries?.length ? (
-        <section className="rounded-md bg-white px-4 md:px-6 w-full lg:w-fit flex flex-col">
+        <section>
           <Accordion type="single" collapsible>
             <AccordionItem value="item-1">
-              <AccordionTrigger>
+              <AccordionTrigger className="max-w-fit py-1">
                 <p className="font-bold mr-5">Tarjetas de Crédito</p>
               </AccordionTrigger>
               <AccordionContent>
-                {creditCardExpenseSummaries.map((item) => (
-                  <div key={item.id} className="flex flex-col gap-2">
-                    <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4">
-                      <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCard.id, item.id)}>
-                        <p className="font-bold lg:self-center justify-self-start">{item.creditCard.name}</p>
-                        <p className="lg:self-center justify-self-start">
-                          Vence el {formatLocaleDueDate(item.dueDate)}
-                        </p>
-                      </Link>
-
-                      <div className="lg:justify-self-center lg:self-center">
-                        <div>
+                <div className="rounded-md bg-white p-4 md:p-6 w-full lg:w-fit flex flex-col gap-2">
+                  {creditCardExpenseSummaries.map((item) => (
+                    <div key={item.id} className="flex flex-col gap-3">
+                      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-2 lg:items-center">
+                        <div className="flex justify-start gap-2 items-center">
+                          {item.paid ? (
+                            <CheckCircle2 className="w-5 text-green-500" />
+                          ) : (
+                            <XCircleIcon className="w-5 text-red-500" />
+                          )}
+                          <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCard.id, item.id)}>
+                            <p className="font-bold lg:self-center justify-self-start">{item.creditCard.name}</p>
+                            <p className="lg:self-center justify-self-start text-xs">
+                              Vence el {formatLocaleDueDate(item.dueDate)}
+                            </p>
+                          </Link>
+                        </div>
+                        <div className="flex justify-between gap-1">
                           <select
-                            className="rounded-md text-sm w-full md:w-fit"
+                            className="rounded-md text-xs w-full"
                             aria-describedby="paymentTypeId"
                             value={item.paymentTypeId}
                             onChange={(e) => handleCreditCardChangePaymentType(item, e.target.value)}
@@ -105,13 +112,8 @@ export default function CreditCardExpensesSummary({
                               </option>
                             ))}
                           </select>
-                        </div>
-                      </div>
-
-                      <div className="lg:justify-self-center lg:self-center">
-                        <div>
                           <select
-                            className="rounded-md text-sm w-full md:w-fit"
+                            className="rounded-md text-xs w-full"
                             aria-describedby="paymentSourceId"
                             value={item.paymentSourceId}
                             onChange={(e) => handleCreditCardChangePaymentSource(item, e.target.value)}
@@ -123,20 +125,13 @@ export default function CreditCardExpensesSummary({
                             ))}
                           </select>
                         </div>
-                      </div>
-                      {item.paid ? (
-                        <>
-                          <span className="text-sm  lg:justify-self-center lg:self-center">
-                            {formatCurrency(item.amount)}
-                          </span>
-                          <span className="text-green-500  lg:justify-self-center lg:self-center">PAGADO</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex justify-end items-center gap-2">
+                        {item.paid ? (
+                          <span className="font-bold text-right">{formatCurrency(item.amount)}</span>
+                        ) : (
+                          <div className="flex justify-between items-center gap-1">
                             <NumericFormat
                               inputMode="decimal"
-                              className="rounded-md text-sm w-full md:w-28"
+                              className="rounded-md text-xs w-full md:w-fit p-2 "
                               value={item.amount}
                               onChange={(e) => handleCreditCardAmountChange(item, e.target.value)}
                               prefix={'$ '}
@@ -144,21 +139,16 @@ export default function CreditCardExpensesSummary({
                               decimalScale={2}
                               decimalSeparator=","
                             />
+                            <Button disabled={isLoading} size={'sm'} onClick={() => payCreditCardExpense(item)}>
+                              Pagar
+                            </Button>
                           </div>
-                          <Button
-                            className="lg:justify-self-center lg:self-center"
-                            disabled={isLoading}
-                            size={'sm'}
-                            onClick={() => payCreditCardExpense(item)}
-                          >
-                            Pagar
-                          </Button>
-                        </>
-                      )}
+                        )}
+                      </div>
+                      <div className="h-px bg-gray-500" />
                     </div>
-                    <div className="h-px mb-2 bg-gray-300" />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>

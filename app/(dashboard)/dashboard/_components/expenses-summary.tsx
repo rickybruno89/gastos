@@ -16,6 +16,7 @@ import { debounce } from 'lodash'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import Link from 'next/link'
 import { PAGES_URL } from '@/lib/routes'
+import { CheckCircle2, XCircleIcon } from 'lucide-react'
 
 type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -73,81 +74,74 @@ export default function ExpensesSummary({
   return (
     <>
       {expenseSummaries?.length ? (
-        <section className="rounded-md bg-white px-4 md:px-6 w-full lg:w-fit flex flex-col gap-2">
+        <section>
           <Accordion type="single" collapsible>
             <AccordionItem value="item-1">
-              <AccordionTrigger>
+              <AccordionTrigger className="max-w-fit py-1">
                 <p className="mr-5 font-bold">Gastos fijos</p>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="flex flex-col gap-2">
+                <div className="rounded-md bg-white p-4 md:p-6 w-full lg:w-fit flex flex-col gap-2">
                   {expenseSummaries.map((item) => (
-                    <div key={item.expenseId} className="flex flex-col gap-2">
-                      <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4">
-                        <Link className="font-bold lg:self-center" href={PAGES_URL.EXPENSES.BASE_PATH}>
-                          {item.expense.description}
-                        </Link>
-                        <div>
-                          <div>
-                            <select
-                              className="rounded-md text-sm w-full md:w-fit"
-                              aria-describedby="paymentTypeId"
-                              value={item.paymentTypeId}
-                              onChange={(e) => handleExpenseChangePaymentType(item, e.target.value)}
-                            >
-                              {paymentTypes.map((paymentType) => (
-                                <option key={paymentType.id} value={paymentType.id}>
-                                  {paymentType.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                    <div key={item.expenseId} className="flex flex-col gap-3">
+                      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-2 lg:items-center">
+                        <div className="flex justify-start gap-2 items-center">
+                          {item.paid ? (
+                            <CheckCircle2 className="w-5 text-green-500" />
+                          ) : (
+                            <XCircleIcon className="w-5 text-red-500" />
+                          )}
+                          <Link className="font-bold lg:self-center" href={PAGES_URL.EXPENSES.BASE_PATH}>
+                            {item.expense.description}
+                          </Link>
                         </div>
-
-                        <div>
-                          <div>
-                            <select
-                              className="rounded-md text-sm w-full md:w-fit"
-                              aria-describedby="paymentSourceId"
-                              value={item.paymentSourceId}
-                              onChange={(e) => handleExpenseChangePaymentSource(item, e.target.value)}
-                            >
-                              {paymentSources.map((paymentSource) => (
-                                <option key={paymentSource.id} value={paymentSource.id}>
-                                  {paymentSource.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                        <div className="flex justify-between gap-1">
+                          <select
+                            className="rounded-md text-xs w-full"
+                            aria-describedby="paymentTypeId"
+                            value={item.paymentTypeId}
+                            onChange={(e) => handleExpenseChangePaymentType(item, e.target.value)}
+                          >
+                            {paymentTypes.map((paymentType) => (
+                              <option key={paymentType.id} value={paymentType.id}>
+                                {paymentType.name}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            className="rounded-md text-xs w-full"
+                            aria-describedby="paymentSourceId"
+                            value={item.paymentSourceId}
+                            onChange={(e) => handleExpenseChangePaymentSource(item, e.target.value)}
+                          >
+                            {paymentSources.map((paymentSource) => (
+                              <option key={paymentSource.id} value={paymentSource.id}>
+                                {paymentSource.name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         {item.paid ? (
-                          <>
-                            <span className="text-sm  lg:justify-self-center lg:self-center">
-                              {formatCurrency(item.amount)}
-                            </span>
-                            <span className="text-green-500  lg:justify-self-center lg:self-center">PAGADO</span>
-                          </>
+                          <span className="font-bold text-right">{formatCurrency(item.amount)}</span>
                         ) : (
-                          <>
-                            <div className="flex justify-end items-center gap-2">
-                              <NumericFormat
-                                className="rounded-md text-sm w-full md:w-28"
-                                inputMode="decimal"
-                                value={item.amount}
-                                onChange={(e) => handleExpenseAmountChange(item, e.target.value)}
-                                prefix={'$ '}
-                                thousandSeparator="."
-                                decimalScale={2}
-                                decimalSeparator=","
-                              />
-                            </div>
+                          <div className="flex justify-between items-center gap-1">
+                            <NumericFormat
+                              className="rounded-md text-xs w-full md:w-fit p-2"
+                              inputMode="decimal"
+                              value={item.amount}
+                              onChange={(e) => handleExpenseAmountChange(item, e.target.value)}
+                              prefix={'$ '}
+                              thousandSeparator="."
+                              decimalScale={2}
+                              decimalSeparator=","
+                            />
                             <Button disabled={isLoading} size={'sm'} onClick={() => payExpense(item)}>
                               Pagar
                             </Button>
-                          </>
+                          </div>
                         )}
                       </div>
-                      <div className="h-px bg-gray-300" />
+                      <div className="h-px bg-gray-500" />
                     </div>
                   ))}
                   {expenses
