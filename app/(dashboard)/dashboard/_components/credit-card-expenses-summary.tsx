@@ -1,6 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { formatCurrency, formatLocaleDueDate, removeCurrencyMaskFromInput } from '@/lib/utils'
+import { formatCurrency, formatLocaleDueDate, getTodayDueDate, removeCurrencyMaskFromInput } from '@/lib/utils'
 import {
   setCreditCardPaymentSummaryPaid,
   updateAmountCreditCardPaymentSummary,
@@ -98,14 +98,28 @@ export default function CreditCardExpensesSummary({
                         <div className="flex justify-start gap-2 items-center">
                           {item.paid ? (
                             <CheckCircle2 className="w-5 text-green-500" />
+                          ) : item.dueDate === getTodayDueDate() ? (
+                            <span className="animate-ping h-5 w-5 rounded-full bg-red-500"></span>
                           ) : (
                             <XCircleIcon className="w-5 text-red-500" />
                           )}
                           <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCard.id, item.id)}>
-                            <p className="font-bold lg:self-center justify-self-start">{item.creditCard.name}</p>
-                            <p className="lg:self-center justify-self-start text-xs">
-                              Vence el {formatLocaleDueDate(item.dueDate)}
+                            <p
+                              className={`font-bold lg:self-center justify-self-start ${
+                                item.dueDate === getTodayDueDate() ? 'text-red-500' : ''
+                              }`}
+                            >
+                              {item.creditCard.name}
                             </p>
+                            {item.dueDate ? (
+                              item.dueDate === getTodayDueDate() ? (
+                                <span className="text-xs text-red-500">VENCE HOY</span>
+                              ) : (
+                                <p className="lg:self-center justify-self-start text-xs">
+                                  Vence el {formatLocaleDueDate(item.dueDate)}
+                                </p>
+                              )
+                            ) : null}
                           </Link>
                         </div>
                         <div className="flex justify-between gap-1">

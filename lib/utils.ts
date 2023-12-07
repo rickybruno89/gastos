@@ -48,6 +48,17 @@ export const getToday = () => {
   return `${year}-${formattedMonth}`
 }
 
+export const getTodayDueDate = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  let month = now.getMonth() + 1
+  let day = now.getDate()
+  const formattedDay = day < 10 ? `0${day}` : `${day}`
+  const formattedMonth = month < 10 ? `0${month}` : `${month}`
+
+  return `${year}-${formattedMonth}-${formattedDay}`
+}
+
 export const getNextMonthDate = () => {
   let now = new Date()
   now.setMonth(now.getMonth() + 1)
@@ -57,6 +68,22 @@ export const getNextMonthDate = () => {
   const formattedMonth = month < 10 ? `0${month}` : `${month}`
 
   return `${year}-${formattedMonth}`
+}
+
+export const getNextMonthDueDate = (date: string | null) => {
+  if (!date) return null
+  const [yyyy, mm, dd] = date.split('-')
+  const adjustedDate = new Date(`${yyyy}-${mm}-${dd}T00:00:00`)
+
+  adjustedDate.setMonth(adjustedDate.getMonth() + 1)
+  let year = adjustedDate.getFullYear()
+  let month = adjustedDate.getMonth() + 1
+  let day = adjustedDate.getDate()
+
+  const formattedMonth = month < 10 ? `0${month}` : `${month}`
+  const formattedDay = day < 10 ? `0${day}` : `${day}`
+
+  return `${year}-${formattedMonth}-${formattedDay}`
 }
 
 export const encryptString = (string: string) => crypto.AES.encrypt(string, process.env.CRYPTO_SECRET!).toString()
