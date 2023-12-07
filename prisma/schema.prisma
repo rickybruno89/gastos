@@ -182,6 +182,7 @@ model Expense {
   description      String
   notes            String
   amount           Float
+  dueDate          String?
   sharedWith       Person[]
   paymentType      PaymentType             @relation(fields: [paymentTypeId], references: [id])
   paymentTypeId    String
@@ -201,6 +202,7 @@ model ExpensePaymentSummary {
   expense         Expense       @relation(fields: [expenseId], references: [id])
   expenseId       String
   date            String
+  dueDate         String?
   amount          Float
   paid            Boolean       @default(false)
   paymentType     PaymentType   @relation(fields: [paymentTypeId], references: [id])

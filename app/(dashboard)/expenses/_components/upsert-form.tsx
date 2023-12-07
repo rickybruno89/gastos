@@ -207,7 +207,27 @@ export default function UpsertExpenseForm({
             </div>
           ) : null}
         </div>
-
+        <div>
+          <label className="mb-2 block text-sm font-medium" htmlFor="dueDate">
+            Fecha de vencimiento
+          </label>
+          <div>
+            <input
+              id="dueDate"
+              name="dueDate"
+              type="date"
+              className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
+              defaultValue={expenseItem?.dueDate || ''}
+            />
+          </div>
+          {state.errors?.dueDate ? (
+            <div id="dueDate-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+              {state.errors.dueDate.map((error: string) => (
+                <p key={error}>{error}</p>
+              ))}
+            </div>
+          ) : null}
+        </div>
         <div>
           <label htmlFor="notes" className="mb-2 block text-sm font-medium">
             Notas

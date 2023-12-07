@@ -16,6 +16,7 @@ export const addExpenseToSummary = async (date: string, expense: Expense) => {
       data: {
         expenseId: expense.id,
         date,
+        dueDate: expense.dueDate,
         amount: expense.amount,
         paid: false,
         paymentTypeId: expense.paymentTypeId,
@@ -47,6 +48,7 @@ export const generateExpenseSummaryForMonth = async (date: string) => {
       data: expenses.map((expense) => ({
         expenseId: expense.id,
         date,
+        dueDate: expense.dueDate,
         amount: expense.amount,
         paid: false,
         paymentTypeId: expense.paymentTypeId,

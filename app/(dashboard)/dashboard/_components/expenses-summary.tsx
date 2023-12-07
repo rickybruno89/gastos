@@ -1,6 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { formatCurrency, formatLocaleDate, removeCurrencyMaskFromInput } from '@/lib/utils'
+import { formatCurrency, formatLocaleDate, formatLocaleDueDate, removeCurrencyMaskFromInput } from '@/lib/utils'
 import {
   generateExpenseSummaryForMonth,
   setExpensePaymentSummaryPaid,
@@ -102,14 +102,19 @@ export default function ExpensesSummary({
                           ) : (
                             <XCircleIcon className="w-5 text-red-500" />
                           )}
-                          <Link
-                            className="font-bold lg:self-center"
-                            href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=${
-                              PAGES_URL.DASHBOARD.BASE_PATH
-                            }?date=${date}&showing=expense-content`}
-                          >
-                            {item.expense.description}
-                          </Link>
+                          <div className="lg:self-center flex-col flex">
+                            <Link
+                              className="font-bold"
+                              href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=${
+                                PAGES_URL.DASHBOARD.BASE_PATH
+                              }?date=${date}&showing=expense-content`}
+                            >
+                              {item.expense.description}
+                            </Link>
+                            {item.dueDate ? (
+                              <span className="text-xs">Vence el {formatLocaleDueDate(item.dueDate)}</span>
+                            ) : null}
+                          </div>
                         </div>
                         <div className="flex justify-between gap-1">
                           <select

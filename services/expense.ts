@@ -13,6 +13,7 @@ type CreateExpenseState = {
   errors?: {
     description?: string[]
     notes?: string[]
+    dueDate?: string[]
     amount?: string[]
     sharedWith?: string[]
     paymentTypeId?: string[]
@@ -24,6 +25,7 @@ type CreateExpenseState = {
 const ExpenseSchema = z.object({
   id: z.string().cuid(),
   description: z.string().toUpperCase().min(1, { message: 'Ingrese una descripción' }),
+  dueDate: z.string(),
   notes: z.string().toUpperCase(),
   amount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
   sharedWith: z.string().array(),
@@ -44,6 +46,7 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
     const validatedFields = CreateExpenseSchema.safeParse({
       description: formData.get('description'),
       notes: formData.get('notes'),
+      dueDate: formData.get('dueDate'),
       amount: formData.get('amount'),
       sharedWith: formData.getAll('sharedWith'),
       paymentTypeId: formData.get('paymentTypeId'),
@@ -57,7 +60,7 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
       }
     }
 
-    const { description, notes, amount, sharedWith, paymentTypeId, paymentSourceId } = validatedFields.data
+    const { description, notes, dueDate, amount, sharedWith, paymentTypeId, paymentSourceId } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -65,6 +68,7 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
       data: {
         description: encryptString(description),
         notes,
+        dueDate,
         amount: removeCurrencyMaskFromInput(amount),
         sharedWith: {
           connect: sharedWith.map((personId) => ({ id: personId })),
@@ -92,6 +96,7 @@ export const updateExpense = async (
   try {
     const validatedFields = CreateExpenseSchema.safeParse({
       description: formData.get('description'),
+      dueDate: formData.get('dueDate'),
       notes: formData.get('notes'),
       amount: formData.get('amount'),
       sharedWith: formData.getAll('sharedWith'),
@@ -106,11 +111,12 @@ export const updateExpense = async (
       }
     }
 
-    const { description, notes, amount, sharedWith, paymentTypeId, paymentSourceId } = validatedFields.data
+    const { description, notes, dueDate, amount, sharedWith, paymentTypeId, paymentSourceId } = validatedFields.data
 
     await prisma.expense.update({
       data: {
         description: encryptString(description),
+        dueDate,
         notes,
         amount: removeCurrencyMaskFromInput(amount),
         sharedWith: {
@@ -124,6 +130,25 @@ export const updateExpense = async (
         id,
       },
     })
+
+    const expensePaymentSummaryToUpdate = await prisma.expensePaymentSummary.findFirst({
+      where: {
+        expenseId: id,
+      },
+      orderBy: {
+        date: 'desc',
+      },
+    })
+    if (expensePaymentSummaryToUpdate && !expensePaymentSummaryToUpdate.paid) {
+      await prisma.expensePaymentSummary.update({
+        data: {
+          dueDate,
+        },
+        where: {
+          id: expensePaymentSummaryToUpdate.id,
+        },
+      })
+    }
   } catch (error) {
     return {
       message: 'Error en base de datos',
