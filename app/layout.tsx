@@ -6,7 +6,7 @@ import { inter } from '@/components/ui/fonts'
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | GastosApp',
+    template: '%s | GastApp',
     default: 'Inicio',
   },
   description: 'Lleva la cuenta de tus gastos mensuales',
