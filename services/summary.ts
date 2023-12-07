@@ -364,7 +364,9 @@ export async function fetchExpenseSummariesForMonth(date: string) {
       },
       orderBy: [
         { paid: 'asc' },
-
+        {
+          dueDate: 'asc',
+        },
         {
           expense: {
             createdAt: 'asc',
@@ -403,6 +405,25 @@ export const setExpensePaymentSummaryPaid = async (expenseItem: ExpensePaymentSu
         paid: true,
         paymentSourceId: expenseItem.paymentSourceId,
         paymentTypeId: expenseItem.paymentTypeId,
+      },
+      where: {
+        id: expenseItem.id,
+      },
+    })
+  } catch (error) {
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
+  }
+  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${expenseItem.date}`)
+}
+
+export const setNoNeedExpensePaymentSummary = async (expenseItem: ExpensePaymentSummary) => {
+  try {
+    await prisma.expensePaymentSummary.update({
+      data: {
+        amount: 0,
+        paid: true,
       },
       where: {
         id: expenseItem.id,
@@ -550,16 +571,6 @@ export const updateAmountExpenseSummary = async (
       id: expenseSummary.id,
     },
   })
-  if (amount) {
-    await prisma.expense.update({
-      data: {
-        amount: amount,
-      },
-      where: {
-        id: expenseSummary.expenseId,
-      },
-    })
-  }
   revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
 }
@@ -577,14 +588,6 @@ export const updatePaymentTypeExpenseSummary = async (
       id: expenseSummary.id,
     },
   })
-  await prisma.expense.update({
-    data: {
-      paymentTypeId,
-    },
-    where: {
-      id: expenseSummary.expenseId,
-    },
-  })
   revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
 }
@@ -600,14 +603,6 @@ export const updatePaymentSourceExpenseSummary = async (
     },
     where: {
       id: expenseSummary.id,
-    },
-  })
-  await prisma.expense.update({
-    data: {
-      paymentSourceId,
-    },
-    where: {
-      id: expenseSummary.expenseId,
     },
   })
   revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)

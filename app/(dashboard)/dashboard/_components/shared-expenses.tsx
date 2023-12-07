@@ -51,6 +51,7 @@ const calcSharedExpenses = (
   const expensesByPerson: ExpensesByPerson[] = []
   expenseSummaries.forEach((item) => {
     item.expense.sharedWith.forEach((person) => {
+      if (!item.amount) return
       const amountPerPerson = item.amount / (item.expense.sharedWith.length + 1)
 
       let existingPerson = expensesByPerson.find((p) => p.id === person.id)
@@ -78,6 +79,7 @@ const calcSharedExpenses = (
   creditCardExpenseSummaries.forEach((summary) => {
     summary.itemHistoryPayment.forEach((payment) => {
       payment.creditCardExpenseItem.sharedWith.forEach((person) => {
+        if (!payment.installmentsAmount) return
         const amountPerPerson = payment.installmentsAmount / (payment.creditCardExpenseItem.sharedWith.length + 1)
 
         let existingPerson = expensesByPerson.find((p) => p.id === person.id)
