@@ -131,7 +131,7 @@ export default function SharedExpenses({
   return (
     <section id="shared-content">
       <Accordion type="single" collapsible onValueChange={handleScrollAccordion}>
-        <AccordionItem value="item-1">
+        <AccordionItem value="shared-content">
           <AccordionTrigger className="max-w-fit py-1">
             <p className="font-bold mr-5">Gastos compartidos</p>
           </AccordionTrigger>

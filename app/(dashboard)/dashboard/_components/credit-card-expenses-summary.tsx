@@ -86,7 +86,7 @@ export default function CreditCardExpensesSummary({
       {creditCardExpenseSummaries?.length ? (
         <section id="credit-card-content">
           <Accordion type="single" collapsible onValueChange={handleScrollAccordion}>
-            <AccordionItem value="item-1">
+            <AccordionItem value="credit-card-content">
               <AccordionTrigger className="max-w-fit py-1">
                 <p className="font-bold mr-5">Tarjetas de Crédito</p>
               </AccordionTrigger>

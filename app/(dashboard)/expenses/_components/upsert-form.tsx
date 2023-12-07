@@ -30,10 +30,15 @@ export default function UpsertExpenseForm({
   paymentTypes: PaymentType[]
   paymentSources: PaymentSource[]
 }) {
-  const callbackUrl = useSearchParams().get('callbackUrl') || PAGES_URL.EXPENSES.BASE_PATH
+  const callbackUrl = useSearchParams().get('callbackUrl')
+  const showingAccordion = useSearchParams().get('showing')
+  const completeCallbackUrl = callbackUrl ? `${callbackUrl}&showing=${showingAccordion}` : PAGES_URL.EXPENSES.BASE_PATH
+
   const initialState = { message: null, errors: {} }
 
-  const upsertExpenseItemWithId = expenseItem ? updateExpense.bind(null, expenseItem.id, callbackUrl) : createExpense
+  const upsertExpenseItemWithId = expenseItem
+    ? updateExpense.bind(null, expenseItem.id, completeCallbackUrl)
+    : createExpense
 
   const [state, dispatch] = useFormState(upsertExpenseItemWithId, initialState)
 
@@ -229,7 +234,7 @@ export default function UpsertExpenseForm({
 
         <div className="mt-6 flex justify-end gap-4">
           <Link
-            href={callbackUrl}
+            href={completeCallbackUrl}
             className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
           >
             Cancelar

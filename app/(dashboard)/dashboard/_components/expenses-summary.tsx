@@ -17,6 +17,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import Link from 'next/link'
 import { PAGES_URL } from '@/lib/routes'
 import { CheckCircle2, XCircleIcon } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 
 type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -51,6 +52,7 @@ export default function ExpensesSummary({
   expenses: ExpensesWithInclude[]
   date: string
 }) {
+  const isOpen = useSearchParams().get('showing') || ''
   const [isLoading, setIsLoading] = useState(false)
 
   const handleExpenseAmountChange = debounce((expenseSummary: ExpensePaymentSummary, inputAmount: string) => {
@@ -84,8 +86,8 @@ export default function ExpensesSummary({
     <>
       {expenseSummaries?.length ? (
         <section id="expense-content">
-          <Accordion type="single" collapsible onValueChange={handleScrollAccordion}>
-            <AccordionItem value="item-1">
+          <Accordion type="single" collapsible defaultValue={isOpen} onValueChange={handleScrollAccordion}>
+            <AccordionItem value="expense-content">
               <AccordionTrigger className="max-w-fit py-1">
                 <p className="mr-5 font-bold">Gastos fijos</p>
               </AccordionTrigger>
@@ -104,7 +106,7 @@ export default function ExpensesSummary({
                             className="font-bold lg:self-center"
                             href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=${
                               PAGES_URL.DASHBOARD.BASE_PATH
-                            }?date=${date}`}
+                            }?date=${date}&showing=expense-content`}
                           >
                             {item.expense.description}
                           </Link>
