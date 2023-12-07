@@ -14,6 +14,7 @@ import {
   updatePaymentTypeExpenseSummary,
   updatePaymentSourceExpenseSummary,
   addExpenseToSummary,
+  setNoNeedExpensePaymentSummary,
 } from '@/services/summary'
 import { ExpensePaymentSummary, PaymentSource, PaymentType, Prisma } from '@prisma/client'
 import React, { useState } from 'react'
@@ -64,7 +65,7 @@ export default function ExpensesSummary({
   const handleExpenseAmountChange = debounce((expenseSummary: ExpensePaymentSummary, inputAmount: string) => {
     const amount = removeCurrencyMaskFromInput(inputAmount)
     updateAmountExpenseSummary(expenseSummary, amount, date)
-  }, 1000)
+  }, 500)
 
   const handleExpenseChangePaymentType = (expenseSummary: ExpensePaymentSummary, paymentTypeId: string) => {
     updatePaymentTypeExpenseSummary(expenseSummary, paymentTypeId, date)
@@ -76,6 +77,12 @@ export default function ExpensesSummary({
   const payExpense = async (item: ExpensePaymentSummary) => {
     setIsLoading(true)
     await setExpensePaymentSummaryPaid(item)
+    setIsLoading(false)
+  }
+
+  const dontPayExpense = async (item: ExpensePaymentSummary) => {
+    setIsLoading(true)
+    await setNoNeedExpensePaymentSummary(item)
     setIsLoading(false)
   }
 
@@ -112,7 +119,9 @@ export default function ExpensesSummary({
                           )}
                           <div className="lg:self-center flex-col flex">
                             <Link
-                              className={`font-bold ${item.dueDate === getTodayDueDate() ? 'text-red-500' : ''}`}
+                              className={`font-bold ${
+                                item.dueDate === getTodayDueDate() && !item.paid ? 'text-red-500' : ''
+                              }`}
                               href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=${
                                 PAGES_URL.DASHBOARD.BASE_PATH
                               }?date=${date}&showing=expense-content`}
@@ -120,7 +129,7 @@ export default function ExpensesSummary({
                               {item.expense.description}
                             </Link>
                             {item.dueDate ? (
-                              item.dueDate === getTodayDueDate() ? (
+                              item.dueDate === getTodayDueDate() && !item.paid ? (
                                 <span className="text-xs text-red-500">VENCE HOY</span>
                               ) : (
                                 <span className="text-xs">Vence el {formatLocaleDueDate(item.dueDate)}</span>
@@ -155,7 +164,13 @@ export default function ExpensesSummary({
                           </select>
                         </div>
                         {item.paid ? (
-                          <span className="font-bold text-right">{formatCurrency(item.amount)}</span>
+                          <div className="text-right font-bold">
+                            {item.amount ? (
+                              <span>Pagado {formatCurrency(item.amount)}</span>
+                            ) : (
+                              <span className="italic font-normal">No se pagó este mes</span>
+                            )}
+                          </div>
                         ) : (
                           <div className="flex justify-between items-center gap-1">
                             <NumericFormat
@@ -168,9 +183,19 @@ export default function ExpensesSummary({
                               decimalScale={2}
                               decimalSeparator=","
                             />
-                            <Button disabled={isLoading} size={'sm'} onClick={() => payExpense(item)}>
-                              Pagar
-                            </Button>
+                            <div>
+                              <Button
+                                disabled={isLoading}
+                                size={'sm'}
+                                variant={'ghost'}
+                                onClick={() => dontPayExpense(item)}
+                              >
+                                No se paga
+                              </Button>
+                              <Button disabled={isLoading} size={'sm'} onClick={() => payExpense(item)}>
+                                Pagar
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
