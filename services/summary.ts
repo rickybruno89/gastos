@@ -342,11 +342,15 @@ export async function fetchExpenseSummariesForMonth(date: string) {
           },
         },
       },
-      orderBy: {
-        expense: {
-          createdAt: 'asc',
+      orderBy: [
+        { paid: 'asc' },
+
+        {
+          expense: {
+            createdAt: 'asc',
+          },
         },
-      },
+      ],
     })
     return data.map((item) => ({
       ...item,
