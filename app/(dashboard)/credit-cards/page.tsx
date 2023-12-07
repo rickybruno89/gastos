@@ -24,7 +24,8 @@ export default async function Page() {
       <div className="flex gap-4 flex-wrap justify-center md:justify-start">
         {creditCards.map((creditCard) => (
           <Link
-            className="bg-red-700 w-full md:w-[350px] aspect-video rounded-md shadow-xl p-4 text-white flex flex-col justify-between"
+            style={{ backgroundColor: creditCard.color, color: creditCard.textColor }}
+            className="w-full md:w-[350px] aspect-video rounded-md shadow-xl p-4  flex flex-col justify-between"
             href={PAGES_URL.CREDIT_CARDS.DETAILS(creditCard.id)}
             key={creditCard.id}
           >

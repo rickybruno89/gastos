@@ -8,7 +8,7 @@ import { deleteCreditCardExpenseItem, fetchCreditCardById } from '@/services/cre
 import { deleteCreditCardPaymentSummary } from '@/services/summary'
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import { PlusIcon } from '@heroicons/react/24/outline'
-import { EditIcon, EyeIcon } from 'lucide-react'
+import { Edit, EditIcon, EyeIcon } from 'lucide-react'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import React from 'react'
@@ -46,18 +46,23 @@ export default async function Page({ params }: { params: { id: string } }) {
         <section>
           <h1 className="text-xl font-bold mb-2">Detalles</h1>
           <div className="rounded-md bg-white p-4 flex flex-wrap gap-1 md:gap-4 w-fit">
-            <p>
-              Nombre: <span className="font-bold">{creditCard?.name}</span>{' '}
-            </p>
-            <p>
-              Canal de pago: <span className="font-bold">{creditCard?.paymentSource.name}</span>{' '}
-            </p>
-            <p>
-              Forma de pago: <span className="font-bold">{creditCard?.paymentType.name}</span>{' '}
-            </p>
-            <p>
-              Impuesto de sellado: <span className="font-bold">{creditCard?.taxesPercent.toString()} %</span>{' '}
-            </p>
+            <div>
+              <p>
+                Nombre: <span className="font-bold">{creditCard?.name}</span>{' '}
+              </p>
+              <p>
+                Canal de pago: <span className="font-bold">{creditCard?.paymentSource.name}</span>{' '}
+              </p>
+              <p>
+                Forma de pago: <span className="font-bold">{creditCard?.paymentType.name}</span>{' '}
+              </p>
+              <p>
+                Impuesto de sellado: <span className="font-bold">{creditCard?.taxesPercent.toString()} %</span>{' '}
+              </p>
+            </div>
+            <Link href={PAGES_URL.CREDIT_CARDS.EDIT(creditCard.id)} className="flex gap-2 text-blue-500">
+              Editar <Edit className="w-5 " />
+            </Link>
           </div>
         </section>
         <section>

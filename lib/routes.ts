@@ -6,6 +6,7 @@ export const PAGES_URL = {
     BASE_PATH: `/credit-cards`,
     CREATE: `/credit-cards/create`,
     DETAILS: (id: string) => `/credit-cards/${id}`,
+    EDIT: (id: string) => `/credit-cards/${id}/edit`,
     EXPENSE_ITEM: {
       CREATE: (id: string) => `/credit-cards/${id}/expense-item/create`,
       EDIT: (id: string, editxpenseItemId: string) => `/credit-cards/${id}/expense-item/${editxpenseItemId}/edit`,

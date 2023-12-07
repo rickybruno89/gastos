@@ -54,6 +54,8 @@ const CreateCreditCardExpenseItemSchema = CreditCardExpenseItemSchema.omit({
 const CreditCardSchema = z.object({
   id: z.string().cuid(),
   creditCardName: z.string().min(1, { message: 'El nombre es requerido' }).toUpperCase(),
+  color: z.string(),
+  textColor: z.string(),
   taxesPercent: z.coerce.number().gt(0, { message: 'El porcentaje tiene que ser mayor que 0' }),
   paymentTypeId: z.string({
     invalid_type_error: 'Por favor seleccione una forma de pago',
@@ -65,13 +67,16 @@ const CreditCardSchema = z.object({
 
 const CreateCreditCardSchema = CreditCardSchema.omit({ id: true })
 
-export const createCreditCard = async (
+export const updateCreditCard = async (
+  id: string,
   _prevState: CreateCreditCardState,
   formData: FormData
 ): Promise<PaymentType | any> => {
   try {
     const validatedFields = CreateCreditCardSchema.safeParse({
       creditCardName: formData.get('creditCardName'),
+      color: formData.get('color'),
+      textColor: formData.get('textColor'),
       taxesPercent: formData.get('taxesPercent'),
       paymentTypeId: formData.get('paymentTypeId'),
       paymentSourceId: formData.get('paymentSourceId'),
@@ -84,7 +89,72 @@ export const createCreditCard = async (
       }
     }
 
-    const { creditCardName, taxesPercent, paymentTypeId, paymentSourceId } = validatedFields.data
+    const { creditCardName, color, textColor, taxesPercent, paymentTypeId, paymentSourceId } = validatedFields.data
+
+    const userId = await getAuthUserId()
+
+    const existingCreditCard = await prisma.creditCard.findFirst({
+      where: {
+        name: creditCardName,
+        userId,
+        id: {
+          not: id,
+        },
+      },
+    })
+
+    if (existingCreditCard) {
+      return {
+        errors: { creditCardName: ['El nombre ya existe'] },
+        message: 'Error',
+      }
+    }
+
+    await prisma.creditCard.update({
+      data: {
+        name: creditCardName,
+        color,
+        textColor,
+        taxesPercent,
+        paymentTypeId,
+        paymentSourceId,
+        userId,
+      },
+      where: {
+        id,
+      },
+    })
+  } catch (error) {
+    return {
+      message: 'Error en base de datos',
+    }
+  }
+  revalidatePath(PAGES_URL.CREDIT_CARDS.BASE_PATH)
+  redirect(PAGES_URL.CREDIT_CARDS.BASE_PATH)
+}
+
+export const createCreditCard = async (
+  _prevState: CreateCreditCardState,
+  formData: FormData
+): Promise<PaymentType | any> => {
+  try {
+    const validatedFields = CreateCreditCardSchema.safeParse({
+      creditCardName: formData.get('creditCardName'),
+      color: formData.get('color'),
+      textColor: formData.get('textColor'),
+      taxesPercent: formData.get('taxesPercent'),
+      paymentTypeId: formData.get('paymentTypeId'),
+      paymentSourceId: formData.get('paymentSourceId'),
+    })
+
+    if (!validatedFields.success) {
+      return {
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: 'Error',
+      }
+    }
+
+    const { creditCardName, color, textColor, taxesPercent, paymentTypeId, paymentSourceId } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -105,9 +175,11 @@ export const createCreditCard = async (
     await prisma.creditCard.create({
       data: {
         name: creditCardName,
-        taxesPercent: taxesPercent,
-        paymentTypeId: paymentTypeId,
-        paymentSourceId: paymentSourceId,
+        color,
+        textColor,
+        taxesPercent,
+        paymentTypeId,
+        paymentSourceId,
         userId,
       },
     })
@@ -292,6 +364,9 @@ export async function fetchCreditCards() {
             deleted: false,
           },
         },
+      },
+      orderBy: {
+        createdAt: 'asc',
       },
     })
     return data

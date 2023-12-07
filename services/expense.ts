@@ -209,6 +209,9 @@ export async function fetchExpenses() {
         paymentType: true,
         sharedWith: true,
       },
+      orderBy: {
+        createdAt: 'asc',
+      },
     })
     return data.map((expense) => ({
       ...expense,

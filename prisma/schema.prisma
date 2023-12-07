@@ -106,6 +106,8 @@ model PaymentSource {
 model CreditCard {
   id                     String                     @id @default(cuid())
   name                   String
+  color                  String                     @default("#143273")
+  textColor              String                     @default("#FFFFFF")
   taxesPercent           Float
   paymentType            PaymentType                @relation(fields: [paymentTypeId], references: [id])
   paymentTypeId          String
