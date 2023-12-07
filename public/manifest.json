@@ -6,7 +6,7 @@
     "start_url": "/",
     "name": "GastApp",
     "short_name": "GastApp",
-    "description": "Lleva tus gastos mensuales de pagos recurrentes y tarjeta de creditos",
+    "description": "Lleva tus gastos mensuales de pagos recurrentes y tarjetas de creditos",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",
