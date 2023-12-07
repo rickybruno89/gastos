@@ -84,7 +84,7 @@ export default function ExpensesSummary({
                 <div className="rounded-md bg-white p-4 md:p-6 w-full lg:w-fit flex flex-col gap-2">
                   {expenseSummaries.map((item) => (
                     <div key={item.expenseId} className="flex flex-col gap-3">
-                      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-2">
+                      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-2 lg:items-center">
                         <div className="flex justify-start gap-2 items-center">
                           {item.paid ? (
                             <CheckCircle2 className="w-5 text-green-500" />
