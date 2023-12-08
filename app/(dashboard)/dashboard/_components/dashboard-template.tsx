@@ -21,7 +21,7 @@ export default async function DashboardTemplate({ date }: { date: string }) {
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <div>
+      <div className="flex flex-col gap-3">
         <ExpensesSummary
           expenses={expenses}
           expenseSummaries={expenseSummaries}

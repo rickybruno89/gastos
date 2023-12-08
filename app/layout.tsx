@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: '%s | GastApp',
     default: 'Inicio',
   },
-  description: 'Lleva la cuenta de tus gastos mensuales',
+  description: 'Lleva la cuenta de tus obligaciones mensuales',
   manifest: '/manifest.json',
   icons: {
     apple: '/icon.png',
