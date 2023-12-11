@@ -99,7 +99,9 @@ export default function CreditCardExpensesSummary({
                           {item.paid ? (
                             <CheckCircle2 className="w-5 text-green-500" />
                           ) : item.dueDate === getTodayDueDate() && !item.paid ? (
-                            <span className="animate-ping h-5 w-5 rounded-full bg-red-500" />
+                            <span className=" flex h-5 w-5 p-1.5">
+                              <span className="animate-ping w-full h-full rounded-full bg-red-500" />
+                            </span>
                           ) : (
                             <XCircleIcon className="w-5 text-red-500" />
                           )}

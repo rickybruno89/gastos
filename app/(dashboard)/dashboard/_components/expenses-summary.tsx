@@ -111,11 +111,19 @@ export default function ExpensesSummary({
                       <div className="flex flex-col lg:grid lg:grid-cols-4 gap-2 lg:items-center">
                         <div className="flex justify-start gap-2 items-center">
                           {item.paid ? (
-                            <CheckCircle2 className="w-5 text-green-500" />
+                            item.amount ? (
+                              <CheckCircle2 className="w-5 text-green-500" />
+                            ) : (
+                              <XCircleIcon className="w-5 text-red-500" />
+                            )
                           ) : item.dueDate === getTodayDueDate() ? (
-                            <span className="animate-ping h-5 w-5 rounded-full bg-red-500"></span>
+                            <span className=" flex h-5 w-5 p-1.5">
+                              <span className="animate-ping w-full h-full rounded-full bg-red-500" />
+                            </span>
                           ) : (
-                            <XCircleIcon className="w-5 text-red-500" />
+                            <span className=" flex h-5 w-5 p-1.5">
+                              <span className="animate-ping w-full h-full rounded-full bg-cyan-500" />
+                            </span>
                           )}
                           <div className="lg:self-center flex-col flex">
                             <Link
