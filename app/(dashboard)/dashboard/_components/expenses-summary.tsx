@@ -116,7 +116,7 @@ export default function ExpensesSummary({
                             ) : (
                               <XCircleIcon className="w-5 text-red-500" />
                             )
-                          ) : item.dueDate === getTodayDueDate() ? (
+                          ) : item.dueDate && item.dueDate <= getTodayDueDate() ? (
                             <span className=" flex h-5 w-5 p-1.5">
                               <span className="animate-ping w-full h-full rounded-full bg-red-500" />
                             </span>
@@ -128,7 +128,7 @@ export default function ExpensesSummary({
                           <div className="lg:self-center flex-col flex">
                             <Link
                               className={`font-bold ${
-                                item.dueDate === getTodayDueDate() && !item.paid ? 'text-red-500' : ''
+                                item.dueDate && item.dueDate <= getTodayDueDate() && !item.paid ? 'text-red-500' : ''
                               }`}
                               href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=${
                                 PAGES_URL.DASHBOARD.BASE_PATH
@@ -137,8 +137,14 @@ export default function ExpensesSummary({
                               {item.expense.description}
                             </Link>
                             {item.dueDate ? (
-                              item.dueDate === getTodayDueDate() && !item.paid ? (
-                                <span className="text-xs text-red-500">VENCE HOY</span>
+                              item.dueDate <= getTodayDueDate() && !item.paid ? (
+                                item.dueDate === getTodayDueDate() ? (
+                                  <span className="text-xs text-red-500">VENCE HOY</span>
+                                ) : (
+                                  <span className="text-xs text-red-500">
+                                    VENCIO el {formatLocaleDueDate(item.dueDate)}
+                                  </span>
+                                )
                               ) : (
                                 <span className="text-xs">Vence el {formatLocaleDueDate(item.dueDate)}</span>
                               )

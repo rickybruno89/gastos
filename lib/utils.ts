@@ -58,6 +58,17 @@ export const getTodayDueDate = () => {
 
   return `${year}-${formattedMonth}-${formattedDay}`
 }
+export const getDueDatePlusOneDay = () => {
+  const now = new Date()
+  now.setDate(now.getDate() + 1)
+  const year = now.getFullYear()
+  let month = now.getMonth() + 1
+  let day = now.getDate()
+  const formattedDay = day < 10 ? `0${day}` : `${day}`
+  const formattedMonth = month < 10 ? `0${month}` : `${month}`
+
+  return `${year}-${formattedMonth}-${formattedDay}`
+}
 
 export const getNextMonthDate = () => {
   let now = new Date()
