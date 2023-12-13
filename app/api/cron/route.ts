@@ -1,6 +1,14 @@
 import { mailer } from '@/lib/mailer'
+import { headers } from 'next/headers'
 
 export async function GET() {
+  const headersList = headers()
+  const token = headersList.get('Authorization')
+  if (token !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new Response('Unauthorized', {
+      status: 401,
+    })
+  }
   return await mailer.sendMail({
     from: '"GastApp" <gastapp.ingeit@gmail.com>',
     to: 'rbrunount@gmail.com',
