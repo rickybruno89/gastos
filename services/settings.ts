@@ -1,11 +1,13 @@
 'use server'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
-import { getAuthUserId } from '@/lib/auth'
+import { getAuthUserId, nextAuthOptions } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
+import { mailer } from '@/lib/mailer'
+import { getServerSession } from 'next-auth'
 
 const PaymentSourceSchema = z.object({
   id: z.string().cuid(),
@@ -212,4 +214,14 @@ export async function fetchPersonToShare() {
     console.error('Error:', error)
     throw new Error('Error al cargar Personas')
   }
+}
+
+export const dispatchEmail = async () => {
+  const session = await getServerSession(nextAuthOptions)
+  return await mailer.sendMail({
+    from: '"GastApp" <gastapp.ingeit@gmail.com>', // sender address
+    to: session?.user.email, // list of receivers
+    subject: 'GASTAPP - Prueba', // Subject line
+    html: '<b>Hola estoy aqui. Soy una prueba</b>', // html body
+  })
 }
