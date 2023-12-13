@@ -9,10 +9,19 @@ export async function GET() {
       status: 401,
     })
   }
-  return await mailer.sendMail({
-    from: '"GastApp" <gastapp.ingeit@gmail.com>',
-    to: 'rbrunount@gmail.com',
-    subject: 'GASTAPP - CRON',
-    html: '<b>Esto es desde CRON</b>',
-  })
+  try {
+    await mailer.sendMail({
+      from: '"GastApp" <gastapp.ingeit@gmail.com>',
+      to: 'rbrunount@gmail.com',
+      subject: 'GASTAPP - CRON',
+      html: '<b>Esto es desde CRON</b>',
+    })
+    return new Response('GET request successful', {
+      status: 200,
+    })
+  } catch (error) {
+    return new Response('Error', {
+      status: 500,
+    })
+  }
 }
