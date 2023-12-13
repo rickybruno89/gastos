@@ -53,7 +53,7 @@ const getExpensesToExpire = async (dueDate: string) => {
   return groupedByUserEmail
 }
 
-export const buildHTMLMail = (title: string, expenses: string[]) => {
+const buildHTMLMail = (title: string, expenses: string[]) => {
   let expenseString = ''
   for (const expense of expenses) {
     expenseString += `<li><h3>${expense}</h3></li>`
