@@ -243,17 +243,18 @@ export async function POST() {
   }
   try {
     const expirations = await getExpensesToExpire()
-
-    const promises = expirations.map((item) => {
-      const html = buildHTMLMail(item)
-      return mailer.sendMail({
-        from: '"GastApp" <gastapp.ingeit@gmail.com>',
-        to: item.userEmail,
-        subject: 'Próximos vencimientos',
-        html,
+    if (expirations.length) {
+      const promises = expirations.map((item) => {
+        const html = buildHTMLMail(item)
+        return mailer.sendMail({
+          from: '"GastApp" <gastapp.ingeit@gmail.com>',
+          to: item.userEmail,
+          subject: 'Próximos vencimientos',
+          html,
+        })
       })
-    })
-    await Promise.all(promises)
+      await Promise.all(promises)
+    }
 
     return new Response('GET request successful', {
       status: 200,
