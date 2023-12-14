@@ -3,23 +3,43 @@ import { headers } from 'next/headers'
 import prisma from '@/lib/prisma'
 import { decryptString, getDueDatePlusOneDay, getTodayDueDate } from '@/lib/utils'
 
-interface ExpenseUser {
+interface Expense {
   userEmail: string
   expense: string
+  dueDate: string | null
 }
 
-interface UserWithExpenses {
+interface ReducedExpense {
   userEmail: string
-  expenses: string[]
+  today: string[]
+  tomorrow: string[]
+  unknownDueDate?: string[]
+}
+interface GroupedByUser {
+  userEmail: string
+  expenses: { today: string[]; tomorrow: string[]; unknownDueDate: string[] } | null
+  creditCardExpenses: { today: string[]; tomorrow: string[] } | null
 }
 
-const getExpensesToExpire = async (dueDate: string) => {
-  const response = await prisma.expensePaymentSummary.findMany({
+const getExpensesToExpire = async () => {
+  const today = getTodayDueDate()
+  const tomorrow = getDueDatePlusOneDay()
+  const expenses = await prisma.expensePaymentSummary.findMany({
     where: {
-      dueDate,
+      OR: [
+        {
+          dueDate: {
+            in: [today, tomorrow, ''],
+          },
+        },
+        {
+          dueDate: null,
+        },
+      ],
       paid: false,
     },
     select: {
+      dueDate: true,
       user: {
         select: {
           email: true,
@@ -32,37 +52,182 @@ const getExpensesToExpire = async (dueDate: string) => {
       },
     },
   })
-  const dueTodayResponse = response.map((item) => ({
+
+  const mappedExpenses = expenses.map((item) => ({
     userEmail: item.user.email,
     expense: decryptString(item.expense.description),
-  })) as ExpenseUser[]
+    dueDate: item.dueDate,
+  })) as Expense[]
 
-  const groupedByUserEmail: UserWithExpenses[] = Object.values(
-    dueTodayResponse.reduce((acc, obj) => {
-      const { userEmail, expense } = obj
+  const reducedExpenses: ReducedExpense[] = mappedExpenses.reduce<ReducedExpense[]>((acc, expense) => {
+    const targetEntry = acc.find((entry) => entry.userEmail === expense.userEmail)
+    if (!targetEntry) {
+      acc.push({
+        userEmail: expense.userEmail,
+        today: [],
+        tomorrow: [],
+        unknownDueDate: [],
+      })
+    }
 
-      if (!acc[userEmail]) {
-        acc[userEmail] = { userEmail, expenses: [] }
+    const entryToUpdate = acc.find((entry) => entry.userEmail === expense.userEmail)!
+
+    const targetArray =
+      expense.dueDate === today
+        ? entryToUpdate.today
+        : expense.dueDate === tomorrow
+        ? entryToUpdate.tomorrow
+        : entryToUpdate.unknownDueDate!
+
+    targetArray.push(expense.expense)
+
+    return acc
+  }, [])
+
+  const creditCardExpenses = await prisma.creditCardPaymentSummary.findMany({
+    where: {
+      dueDate: {
+        in: [today, tomorrow, ''],
+      },
+      paid: false,
+    },
+    select: {
+      dueDate: true,
+      user: {
+        select: {
+          email: true,
+        },
+      },
+      creditCard: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  })
+
+  const mappedCreditCardExpenses = creditCardExpenses.map((item) => ({
+    userEmail: item.user.email,
+    expense: item.creditCard.name,
+    dueDate: item.dueDate,
+  })) as Expense[]
+
+  const reducedCreditCardExpenses: ReducedExpense[] = mappedCreditCardExpenses.reduce<ReducedExpense[]>(
+    (acc, expense) => {
+      const targetEntry = acc.find((entry) => entry.userEmail === expense.userEmail)
+      if (!targetEntry) {
+        acc.push({
+          userEmail: expense.userEmail,
+          today: [],
+          tomorrow: [],
+        })
       }
 
-      acc[userEmail].expenses.push(expense)
+      const entryToUpdate = acc.find((entry) => entry.userEmail === expense.userEmail)!
+
+      const targetArray = expense.dueDate === today ? entryToUpdate.today : entryToUpdate.tomorrow
+
+      targetArray.push(expense.expense)
 
       return acc
-    }, {} as Record<string, UserWithExpenses>)
+    },
+    []
   )
-  return groupedByUserEmail
+
+  const userEmailsSet = new Set([
+    ...reducedExpenses.map((item) => item.userEmail),
+    ...reducedCreditCardExpenses.map((item) => item.userEmail),
+  ])
+
+  const groupedAllByUser = Array.from(userEmailsSet).map((userEmailItem) => {
+    const expenseUser = reducedExpenses.find((item) => item.userEmail === userEmailItem)
+    const creditCardUser = reducedCreditCardExpenses.find((item) => item.userEmail === userEmailItem)
+
+    const getExpensesWithoutUser = () => {
+      if (!expenseUser) return null
+      const { userEmail, ...expensesWithoutUser } = expenseUser
+      return expensesWithoutUser
+    }
+
+    const getCreditCardExpensesWithoutUser = () => {
+      if (!creditCardUser) return null
+      const { userEmail, ...expensesWithoutUser } = creditCardUser
+      return expensesWithoutUser
+    }
+
+    return {
+      userEmail: userEmailItem,
+      expenses: getExpensesWithoutUser(),
+      creditCardExpenses: getCreditCardExpensesWithoutUser(),
+    }
+  }) as GroupedByUser[]
+
+  return groupedAllByUser
 }
 
-const buildHTMLMail = (title: string, expenses: string[]) => {
-  let expenseString = ''
+const buildHTMLExpensesList = (expenses: string[]) => {
+  if (!expenses.length) return '<li>No se encontraron gastos</li>'
+  let expensesList = ''
   for (const expense of expenses) {
-    expenseString += `<li><h3>${expense}</h3></li>`
+    expensesList += `<li>${expense}</li>`
   }
+  return expensesList
+}
+
+const buildHTMLExpenses = (expenses: GroupedByUser['expenses']) => {
+  if (!expenses) return '<h3>No hay próximos vencimientos</h3>'
+  const expenseToday = buildHTMLExpensesList(expenses.today)
+  const expenseTomorrow = buildHTMLExpensesList(expenses.tomorrow)
+  const expenseUnknownDate = buildHTMLExpensesList(expenses.unknownDueDate)
+
+  return `
+    <ul>
+      <li>
+        <h3>Vencen Hoy</h3>
+        <ul>${expenseToday}</ul>
+      </li>
+      <li>
+        <h3>Vencen Mañana</h3>
+        <ul>${expenseTomorrow}</ul>
+      </li>
+      <li>
+        <h3>Gastos no pagados que no tienen fecha de vencimiento</h3>
+        <ul>${expenseUnknownDate}</ul>
+      </li>
+    </ul>
+  `
+}
+const buildHTMLCreditCardExpenses = (expenses: GroupedByUser['creditCardExpenses']) => {
+  if (!expenses) return '<h3>No hay próximos vencimientos</h3>'
+  const expenseToday = buildHTMLExpensesList(expenses.today)
+  const expenseTomorrow = buildHTMLExpensesList(expenses.tomorrow)
+
+  return `
+    <ul>
+      <li>
+        <h3>Vencen Hoy</h3>
+        <ul>${expenseToday}</ul>
+      </li>
+      <li>
+        <h3>Vencen Mañana</h3>
+        <ul>${expenseTomorrow}</ul>
+      </li>
+    </ul>
+  `
+}
+
+const buildHTMLMail = (item: GroupedByUser) => {
   return `
       <div>
-        <h1>${title}</h1>
         <ul>
-          ${expenseString}
+          <li>
+            <h1>Gastos fijos</h1>
+            ${buildHTMLExpenses(item.expenses)}
+          </li>
+          <li>
+            <h1>Tarjetas de crédito</h1>
+            ${buildHTMLCreditCardExpenses(item.creditCardExpenses)}
+          </li>
         </ul>
       </div>
     `
@@ -76,31 +241,20 @@ export async function POST() {
       status: 401,
     })
   }
-
   try {
-    const expiresToday = await getExpensesToExpire(getTodayDueDate())
-    const expiresTomorrow = await getExpensesToExpire(getDueDatePlusOneDay())
+    const expirations = await getExpensesToExpire()
 
-    const promisesToday = expiresToday.map((item) => {
-      const html = buildHTMLMail('Gastos que vencen hoy', item.expenses)
+    const promises = expirations.map((item) => {
+      const html = buildHTMLMail(item)
       return mailer.sendMail({
         from: '"GastApp" <gastapp.ingeit@gmail.com>',
         to: item.userEmail,
-        subject: 'Vencimientos de hoy',
+        subject: 'Próximos vencimientos',
         html,
       })
     })
-    await Promise.all(promisesToday)
-    const promisesTomorrow = expiresTomorrow.map((item) => {
-      const html = buildHTMLMail('Gastos que vencen mañana', item.expenses)
-      return mailer.sendMail({
-        from: '"GastApp" <gastapp.ingeit@gmail.com>',
-        to: item.userEmail,
-        subject: 'Vencimientos de mañana',
-        html,
-      })
-    })
-    await Promise.all(promisesTomorrow)
+    await Promise.all(promises)
+
     return new Response('GET request successful', {
       status: 200,
     })

@@ -68,7 +68,7 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
       data: {
         description: encryptString(description),
         notes,
-        dueDate,
+        dueDate: dueDate || null,
         amount: removeCurrencyMaskFromInput(amount),
         sharedWith: {
           connect: sharedWith.map((personId) => ({ id: personId })),
@@ -116,7 +116,7 @@ export const updateExpense = async (
     await prisma.expense.update({
       data: {
         description: encryptString(description),
-        dueDate,
+        dueDate: dueDate || null,
         notes,
         amount: removeCurrencyMaskFromInput(amount),
         sharedWith: {
@@ -142,7 +142,7 @@ export const updateExpense = async (
     if (expensePaymentSummaryToUpdate && !expensePaymentSummaryToUpdate.paid) {
       await prisma.expensePaymentSummary.update({
         data: {
-          dueDate,
+          dueDate: dueDate || null,
         },
         where: {
           id: expensePaymentSummaryToUpdate.id,

@@ -291,11 +291,17 @@ export async function fetchCreditCardSummariesForMonth(date: string) {
 
   try {
     const data = await prisma.creditCardPaymentSummary.findMany({
-      orderBy: {
-        creditCard: {
-          name: 'asc',
+      orderBy: [
+        { paid: 'asc' },
+        {
+          dueDate: 'asc',
         },
-      },
+        {
+          creditCard: {
+            name: 'asc',
+          },
+        },
+      ],
       where: {
         userId,
         date,
@@ -414,7 +420,7 @@ export const setExpensePaymentSummaryPaid = async (expenseItem: ExpensePaymentSu
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
   }
-  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${expenseItem.date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${expenseItem.date}`)
 }
 

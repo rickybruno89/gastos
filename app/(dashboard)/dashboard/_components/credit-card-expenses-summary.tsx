@@ -98,12 +98,14 @@ export default function CreditCardExpensesSummary({
                         <div className="flex justify-start gap-2 items-center">
                           {item.paid ? (
                             <CheckCircle2 className="w-5 text-green-500" />
-                          ) : item.dueDate === getTodayDueDate() && !item.paid ? (
+                          ) : item.dueDate <= getTodayDueDate() ? (
                             <span className=" flex h-5 w-5 p-1.5">
                               <span className="animate-ping w-full h-full rounded-full bg-red-500" />
                             </span>
                           ) : (
-                            <XCircleIcon className="w-5 text-red-500" />
+                            <span className=" flex h-5 w-5 p-1.5">
+                              <span className="animate-ping w-full h-full rounded-full bg-cyan-500" />
+                            </span>
                           )}
                           <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCard.id, item.id)}>
                             <p
