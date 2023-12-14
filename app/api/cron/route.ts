@@ -82,26 +82,28 @@ export async function POST() {
     const expiresToday = await getExpensesToExpire(getTodayDueDate())
     const expiresTomorrow = await getExpensesToExpire(getDueDatePlusOneDay())
 
-    expiresToday.forEach((item) => {
+    const promisesToday = expiresToday.map((item) => {
       const html = buildHTMLMail('Gastos que vencen hoy', item.expenses)
-      mailer.sendMail({
+      return mailer.sendMail({
         from: '"GastApp" <gastapp.ingeit@gmail.com>',
         to: item.userEmail,
         subject: 'Vencimientos de hoy',
         html,
       })
     })
+    Promise.all(promisesToday)
     console.log('🚀 ~ file: route.ts:94 ~ expiresToday.forEach ~ expiresToday:', expiresToday)
 
-    expiresTomorrow.forEach((item) => {
+    const promisesTomorrow = expiresTomorrow.map((item) => {
       const html = buildHTMLMail('Gastos que vencen mañana', item.expenses)
-      mailer.sendMail({
+      return mailer.sendMail({
         from: '"GastApp" <gastapp.ingeit@gmail.com>',
         to: item.userEmail,
         subject: 'Vencimientos de mañana',
         html,
       })
     })
+    Promise.all(promisesTomorrow)
     console.log('🚀 ~ file: route.ts:105 ~ expiresTomorrow.forEach ~ expiresTomorrow:', expiresTomorrow)
     return new Response('GET request successful', {
       status: 200,
