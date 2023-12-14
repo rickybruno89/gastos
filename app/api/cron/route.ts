@@ -69,12 +69,6 @@ const buildHTMLMail = (title: string, expenses: string[]) => {
 }
 
 export async function POST() {
-  await mailer.sendMail({
-    from: '"GastApp" <gastapp.ingeit@gmail.com>',
-    to: 'rbrunount@gmail.com',
-    subject: 'Vencimientos de hoy',
-    html: 'HOLA 1',
-  })
   const headersList = headers()
   const token = headersList.get('Authorization')
   if (token !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -82,12 +76,7 @@ export async function POST() {
       status: 401,
     })
   }
-  await mailer.sendMail({
-    from: '"GastApp" <gastapp.ingeit@gmail.com>',
-    to: 'rbrunount@gmail.com',
-    subject: 'Vencimientos de hoy',
-    html: 'HOLA 2',
-  })
+
   try {
     const expiresToday = await getExpensesToExpire(getTodayDueDate())
     const expiresTomorrow = await getExpensesToExpire(getDueDatePlusOneDay())
@@ -101,9 +90,7 @@ export async function POST() {
         html,
       })
     })
-    const res1 = await Promise.all(promisesToday)
-    console.log('🚀 ~ file: route.ts:93 ~ POST ~ res1:', res1)
-
+    await Promise.all(promisesToday)
     const promisesTomorrow = expiresTomorrow.map((item) => {
       const html = buildHTMLMail('Gastos que vencen mañana', item.expenses)
       return mailer.sendMail({
@@ -113,14 +100,7 @@ export async function POST() {
         html,
       })
     })
-    const res2 = await Promise.all(promisesTomorrow)
-    console.log('🚀 ~ file: route.ts:105 ~ POST ~ res2:', res2)
-    await mailer.sendMail({
-      from: '"GastApp" <gastapp.ingeit@gmail.com>',
-      to: 'rbrunount@gmail.com',
-      subject: 'Vencimientos de hoy',
-      html: 'HOLA 3',
-    })
+    await Promise.all(promisesTomorrow)
     return new Response('GET request successful', {
       status: 200,
     })
