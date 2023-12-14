@@ -370,6 +370,10 @@ export async function fetchExpenseSummariesForMonth(date: string) {
       },
       orderBy: [
         { paid: 'asc' },
+
+        {
+          amount: 'desc',
+        },
         {
           dueDate: 'asc',
         },
@@ -439,7 +443,7 @@ export const setNoNeedExpensePaymentSummary = async (expenseItem: ExpensePayment
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
   }
-  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${expenseItem.date}`)
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${expenseItem.date}`)
 }
 
