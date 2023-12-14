@@ -68,7 +68,7 @@ const buildHTMLMail = (title: string, expenses: string[]) => {
     `
 }
 
-export async function GET() {
+export async function POST() {
   const headersList = headers()
   const token = headersList.get('Authorization')
   if (token !== `Bearer ${process.env.CRON_SECRET}`) {
