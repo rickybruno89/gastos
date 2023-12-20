@@ -46,7 +46,7 @@ export const generateExpenseSummaryForMonth = async (date: string) => {
 
     const mappedExpenses = expenses.map((item) => ({
       ...item,
-      dueDate: getNextMonthDueDate(item.dueDate),
+      dueDate: getNextMonthDueDate(item.dueDate, date),
     }))
 
     const transactions = mappedExpenses.map((item) =>
@@ -395,6 +395,30 @@ export async function fetchExpenseSummariesForMonth(date: string) {
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
   }
+}
+
+export const undoExpensePaymentSummaryPaid = async (expenseItem: ExpensePaymentSummary) => {
+  try {
+   const expense = await prisma.expense.findUnique({
+    where: {
+      id: expenseItem.expenseId
+    }
+   })
+    await prisma.expensePaymentSummary.update({
+      data: {
+        paid: false,
+        amount: expense?.amount
+      },
+      where: {
+        id: expenseItem.id,
+      },
+    })
+  } catch (error) {
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
+  }
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${expenseItem.date}`)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${expenseItem.date}`)
 }
 
 export const setExpensePaymentSummaryPaid = async (expenseItem: ExpensePaymentSummary) => {

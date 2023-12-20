@@ -134,15 +134,19 @@ export const updateExpense = async (
     const expensePaymentSummaryToUpdate = await prisma.expensePaymentSummary.findFirst({
       where: {
         expenseId: id,
+        paid: false,
       },
       orderBy: {
         date: 'desc',
       },
     })
-    if (expensePaymentSummaryToUpdate && !expensePaymentSummaryToUpdate.paid) {
+    if (expensePaymentSummaryToUpdate) {
       await prisma.expensePaymentSummary.update({
         data: {
           dueDate: dueDate || null,
+          amount: removeCurrencyMaskFromInput(amount),
+          paymentTypeId,
+          paymentSourceId,
         },
         where: {
           id: expensePaymentSummaryToUpdate.id,

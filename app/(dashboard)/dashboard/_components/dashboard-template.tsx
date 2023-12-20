@@ -20,22 +20,14 @@ export default async function DashboardTemplate({ date }: { date: string }) {
   const paymentSourceBalance = await fetchPaymentSourceBalance(date)
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <div className="flex flex-col gap-3">
-        <ExpensesSummary
-          expenses={expenses}
-          expenseSummaries={expenseSummaries}
-          paymentTypes={paymentTypes}
-          date={date}
-          paymentSources={paymentSources}
-        />
-        <CreditCardExpensesSummary
-          creditCardExpenseSummaries={creditCardExpenseSummaries}
-          paymentTypes={paymentTypes}
-          date={date}
-          paymentSources={paymentSources}
-        />
-      </div>
+    <div className="flex flex-col gap-4">
+      <ExpensesSummary expenses={expenses} expenseSummaries={expenseSummaries} date={date} />
+      <CreditCardExpensesSummary
+        creditCardExpenseSummaries={creditCardExpenseSummaries}
+        paymentTypes={paymentTypes}
+        paymentSources={paymentSources}
+        date={date}
+      />
       <div>
         <SourceBalance paymentSourceBalance={paymentSourceBalance} />
         <SharedExpenses expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} />

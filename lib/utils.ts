@@ -81,12 +81,12 @@ export const getNextMonthDate = () => {
   return `${year}-${formattedMonth}`
 }
 
-export const getNextMonthDueDate = (date: string | null) => {
-  if (!date) return null
-  const [yyyy, mm, dd] = date.split('-')
+export const getNextMonthDueDate = (itemDate: string | null, date: string) => {
+  if (!itemDate) return null
+  const [, , dd] = itemDate.split('-')
+  const [yyyy, mm] = date.split('-')
   const adjustedDate = new Date(`${yyyy}-${mm}-${dd}T00:00:00`)
 
-  adjustedDate.setMonth(adjustedDate.getMonth() + 1)
   let year = adjustedDate.getFullYear()
   let month = adjustedDate.getMonth() + 1
   let day = adjustedDate.getDate()
