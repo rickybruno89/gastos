@@ -1,5 +1,5 @@
 'use server'
-import { PaymentType, Prisma } from '@prisma/client'
+import { CreditCardPaymentSummary, PaymentType, Prisma } from '@prisma/client'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth'
@@ -516,4 +516,23 @@ export const deleteCreditCardExpenseItem = async (id: string) => {
   }
   revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(existingCreditCardExpenseItem.creditCardId))
   redirect(PAGES_URL.CREDIT_CARDS.DETAILS(existingCreditCardExpenseItem.creditCardId))
+}
+
+export const undoCCExpensePaymentSummaryPaid = async (item: CreditCardPaymentSummary) => {
+  try {
+ 
+    await prisma.creditCardPaymentSummary.update({
+      data: {
+        paid: false,
+      },
+      where: {
+        id: item.id,
+      },
+    })
+  } catch (error) {
+    console.error('Error:', error)
+    throw new Error('Error al cargar Tarjetas de créditos')
+  }
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${item.date}`)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${item.date}`)
 }

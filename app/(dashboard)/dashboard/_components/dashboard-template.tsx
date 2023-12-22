@@ -21,7 +21,7 @@ export default async function DashboardTemplate({ date }: { date: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <ExpensesSummary expenses={expenses} expenseSummaries={expenseSummaries} date={date} />
+      <ExpensesSummary expenses={expenses} expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} date={date} />
       <CreditCardExpensesSummary
         creditCardExpenseSummaries={creditCardExpenseSummaries}
         paymentTypes={paymentTypes}
