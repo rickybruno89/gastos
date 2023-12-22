@@ -6,7 +6,6 @@ import {
   fetchPaymentSourceBalance,
 } from '@/services/summary'
 import ExpensesSummary from './expenses-summary'
-import CreditCardExpensesSummary from './credit-card-expenses-summary'
 import SourceBalance from './source-balance'
 import SharedExpenses from './shared-expenses'
 import { fetchExpenses } from '@/services/expense'
@@ -22,12 +21,6 @@ export default async function DashboardTemplate({ date }: { date: string }) {
   return (
     <div className="flex flex-col gap-4">
       <ExpensesSummary expenses={expenses} expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} date={date} />
-      <CreditCardExpensesSummary
-        creditCardExpenseSummaries={creditCardExpenseSummaries}
-        paymentTypes={paymentTypes}
-        paymentSources={paymentSources}
-        date={date}
-      />
       <div>
         <SourceBalance paymentSourceBalance={paymentSourceBalance} />
         <SharedExpenses expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} />

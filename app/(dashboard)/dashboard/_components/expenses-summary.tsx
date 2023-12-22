@@ -188,13 +188,14 @@ export default function ExpensesSummary({
               <TableHead>Canal de pago</TableHead>
               <TableHead>Fecha de vencimiento</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead>Compartido</TableHead>
               <TableHead className="text-right">Monto</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             <TableRow className="text-xs md:text-sm">
-              <TableCell colSpan={7} className="sticky left-0 px-0 py-2 uppercase font-bold">
+              <TableCell colSpan={8} className="sticky left-0 px-0 py-2 uppercase font-bold">
                 Gastos Fijos
               </TableCell>
             </TableRow>
@@ -206,6 +207,7 @@ export default function ExpensesSummary({
                 <TableCell>{item.paymentSource.name}</TableCell>
                 <TableCell>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</TableCell>
                 <TableCell>{getStatusBadge(item)}</TableCell>
+                <TableCell>{item.expense.sharedWith.map((person) => person.name).join(' - ')}</TableCell>
                 <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
                 <TableCell className="text-right flex flex-nowrap items-center justify-end">
                   <DropdownMenu>
@@ -246,7 +248,7 @@ export default function ExpensesSummary({
               </TableRow>
             ))}
             <TableRow className="text-xs md:text-sm">
-              <TableCell colSpan={7} className="sticky left-0 px-0 py-2 uppercase font-bold">
+              <TableCell colSpan={8} className="sticky left-0 px-0 py-2 uppercase font-bold">
                 Tarjetas de crédito
               </TableCell>
             </TableRow>
@@ -257,6 +259,7 @@ export default function ExpensesSummary({
                 <TableCell>{item.paymentSource.name}</TableCell>
                 <TableCell>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</TableCell>
                 <TableCell>{getStatusBadge(item)}</TableCell>
+                <TableCell>-</TableCell>
                 <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
                 <TableCell className="text-right flex flex-nowrap items-center justify-end">
                   <DropdownMenu>
@@ -267,6 +270,14 @@ export default function ExpensesSummary({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Link
+                          className="w-full"
+                          href={`${PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCardId, item.id)}`}
+                        >
+                          Ver detalle
+                        </Link>
+                      </DropdownMenuItem>
                       {item.paid ? (
                         <>
                           <DropdownMenuItem className="cursor-pointer" onClick={() => undoCCExpensePayment(item)}>
@@ -275,14 +286,6 @@ export default function ExpensesSummary({
                         </>
                       ) : (
                         <>
-                          <DropdownMenuItem className="cursor-pointer">
-                            {/* <Link
-                              className="w-full"
-                              href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=/dashboard`}
-                            >
-                              Editar
-                            </Link> */}
-                          </DropdownMenuItem>
                           <DropdownMenuItem className="cursor-pointer" onClick={() => payCCExpense(item)}>
                             Pagar
                           </DropdownMenuItem>
@@ -296,17 +299,17 @@ export default function ExpensesSummary({
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell className="py-0.5" colSpan={5} />
+              <TableCell className="py-0.5" colSpan={6} />
               <TableCell className="py-0.5 pt-2 text-right">Total</TableCell>
               <TableCell className="text-right py-0.5 pr-4">{formatCurrency(getTotals().amount)}</TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="py-0.5" colSpan={5} />
+              <TableCell className="py-0.5" colSpan={6} />
               <TableCell className="py-0.5 text-right">Pagado</TableCell>
               <TableCell className="text-right py-0.5 pr-4">{formatCurrency(getTotals().paid)}</TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="py-0.5" colSpan={5} />
+              <TableCell className="py-0.5" colSpan={6} />
               <TableCell className="py-0.5 pb-2 text-right">No Pagado</TableCell>
               <TableCell className="text-right py-0.5 pr-4">{formatCurrency(getTotals().notPaid)}</TableCell>
             </TableRow>
