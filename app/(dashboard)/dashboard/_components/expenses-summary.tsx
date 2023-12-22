@@ -297,21 +297,21 @@ export default function ExpensesSummary({
               </TableRow>
             ))}
           </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell className="py-0.5" colSpan={6} />
+          <TableFooter className="border-b border-b-gray-200">
+            <TableRow className="bg-white">
+              <TableCell className="py-0.5" colSpan={5} />
               <TableCell className="py-0.5 pt-2 text-right">Total</TableCell>
-              <TableCell className="text-right py-0.5 pr-4">{formatCurrency(getTotals().amount)}</TableCell>
+              <TableCell className="text-right py-0.5">{formatCurrency(getTotals().amount)}</TableCell>
             </TableRow>
-            <TableRow>
-              <TableCell className="py-0.5" colSpan={6} />
+            <TableRow className="bg-white">
+              <TableCell className="py-0.5" colSpan={5} />
               <TableCell className="py-0.5 text-right">Pagado</TableCell>
-              <TableCell className="text-right py-0.5 pr-4">{formatCurrency(getTotals().paid)}</TableCell>
+              <TableCell className="text-right py-0.5">{formatCurrency(getTotals().paid)}</TableCell>
             </TableRow>
-            <TableRow>
-              <TableCell className="py-0.5" colSpan={6} />
+            <TableRow className="bg-white">
+              <TableCell className="py-0.5" colSpan={5} />
               <TableCell className="py-0.5 pb-2 text-right">No Pagado</TableCell>
-              <TableCell className="text-right py-0.5 pr-4">{formatCurrency(getTotals().notPaid)}</TableCell>
+              <TableCell className="text-right py-0.5">{formatCurrency(getTotals().notPaid)}</TableCell>
             </TableRow>
           </TableFooter>
         </Table>

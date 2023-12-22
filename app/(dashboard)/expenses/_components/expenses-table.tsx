@@ -1,17 +1,19 @@
 'use client'
 import React, { useEffect, useRef, useState } from 'react'
 import ButtonDelete from '@/components/ui/button-delete'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatLocaleDueDate } from '@/lib/utils'
 import { deleteExpenseItem } from '@/services/expense'
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import Link from 'next/link'
-import { EditIcon, PlusIcon } from 'lucide-react'
+import { EditIcon, MoreHorizontal, PlusIcon } from 'lucide-react'
 import ButtonTooltip from '@/components/ui/button-tooltip'
 import { Prisma } from '@prisma/client'
 import { PAGES_URL } from '@/lib/routes'
 import LinkButton from '@/components/ui/link-button'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { debounce } from 'lodash'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 type DataWithInclude = Prisma.ExpenseGetPayload<{
   include: {
@@ -56,55 +58,59 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
         </div>
       </div>
       {filteredExpenses.length ? (
-        <div className="flex flex-col gap-1 w-full rounded-md bg-white p-4 md:p-6">
-          {filteredExpenses.map((item) => (
-            <div key={item.id} className="flex flex-col">
-              <div className="flex flex-col md:grid lg:grid-cols-8">
-                <p className="self-center col-span-2 font-bold">{item.description}</p>
-                <p className="self-center">{formatCurrency(item.amount)}</p>
-                <p className="self-center col-span-2">
-                  {item.paymentType.name} - {item.paymentSource.name}
-                </p>
-                <div className="self-center">
-                  {item.sharedWith.length ? (
-                    <p>
-                      Compartido con <span>{item.sharedWith.map((person) => person.name).join(' - ')}</span>
-                    </p>
-                  ) : (
-                    <p className="self-center">No compartido</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 justify-self-end self-center col-span-2">
-                  <ButtonTooltip
-                    action="click"
-                    content={
-                      <div>
-                        Notas:{' '}
-                        {item.notes ? (
-                          <span className="">{item.notes}</span>
-                        ) : (
-                          <span className="italic">No hay notas</span>
-                        )}
-                      </div>
-                    }
-                    trigger={<InformationCircleIcon className="w-6 h-6 text-blue-500" />}
-                  />
-                  <ButtonTooltip
-                    action="click"
-                    content="Editar item"
-                    trigger={
-                      <Link href={PAGES_URL.EXPENSES.EDIT(item.id)}>
-                        <EditIcon className="w-5 h-5" />
-                      </Link>
-                    }
-                  />
-                  <ButtonDelete action={deleteExpenseItem} id={item.id} />
-                </div>
-              </div>
-              <div className="my-2 h-px w-full bg-gray-300" />
-            </div>
-          ))}
-        </div>
+        <section className="rounded-md bg-white p-4 md:p-6">
+          <Table className="whitespace-nowrap">
+            <TableHeader>
+              <TableRow className="text-xs md:text-sm">
+                <TableHead className="sticky left-0 bg-white">Descripción</TableHead>
+                <TableHead>Forma de pago</TableHead>
+                <TableHead>Canal de pago</TableHead>
+                <TableHead>Compartido</TableHead>
+                <TableHead className="text-right">Monto</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredExpenses.map((item) => (
+                <TableRow key={item.id} className="text-xs md:text-sm">
+                  <TableCell className="sticky left-0 bg-white">{item.description}</TableCell>
+                  <TableCell>{item.paymentType.name}</TableCell>
+                  <TableCell>{item.paymentSource.name}</TableCell>
+                  <TableCell>{item.sharedWith.map((person) => person.name).join(' - ')}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
+                  <TableCell className="text-right flex flex-nowrap items-center justify-end">
+                    <div className="flex items-center gap-2 justify-self-end self-center col-span-2">
+                      <ButtonTooltip
+                        action="click"
+                        content={
+                          <div>
+                            Notas:{' '}
+                            {item.notes ? (
+                              <span className="">{item.notes}</span>
+                            ) : (
+                              <span className="italic">No hay notas</span>
+                            )}
+                          </div>
+                        }
+                        trigger={<InformationCircleIcon className="w-6 h-6 text-blue-500" />}
+                      />
+                      <ButtonTooltip
+                        action="click"
+                        content="Editar item"
+                        trigger={
+                          <Link href={PAGES_URL.EXPENSES.EDIT(item.id)}>
+                            <EditIcon className="w-5 h-5" />
+                          </Link>
+                        }
+                      />
+                      <ButtonDelete action={deleteExpenseItem} id={item.id} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </section>
       ) : (
         <h1>No hay items </h1>
       )}
