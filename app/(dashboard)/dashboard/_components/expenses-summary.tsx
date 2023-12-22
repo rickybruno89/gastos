@@ -128,14 +128,29 @@ export default function ExpensesSummary({
     }
   }
 
-  const getTotals = () =>
-    expenseSummaries.reduce(
+  const getTotals = () => {
+    const expenses = expenseSummaries.reduce(
       (acc, expense) => {
         if (expense.paid) return { ...acc, paid: acc.paid + expense.amount }
         return { ...acc, notPaid: acc.notPaid + expense.amount }
       },
       { paid: 0, notPaid: 0 }
     )
+    const ccExpenses = creditCardExpenseSummaries.reduce(
+      (acc, expense) => {
+        if (expense.paid) return { ...acc, paid: acc.paid + expense.amount }
+        return { ...acc, notPaid: acc.notPaid + expense.amount }
+      },
+      { paid: 0, notPaid: 0 }
+    )
+    return {
+      paid: expenses.paid + ccExpenses.paid,
+      notPaid: expenses.notPaid + ccExpenses.notPaid,
+      amount:
+        expenseSummaries.reduce((acc, exp) => (acc += exp.amount), 0) +
+        creditCardExpenseSummaries.reduce((acc, exp) => (acc += exp.amount), 0),
+    }
+  }
 
   const getNewExpenses = () =>
     expenses
@@ -164,7 +179,6 @@ export default function ExpensesSummary({
 
   return (
     <section id="expense-content" className="rounded-md bg-white p-4 md:p-6">
-      <p className="font-bold">Gastos fijos</p>
       {expenseSummaries.length ? (
         <Table className="whitespace-nowrap">
           <TableHeader>
@@ -179,8 +193,8 @@ export default function ExpensesSummary({
             </TableRow>
           </TableHeader>
           <TableBody>
-          <TableRow className="text-xs md:text-sm">
-              <TableCell colSpan={7} className="sticky left-0  py-2 ">
+            <TableRow className="text-xs md:text-sm">
+              <TableCell colSpan={7} className="sticky left-0 px-0 py-2 uppercase font-bold">
                 Gastos Fijos
               </TableCell>
             </TableRow>
@@ -232,8 +246,8 @@ export default function ExpensesSummary({
               </TableRow>
             ))}
             <TableRow className="text-xs md:text-sm">
-              <TableCell colSpan={7} className="sticky left-0  py-2 ">
-                Tarjetas de credito
+              <TableCell colSpan={7} className="sticky left-0 px-0 py-2 uppercase font-bold">
+                Tarjetas de crédito
               </TableCell>
             </TableRow>
             {creditCardExpenseSummaries.map((item) => (
@@ -280,14 +294,11 @@ export default function ExpensesSummary({
               </TableRow>
             ))}
           </TableBody>
-
           <TableFooter>
             <TableRow>
               <TableCell className="py-0.5" colSpan={5} />
               <TableCell className="py-0.5 pt-2 text-right">Total</TableCell>
-              <TableCell className="text-right py-0.5 pr-4">
-                {formatCurrency(expenseSummaries.reduce((acc, exp) => (acc += exp.amount), 0))}
-              </TableCell>
+              <TableCell className="text-right py-0.5 pr-4">{formatCurrency(getTotals().amount)}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="py-0.5" colSpan={5} />
