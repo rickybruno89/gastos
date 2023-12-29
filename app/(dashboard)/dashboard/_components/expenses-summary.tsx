@@ -178,7 +178,7 @@ export default function ExpensesSummary({
       ))
 
   return (
-    <section id="expense-content" className="rounded-md bg-white p-4 md:p-6">
+    <section id="expense-content" className="rounded-md bg-white md:p-6">
       {expenseSummaries.length ? (
         <Table className="whitespace-nowrap">
           <TableHeader>
@@ -195,19 +195,19 @@ export default function ExpensesSummary({
           </TableHeader>
           <TableBody>
             <TableRow className="text-xs md:text-sm">
-              <TableCell colSpan={8} className="sticky left-0 px-0 py-2 uppercase font-bold">
+              <TableCell className="sticky left-0 py-2 uppercase font-bold">
                 Gastos Fijos
               </TableCell>
             </TableRow>
             {getNewExpenses()}
             {expenseSummaries.map((item) => (
               <TableRow key={item.id} className="text-xs md:text-sm">
-                <TableCell className="sticky left-0 bg-white">{item.expense.description}</TableCell>
-                <TableCell>{item.paymentType.name}</TableCell>
-                <TableCell>{item.paymentSource.name}</TableCell>
+                <TableCell className="sticky left-0 bg-white capitalize">{item.expense.description.toLowerCase()}</TableCell>
+                <TableCell className='!capitalize'>{item.paymentType.name.toLowerCase()}</TableCell>
+                <TableCell className='!capitalize'>{item.paymentSource.name.toLowerCase()}</TableCell>
                 <TableCell>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</TableCell>
                 <TableCell>{getStatusBadge(item)}</TableCell>
-                <TableCell>{item.expense.sharedWith.map((person) => person.name).join(' - ')}</TableCell>
+                <TableCell className='!capitalize'>{item.expense.sharedWith.map((person) => person.name.toLowerCase()).join(' - ')}</TableCell>
                 <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
                 <TableCell className="text-right flex flex-nowrap items-center justify-end">
                   <DropdownMenu>
@@ -248,8 +248,8 @@ export default function ExpensesSummary({
               </TableRow>
             ))}
             <TableRow className="text-xs md:text-sm">
-              <TableCell colSpan={8} className="sticky left-0 px-0 py-2 uppercase font-bold">
-                Tarjetas de crédito
+              <TableCell className="sticky left-0 py-2 uppercase font-bold">
+                Tarjetas crédito
               </TableCell>
             </TableRow>
             {creditCardExpenseSummaries.map((item) => (
