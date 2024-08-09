@@ -9,7 +9,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
   return (
     <div>
       <Navbar session={session} />
-      <div>{children}</div>
+      <div className='container max-w-7xl mt-6'>{children}</div>
     </div>
   )
 }

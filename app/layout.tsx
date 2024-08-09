@@ -2,7 +2,7 @@ import '@/app/globals.css'
 
 import { Metadata } from 'next'
 import { NextAuthProvider } from './Providers'
-import { inter } from '@/components/ui/fonts'
+import { roboto, inter, lusitana } from '@/components/ui/fonts'
 import { Toaster } from '@/components/ui/toaster'
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased bg-white`}>
+      <body className={`${inter.variable} ${roboto.variable} ${lusitana.variable} antialiased bg-white`}>
         <NextAuthProvider>{children}</NextAuthProvider>
         <Toaster />
       </body>
