@@ -107,24 +107,41 @@ export default function ExpensesSummary({
     setIsLoading(false)
   }
 
-  const getStatusBadge = (expense: ExpensesPaymentSummaryWithInclude | CreditCardExpensesWithInclude) => {
+  // const getStatusBadge = (expense: ExpensesPaymentSummaryWithInclude | CreditCardExpensesWithInclude) => {
+  //   switch (expense.paid) {
+  //     case true:
+  //       if (expense.amount === 0) return <Badge variant={'secondary'}>Omitido</Badge>
+  //       return (
+  //         <Badge className="bg-green-500">
+  //           <span className="flex justify-center gap-1 items-center">
+  //             <Check className="w-4 h-4" /> Pagado
+  //           </span>
+  //         </Badge>
+  //       )
+  //     case false:
+  //       if (expense.dueDate) {
+  //         if (expense.dueDate < getTodayDueDate()) return <Badge className="bg-red-900">Vencido</Badge>
+  //         if (expense.dueDate === getTodayDueDate())
+  //           return <Badge className="bg-red-500 animate-pulse">Vence hoy</Badge>
+  //       }
+  //       return <Badge className="bg-cyan-500">Pendiente</Badge>
+  //   }
+  // }
+
+  const getExpenseStatus = (expense: ExpensesPaymentSummaryWithInclude | CreditCardExpensesWithInclude) => {
     switch (expense.paid) {
       case true:
-        if (expense.amount === 0) return <Badge variant={'secondary'}>Omitido</Badge>
-        return (
-          <Badge className="bg-green-500">
-            <span className="flex justify-center gap-1 items-center">
-              <Check className="w-4 h-4" /> Pagado
-            </span>
-          </Badge>
-        )
+        if (expense.amount === 0) return <span className="leading-tight uppercase font-semibold">Pago omitido</span>
+        return <span className="leading-tight uppercase font-semibold text-money">Pagado</span>
       case false:
         if (expense.dueDate) {
           if (expense.dueDate < getTodayDueDate()) return <Badge className="bg-red-900">Vencido</Badge>
           if (expense.dueDate === getTodayDueDate())
-            return <Badge className="bg-red-500 animate-pulse">Vence hoy</Badge>
+            return (
+              <span className="leading-tight uppercase font-semibold text-orange-500 animate-pulse">Vence hoy</span>
+            )
         }
-        return <Badge className="bg-cyan-500">Pendiente</Badge>
+        return <span className="leading-tight uppercase font-semibold animate-pulse text-cyan-500">Pendiente</span>
     }
   }
 
@@ -320,19 +337,19 @@ export default function ExpensesSummary({
           <div className="flex flex-col gap-2">
             {expenseSummaries.map((item) => (
               <div key={item.id} className="flex bg-gray-50 p-3 rounded-xl gap-2">
-                <div className="w-16 h-16 flex-shrink-0 bg-money rounded-[10px]" />
                 <div className="w-full rounded-[10px] px-2 flex flex-col">
                   <div className="flex-1 flex justify-between items-end font-medium">
-                    <span className="leading-none lowercase first-letter:uppercase text-lg">{item.expense.description}</span>
-                    <span className="leading-none text-xl text-money">{formatCurrency(item.amount)}</span>
+                    <span className="leading-tight lowercase first-letter:uppercase text-lg">
+                      {item.expense.description}
+                    </span>
+                    <span className="leading-tight text-xl text-money">{formatCurrency(item.amount)}</span>
                   </div>
                   <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                    <span className="leading-none block lowercase first-letter:uppercase">{`${item.paymentType.name}`}</span>
-                    <span className="leading-none block lowercase first-letter:uppercase">Vencimiento</span>
-                
+                    <span className="leading-tight block lowercase first-letter:uppercase">{`${item.paymentType.name} - ${item.paymentSource.name}`}</span>
+                    <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
                   </div>
-                  <div className="flex-1 flex justify-between items-start text-sm text-gray-400">
-                  <span className="leading-none block lowercase first-letter:uppercase">{`${item.paymentSource.name}`}</span>
+                  <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                    {getExpenseStatus(item)}
                     <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
                   </div>
                 </div>
