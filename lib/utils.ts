@@ -48,6 +48,8 @@ export const getToday = () => {
   return `${year}-${formattedMonth}`
 }
 
+export const getTodayYear = () => getToday().split("-")[0]
+
 export const getTodayDueDate = () => {
   const now = new Date()
   const year = now.getFullYear()

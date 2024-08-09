@@ -5,8 +5,10 @@ import { Suspense } from 'react'
 import MonthSelector from './_components/month-selector'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 
+const TITLE = 'Resumen mensual'
+
 export const metadata: Metadata = {
-  title: 'Dashboard',
+  title: TITLE,
 }
 
 export default async function Page({
@@ -17,7 +19,9 @@ export default async function Page({
   }
 }) {
   return (
-    <main>
+    <main className='px-4'>
+      <h1 className='text-center mb-2 font-medium'>{TITLE}</h1>
+
       <div className="flex flex-col gap-4 mb-20">
         <MonthSelector />
         <Suspense
