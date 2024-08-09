@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { getToday } from '@/lib/utils'
+import { formatLocaleDate, getToday } from '@/lib/utils'
 import DashboardTemplate from './_components/dashboard-template'
 import { Suspense } from 'react'
 import MonthSelector from './_components/month-selector'
@@ -19,8 +19,7 @@ export default async function Page({
   }
 }) {
   return (
-    <main className='px-4'>
-      <h1 className='text-center mb-2 font-semibold'>{TITLE}</h1>
+    <main className="px-4">
       <div className="flex flex-col gap-4 mb-20">
         <MonthSelector />
         <Suspense
@@ -31,6 +30,7 @@ export default async function Page({
             </div>
           }
         >
+          <h1 className="text-center mb-2">{TITLE + " " + formatLocaleDate(searchParams.date)}</h1>
           <DashboardTemplate date={searchParams.date || getToday()} />
         </Suspense>
       </div>

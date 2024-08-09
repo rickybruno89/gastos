@@ -86,6 +86,8 @@ export default function MonthSelector() {
   const pathname = usePathname()
   const [sliderRef, setSliderRef] = useState<Slider | null>(null)
 
+  const [endOfCarousel, setEndOfCarousel] = useState(initialSlide === yearsArray.length - 1)
+
   useEffect(() => {
     router.push(pathname + '?' + createQueryString('date', date))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -120,6 +122,8 @@ export default function MonthSelector() {
       year: yearsArray.find((item) => item.index === index)!.year!.toString(),
     }
     handleChangeDate(newDatePicker)
+    if (index >= yearsArray.length - 1) setEndOfCarousel(true)
+    else setEndOfCarousel(false)
   }
 
   const settings: Settings = {
@@ -142,9 +146,9 @@ export default function MonthSelector() {
   }
 
   return initialSlide ? (
-    <div className='flex justify-center w-full'>
+    <div className="flex justify-center w-full">
       <div className="bg-gray-100 rounded-md p-2 text-sm md:text-base w-full max-w-xl">
-        <div className="relative">
+        <div className="relative w-[100px] mx-auto">
           <Slider
             ref={(slider) => {
               setSliderRef(slider)
@@ -153,16 +157,18 @@ export default function MonthSelector() {
           >
             {yearsArray.map((item) => (
               <div key={item.index} className="w-full text-center">
-                <h3 className='font-semibold'>{item.year}</h3>
+                <h3 className="font-semibold">{item.year}</h3>
               </div>
             ))}
           </Slider>
-          <button className="absolute top-0 left-4" onClick={previous}>
+          <button className="absolute top-[2px] left-0" onClick={previous}>
             <ChevronLeftIcon className="w-4" />
           </button>
-          <button className="absolute top-0 right-4" onClick={next}>
-            <ChevronRightIcon className="w-4" />
-          </button>
+          {!endOfCarousel && (
+            <button className="absolute top-[2px] right-0" onClick={next}>
+              <ChevronRightIcon className="w-4" />
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-4 mt-2">
           {MONTH_LIST.map((month) => (

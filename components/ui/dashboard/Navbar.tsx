@@ -42,6 +42,7 @@ export default function Navbar({ session }: { session: Session | null }) {
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden'
+    } else {
       document.body.style.overflow = ''
     }
 
