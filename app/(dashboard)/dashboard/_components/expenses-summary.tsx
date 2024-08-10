@@ -27,6 +27,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons'
 import { undoCCExpensePaymentSummaryPaid } from '@/services/credit-card'
 import { Menu, MenuButton, MenuHeading, MenuItem, MenuItems, MenuSection, MenuSeparator } from '@headlessui/react'
+import LinkButton from '@/components/ui/link-button'
+import { PlusIcon } from '@heroicons/react/24/outline'
 
 type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -226,7 +228,7 @@ export default function ExpensesSummary({
       ))
 
   return (
-    <section id="expense-content" className='max-w-xl mx-auto'>
+    <section id="expense-content" className="max-w-xl mx-auto">
       <div className="flex gap-2 mb-4">
         <div className="p-4 flex-1 flex flex-col aspect-video rounded-xl bg-gradient-to-bl from-violet-600 to-purple-600 text-white leading-tight">
           <span className="text-lg font-semibold uppercase">total</span>
@@ -241,7 +243,13 @@ export default function ExpensesSummary({
       </div>
       {expenseSummaries.length ? (
         <div>
-          <p className="text-lg font-semibold mb-2">Gastos fijos</p>
+          <div className='flex justify-between items-center mb-2'>
+            <p className="text-lg font-semibold">Gastos fijos</p>
+            <LinkButton href={PAGES_URL.EXPENSES.CREATE}>
+              <PlusIcon className="w-5 text-orange-400" />
+              <span className='text-orange-400'>Nuevo</span>
+            </LinkButton>
+          </div>
           <div className="flex flex-col gap-2">
             {expenseSummaries.map((item) => (
               <Menu key={item.id}>

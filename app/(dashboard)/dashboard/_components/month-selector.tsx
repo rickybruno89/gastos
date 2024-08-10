@@ -113,7 +113,7 @@ export default function MonthSelector() {
   }
 
   const getMonthSelectedClass = (monthNumber: string) => {
-    return monthNumber === pickedMonth ? 'bg-orange-500 text-white rounded-md' : ''
+    return monthNumber === pickedMonth ? 'bg-orange-500 text-white' : ''
   }
 
   const slideChange = (index: number) => {
@@ -170,11 +170,11 @@ export default function MonthSelector() {
             </button>
           )}
         </div>
-        <div className="grid grid-cols-4 mt-2">
+        <div className="grid grid-cols-4 mt-2 gap-3">
           {MONTH_LIST.map((month) => (
             <div
               key={month.number}
-              className={`p-1 flex justify-center items-center transition-all ease-in-out duration-200 ${getMonthSelectedClass(
+              className={`cursor-pointer rounded-md p-1 flex justify-center items-center transition-all ease-in-out duration-200 hover:scale-110 hover:bg-orange-500 hover:text-white ${getMonthSelectedClass(
                 month.number
               )}`}
               onClick={() => handleMonthPick(month.number)}
