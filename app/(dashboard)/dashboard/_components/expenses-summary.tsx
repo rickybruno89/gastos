@@ -208,31 +208,31 @@ export default function ExpensesSummary({
       .map((expense) => (
         <div key={expense.id} className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px]">
           <div className="w-full rounded-[10px] px-2 flex flex-col">
-            <div className="flex-1 flex justify-between items-end font-medium">
+            <div className="flex-1 flex justify-between items-center font-medium">
               <span className="leading-tight lowercase first-letter:uppercase text-lg">{expense.description}</span>
               <span className="leading-tight text-xl text-money">{formatCurrency(expense.amount)}</span>
             </div>
-            <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-              agregar al resumen
-            </div>
+            <button className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-amber-500 transition-all ease-in-out duration-300" onClick={() => addExpenseToSummary(date, expense)}>
+              agregar al resumen actual
+            </button>
           </div>
         </div>
       ))
 
   return (
     <section id="expense-content">
-      <div className="px-4 flex gap-2 mb-4 justify-start flex-nowrap overflow-x-auto no-scrollbar">
-        <div className=" p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-bl from-violet-600 to-purple-600 text-white leading-tight">
+      <div className="p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
+        <div className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-bl from-violet-600 to-purple-600 text-white leading-tight">
           <span className="text-lg font-semibold uppercase">total</span>
           <span className="text-gray-100 uppercase">gastos fijos</span>
           <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getExpensesTotal().amount)}</span>
         </div>
-        <div className=" p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-bl from-amber-500 to-orange-500 text-white">
+        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-bl from-amber-500 to-orange-500 text-white">
           <span className="text-lg font-semibold uppercase">TOTAL</span>
           <span className="text-gray-100 uppercase">Tarjetas crédito</span>
           <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getCreditCardsTotal().amount)}</span>
         </div>
-        <div className=" p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-bl from-amber-500 to-orange-500 text-white">
+        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-bl from-amber-500 to-orange-500 text-white">
           <span className="text-lg font-semibold uppercase">TOTAL</span>
           <span className="text-gray-100 uppercase">Tarjetas crédito</span>
           <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getCreditCardsTotal().amount)}</span>
