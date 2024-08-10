@@ -19,21 +19,21 @@ export default async function Page({
   }
 }) {
   return (
-    <main className="px-4">
-      <div className="flex flex-col gap-4 mb-20">
+    <main className="flex flex-col gap-4 mb-20">
+      <div className='px-4'>
         <MonthSelector />
-        <Suspense
-          key={`date=${searchParams.date}`}
-          fallback={
-            <div className="mt-32">
-              <LoadingSpinner />
-            </div>
-          }
-        >
-          <h1 className="text-center mb-2">{TITLE + " " + formatLocaleDate(searchParams.date)}</h1>
-          <DashboardTemplate date={searchParams.date || getToday()} />
-        </Suspense>
       </div>
+      <Suspense
+        key={`date=${searchParams.date}`}
+        fallback={
+          <div className="mt-32">
+            <LoadingSpinner />
+          </div>
+        }
+      >
+        <h1 className="text-center mb-2">{TITLE + ' ' + formatLocaleDate(searchParams.date)}</h1>
+        <DashboardTemplate date={searchParams.date || getToday()} />
+      </Suspense>
     </main>
   )
 }

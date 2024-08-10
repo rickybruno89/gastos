@@ -228,21 +228,26 @@ export default function ExpensesSummary({
       ))
 
   return (
-    <section id="expense-content" className="max-w-xl mx-auto">
-      <div className="flex gap-2 mb-4">
-        <div className="p-4 flex-1 flex flex-col aspect-video rounded-xl bg-gradient-to-bl from-violet-600 to-purple-600 text-white leading-tight">
+    <section id="expense-content" >
+      <div className="px-4 flex gap-2 mb-4 justify-start flex-nowrap overflow-x-auto">
+        <div className=" p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-bl from-violet-600 to-purple-600 text-white leading-tight">
           <span className="text-lg font-semibold uppercase">total</span>
           <span className="text-gray-100 uppercase">gastos fijos</span>
           <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getExpensesTotal().amount)}</span>
         </div>
-        <div className="p-4 flex-1 flex flex-col aspect-video rounded-xl bg-gradient-to-bl from-amber-500 to-orange-500 text-white">
+        <div className=" p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-bl from-amber-500 to-orange-500 text-white">
+          <span className="text-lg font-semibold uppercase">TOTAL</span>
+          <span className="text-gray-100 uppercase">Tarjetas crédito</span>
+          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getCreditCardsTotal().amount)}</span>
+        </div>
+        <div className=" p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-bl from-amber-500 to-orange-500 text-white">
           <span className="text-lg font-semibold uppercase">TOTAL</span>
           <span className="text-gray-100 uppercase">Tarjetas crédito</span>
           <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getCreditCardsTotal().amount)}</span>
         </div>
       </div>
       {expenseSummaries.length ? (
-        <div>
+        <div className='max-w-xl mx-auto p-4'>
           <div className='flex justify-between items-center mb-2'>
             <p className="text-lg font-semibold">Gastos fijos</p>
             <LinkButton href={PAGES_URL.EXPENSES.CREATE}>
