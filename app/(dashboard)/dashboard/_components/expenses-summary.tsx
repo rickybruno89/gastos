@@ -206,30 +206,22 @@ export default function ExpensesSummary({
     expenses
       .filter((expense) => !expenseSummaries.some((expenseSummary) => expenseSummary.expenseId === expense.id))
       .map((expense) => (
-        <TableRow key={expense.id} className="text-xs md:text-sm">
-          <TableCell className="sticky left-0 bg-white">{expense.description}</TableCell>
-          <TableCell>{expense.paymentType.name}</TableCell>
-          <TableCell>{expense.paymentSource.name}</TableCell>
-          <TableCell>{expense.dueDate ? formatLocaleDueDate(expense.dueDate) : '-'}</TableCell>
-          <TableCell>
-            <Badge className="bg-cyan-500 animate-pulse">
-              <span className="flex justify-center gap-1 items-center ">
-                <BellPlus className="w-4 h-4" /> Nuevo
-              </span>
-            </Badge>
-          </TableCell>
-          <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
-          <TableCell className="text-right">
-            <Button size={'sm'} variant={'link'} onClick={() => addExpenseToSummary(date, expense)}>
-              Agregar a este resumen
-            </Button>
-          </TableCell>
-        </TableRow>
+        <div key={expense.id} className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px]">
+          <div className="w-full rounded-[10px] px-2 flex flex-col">
+            <div className="flex-1 flex justify-between items-end font-medium">
+              <span className="leading-tight lowercase first-letter:uppercase text-lg">{expense.description}</span>
+              <span className="leading-tight text-xl text-money">{formatCurrency(expense.amount)}</span>
+            </div>
+            <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+              agregar al resumen
+            </div>
+          </div>
+        </div>
       ))
 
   return (
-    <section id="expense-content" >
-      <div className="px-4 flex gap-2 mb-4 justify-start flex-nowrap overflow-x-auto">
+    <section id="expense-content">
+      <div className="px-4 flex gap-2 mb-4 justify-start flex-nowrap overflow-x-auto no-scrollbar">
         <div className=" p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-bl from-violet-600 to-purple-600 text-white leading-tight">
           <span className="text-lg font-semibold uppercase">total</span>
           <span className="text-gray-100 uppercase">gastos fijos</span>
@@ -247,19 +239,20 @@ export default function ExpensesSummary({
         </div>
       </div>
       {expenseSummaries.length ? (
-        <div className='max-w-xl mx-auto p-4'>
-          <div className='flex justify-between items-center mb-2'>
+        <div className="max-w-xl mx-auto p-4">
+          <div className="flex justify-between items-center mb-2">
             <p className="text-lg font-semibold">Gastos fijos</p>
             <LinkButton href={PAGES_URL.EXPENSES.CREATE}>
               <PlusIcon className="w-5 text-orange-400" />
-              <span className='text-orange-400'>Nuevo</span>
+              <span className="text-orange-400">Nuevo</span>
             </LinkButton>
           </div>
           <div className="flex flex-col gap-2">
+            {getNewExpenses()}
             {expenseSummaries.map((item) => (
               <Menu key={item.id}>
                 <MenuButton>
-                  <div key={item.id} className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px]">
+                  <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px]">
                     <div className="w-full rounded-[10px] px-2 flex flex-col">
                       <div className="flex-1 flex justify-between items-end font-medium">
                         <span className="leading-tight lowercase first-letter:uppercase text-lg">
