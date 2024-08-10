@@ -61,7 +61,7 @@ const MONTH_LIST = [
 const buildYearArray = () => {
   const yearsArray = []
   let index = 0
-  for (let year = 1980; year <= parseInt(getTodayYear()); year++) {
+  for (let year = 2020; year <= parseInt(getTodayYear()) + 1; year++) {
     yearsArray.push({ index, year })
     index++
   }
@@ -85,14 +85,14 @@ export default function MonthSelector({ date }: { date: string }) {
   const [sliderRef, setSliderRef] = useState<Slider | null>(null)
 
   const [endOfCarousel, setEndOfCarousel] = useState(initialSlide === yearsArray.length - 1)
+  const [startOfCarousel, setStartOfCarousel] = useState(initialSlide === 0)
 
-    useEffect(() => {
-      router.push(`${pathname}?date=${pickedYear}-${pickedMonth}`)
+  useEffect(() => {
+    router.push(`${pathname}?date=${pickedYear}-${pickedMonth}`)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleChangeDate = (newDatePicker: DatePicker) => {
-    console.log('🚀 ~ handleChangeDate ~ newDatePicker:', newDatePicker)
     router.push(`${pathname}?date=${newDatePicker.year}-${newDatePicker.month}`)
   }
 
@@ -113,6 +113,11 @@ export default function MonthSelector({ date }: { date: string }) {
     handleChangeDate(newDatePicker)
     if (index >= yearsArray.length - 1) setEndOfCarousel(true)
     else setEndOfCarousel(false)
+    if (index === 0) {
+      setStartOfCarousel(true)
+    } else {
+      setStartOfCarousel(false)
+    }
   }
 
   const settings: Settings = {
@@ -134,7 +139,7 @@ export default function MonthSelector({ date }: { date: string }) {
     sliderRef!.slickPrev()
   }
 
-  return initialSlide ? (
+  return (
     <div className="flex justify-center w-full">
       <div className="bg-gray-100 rounded-md p-2 text-sm md:text-base w-full max-w-xl">
         <div className="relative w-[100px] mx-auto">
@@ -150,9 +155,12 @@ export default function MonthSelector({ date }: { date: string }) {
               </div>
             ))}
           </Slider>
-          <button className="absolute top-[2px] left-0" onClick={previous}>
-            <ChevronLeftIcon className="w-4" />
-          </button>
+          {!startOfCarousel && (
+            <button className="absolute top-[2px] left-0" onClick={previous}>
+              <ChevronLeftIcon className="w-4" />
+            </button>
+          )}
+
           {!endOfCarousel && (
             <button className="absolute top-[2px] right-0" onClick={next}>
               <ChevronRightIcon className="w-4" />
@@ -174,5 +182,5 @@ export default function MonthSelector({ date }: { date: string }) {
         </div>
       </div>
     </div>
-  ) : null
+  )
 }

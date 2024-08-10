@@ -221,7 +221,7 @@ export default function ExpensesSummary({
 
   return (
     <section id="expense-content">
-      <div className="p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
+      <div className="max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
         <div className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-bl from-violet-600 to-purple-600 text-white leading-tight">
           <span className="text-lg font-semibold uppercase">total</span>
           <span className="text-gray-100 uppercase">gastos fijos</span>
