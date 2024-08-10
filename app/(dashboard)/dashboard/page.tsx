@@ -18,10 +18,12 @@ export default async function Page({
     date: string
   }
 }) {
+  const date = searchParams.date || getToday()
+
   return (
     <main className="flex flex-col gap-4 mb-20">
-      <div className='px-4'>
-        <MonthSelector />
+      <div className="px-4">
+        <MonthSelector date={date} />
       </div>
       <Suspense
         key={`date=${searchParams.date}`}
@@ -31,8 +33,8 @@ export default async function Page({
           </div>
         }
       >
-        <h1 className="text-center mb-2">{TITLE + ' ' + formatLocaleDate(searchParams.date)}</h1>
-        <DashboardTemplate date={searchParams.date || getToday()} />
+        <h1 className="text-center mb-2">{TITLE + ' ' + formatLocaleDate(date)}</h1>
+        <DashboardTemplate date={date} />
       </Suspense>
     </main>
   )

@@ -73,9 +73,7 @@ type DatePicker = {
   year: string
 }
 
-export default function MonthSelector() {
-  const searchParams = useSearchParams()
-  const date = searchParams.get('date') || getToday()
+export default function MonthSelector({ date }: { date: string }) {
   const pickedMonth = date.split('-')[1]
   const pickedYear = date.split('-')[0]
 
@@ -88,23 +86,14 @@ export default function MonthSelector() {
 
   const [endOfCarousel, setEndOfCarousel] = useState(initialSlide === yearsArray.length - 1)
 
-  useEffect(() => {
-    router.push(pathname + '?' + createQueryString('date', date))
+    useEffect(() => {
+      router.push(`${pathname}?date=${pickedYear}-${pickedMonth}`)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams)
-      params.set(name, value)
-
-      return params.toString()
-    },
-    [searchParams]
-  )
-
   const handleChangeDate = (newDatePicker: DatePicker) => {
-    router.push(pathname + '?' + createQueryString('date', `${newDatePicker.year}-${newDatePicker.month}`))
+    console.log('🚀 ~ handleChangeDate ~ newDatePicker:', newDatePicker)
+    router.push(`${pathname}?date=${newDatePicker.year}-${newDatePicker.month}`)
   }
 
   const handleMonthPick = (monthNumber: string) => {
