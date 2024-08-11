@@ -202,13 +202,11 @@ export default function ExpensesSummary({
           <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().amount)}</span>
         </div>
         <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-lime-500 to-money text-white">
-          <span className="text-lg font-semibold uppercase">total</span>
-          <span className="text-gray-100 uppercase">pagado</span>
+          <span className="text-lg font-semibold uppercase">pagado</span>
           <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().paid)}</span>
         </div>
         <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white">
-          <span className="text-lg font-semibold uppercase">total</span>
-          <span className="text-gray-100 uppercase">no pagado</span>
+          <span className="text-lg font-semibold uppercase">no pagado</span>
           <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().notPaid)}</span>
         </div>
       </div>
