@@ -15,18 +15,17 @@ export default async function Page() {
   const session = await getServerSession(nextAuthOptions)
   if (session?.user.id) return redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${getToday()}`)
   return (
-    <main className="flex min-h-screen flex-col p-6">
-      <div className="flex shrink-0 items-end rounded-lg bg-blue-500 p-4 md:h-52">
-        <h1 className="font-bold text-white text-4xl">Bienvenido a GastApp</h1>
-      </div>
-      <div className="mt-4 flex grow flex-col gap-4 md:flex-row">
-        <div className="flex flex-col justify-center gap-6 rounded-lg bg-gray-50 px-6 py-10 md:w-2/5 md:px-20">
-          <p className={`text-xl text-gray-800 md:text-3xl md:leading-normal ${lusitana.className}`}>
-            <strong>Controla tus gastos fijos y tarjetas de créditos mensualmente</strong>
-          </p>
-        </div>
+    <main className="relative flex min-h-screen justify-center items-center p-6 bg-gray-800">
+      <div className='flex flex-col text-center'>
+        <h1 className=" text-3xl font-bold text-gray-200">
+          Bienvenidos a
+        </h1>
+        <h1 className="animate-pulse text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-orange-500 text-shadow mb-5">
+          GastApp
+        </h1>
         <LoginForm />
       </div>
+      <div className='absolute bottom-6 text-xs text-gray-400'>© 2024 Ricky Bruno. Todos los derechos reservados.</div>
     </main>
   )
 }
