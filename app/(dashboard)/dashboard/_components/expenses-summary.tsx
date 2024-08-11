@@ -134,14 +134,14 @@ export default function ExpensesSummary({
   const getExpenseStatus = (expense: ExpensesPaymentSummaryWithInclude | CreditCardExpensesWithInclude) => {
     switch (expense.paid) {
       case true:
-        if (expense.amount === 0) return <span className="leading-tight uppercase font-semibold">Pago omitido</span>
+        if (expense.amount === 0) return <span className="leading-tight uppercase font-semibold">Omitido</span>
         return <span className="leading-tight uppercase font-semibold text-money">Pagado</span>
       case false:
         if (expense.dueDate) {
-          if (expense.dueDate < getTodayDueDate()) return <Badge className="bg-red-900">Vencido</Badge>
+          if (expense.dueDate < getTodayDueDate()) return <span className="leading-tight uppercase font-semibold text-red-500">Vencido</span>
           if (expense.dueDate === getTodayDueDate())
             return (
-              <span className="leading-tight uppercase font-semibold text-orange-500 animate-pulse">Vence hoy</span>
+              <span className="leading-tight uppercase font-semibold text-orange-500 animate-bounce">Vence hoy</span>
             )
         }
         return <span className="leading-tight uppercase font-semibold animate-pulse text-cyan-500">Pendiente</span>
@@ -182,7 +182,10 @@ export default function ExpensesSummary({
               <span className="leading-tight lowercase first-letter:uppercase text-lg">{expense.description}</span>
               <span className="leading-tight text-xl text-money">{formatCurrency(expense.amount)}</span>
             </div>
-            <button className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-amber-500 transition-all ease-in-out duration-300" onClick={() => addExpenseToSummary(date, expense)}>
+            <button
+              className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-amber-500 transition-all ease-in-out duration-300"
+              onClick={() => addExpenseToSummary(date, expense)}
+            >
               agregar al resumen actual
             </button>
           </div>
@@ -193,20 +196,21 @@ export default function ExpensesSummary({
     <section id="expense-content">
       <div className="max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
         <div className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white leading-tight">
-          <span className="text-lg font-semibold uppercase">total</span>
-          <span className="text-gray-100 uppercase">gastos</span>
-          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().amount)}</span>
+          <div className="flex justify-between items-center text-md font-medium uppercase">
+            <span className="">total</span>
+            <span className="text-xl">{formatCurrency(getTotals().amount)}</span>
+          </div>
+          <div className="flex justify-between items-center text-md font-medium uppercase">
+            <span className="">pagado</span>
+            <span className="text-xl">{formatCurrency(getTotals().paid)}</span>
+          </div>
+          <div className="flex justify-between items-center text-md font-medium uppercase">
+            <span className="">no pagado</span>
+            <span className="text-xl">{formatCurrency(getTotals().notPaid)}</span>
+          </div>
         </div>
-        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-lime-500 to-money text-white">
-          <span className="text-lg font-semibold uppercase">total</span>
-          <span className="text-gray-100 uppercase">pagado</span>
-          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().paid)}</span>
-        </div>
-        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white">
-          <span className="text-lg font-semibold uppercase">total</span>
-          <span className="text-gray-100 uppercase">no pagado</span>
-          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().notPaid)}</span>
-        </div>
+        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-lime-500 to-money text-white"></div>
+        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white"></div>
       </div>
       {expenseSummaries.length ? (
         <div className="max-w-xl mx-auto p-4">
@@ -228,7 +232,7 @@ export default function ExpensesSummary({
                         <span className="leading-tight lowercase first-letter:uppercase text-lg">
                           {item.expense.description}
                         </span>
-                        <span className="leading-tight text-xl text-money">{formatCurrency(item.amount)}</span>
+                        <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
                       </div>
                       <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
                         <span className="leading-tight block lowercase first-letter:uppercase">{`${item.paymentType.name} - ${item.paymentSource.name}`}</span>
@@ -275,6 +279,64 @@ export default function ExpensesSummary({
                           <button
                             className="block w-full text-left data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
                             onClick={() => payExpense(item)}
+                          >
+                            Pagar
+                          </button>
+                        </MenuItem>
+                      </>
+                    )}
+                  </MenuSection>
+                </MenuItems>
+              </Menu>
+            ))}
+            {creditCardExpenseSummaries.map((item) => (
+              <Menu key={item.id}>
+                <MenuButton>
+                  <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px]">
+                    <div className="w-full rounded-[10px] px-2 flex flex-col">
+                      <div className="flex-1 flex justify-between items-end font-medium">
+                        <span className="leading-tight lowercase first-letter:uppercase text-lg">
+                          {item.creditCard.name}
+                        </span>
+                        <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
+                      </div>
+                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                        <span className="leading-tight block lowercase first-letter:uppercase">{`${item.paymentType.name} - ${item.paymentSource.name}`}</span>
+                        <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
+                      </div>
+                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                        {getExpenseStatus(item)}
+                        <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </MenuButton>
+                <MenuItems
+                  anchor="bottom end"
+                  className="bg-white p-4 w-40 shadow-2xl rounded-xl -translate-y-[74px] -translate-x-3"
+                >
+                  <MenuSection>
+                    <MenuHeading className="text-sm">Acciones</MenuHeading>
+                    <MenuItem>
+                      <Link
+                        className="w-full"
+                        href={`${PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCardId, item.id)}`}
+                      >
+                        Ver detalle
+                      </Link>
+                    </MenuItem>
+                    {item.paid ? (
+                      <MenuItem>
+                        <div className="data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1">
+                          <button onClick={() => undoCCExpensePayment(item)}>Deshacer pago</button>
+                        </div>
+                      </MenuItem>
+                    ) : (
+                      <>
+                        <MenuItem>
+                          <button
+                            className="block w-full text-left data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
+                            onClick={() => payCCExpense(item)}
                           >
                             Pagar
                           </button>
