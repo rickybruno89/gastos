@@ -172,36 +172,6 @@ export default function ExpensesSummary({
     }
   }
 
-  const getCreditCardsTotal = () => {
-    const ccExpenses = creditCardExpenseSummaries.reduce(
-      (acc, expense) => {
-        if (expense.paid) return { ...acc, paid: acc.paid + expense.amount }
-        return { ...acc, notPaid: acc.notPaid + expense.amount }
-      },
-      { paid: 0, notPaid: 0 }
-    )
-    return {
-      paid: ccExpenses.paid,
-      notPaid: ccExpenses.notPaid,
-      amount: creditCardExpenseSummaries.reduce((acc, exp) => (acc += exp.amount), 0),
-    }
-  }
-
-  const getExpensesTotal = () => {
-    const expenses = expenseSummaries.reduce(
-      (acc, expense) => {
-        if (expense.paid) return { ...acc, paid: acc.paid + expense.amount }
-        return { ...acc, notPaid: acc.notPaid + expense.amount }
-      },
-      { paid: 0, notPaid: 0 }
-    )
-    return {
-      paid: expenses.paid,
-      notPaid: expenses.notPaid,
-      amount: expenseSummaries.reduce((acc, exp) => (acc += exp.amount), 0),
-    }
-  }
-
   const getNewExpenses = () =>
     expenses
       .filter((expense) => !expenseSummaries.some((expenseSummary) => expenseSummary.expenseId === expense.id))
@@ -222,26 +192,26 @@ export default function ExpensesSummary({
   return (
     <section id="expense-content">
       <div className="max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
-        <div className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-bl from-violet-600 to-purple-600 text-white leading-tight">
+        <div className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white leading-tight">
           <span className="text-lg font-semibold uppercase">total</span>
-          <span className="text-gray-100 uppercase">gastos fijos</span>
-          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getExpensesTotal().amount)}</span>
+          <span className="text-gray-100 uppercase">gastos</span>
+          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().amount)}</span>
         </div>
-        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-bl from-amber-500 to-orange-500 text-white">
-          <span className="text-lg font-semibold uppercase">TOTAL</span>
-          <span className="text-gray-100 uppercase">Tarjetas crédito</span>
-          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getCreditCardsTotal().amount)}</span>
+        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-lime-500 to-money text-white">
+          <span className="text-lg font-semibold uppercase">total</span>
+          <span className="text-gray-100 uppercase">pagado</span>
+          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().paid)}</span>
         </div>
-        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-bl from-amber-500 to-orange-500 text-white">
-          <span className="text-lg font-semibold uppercase">TOTAL</span>
-          <span className="text-gray-100 uppercase">Tarjetas crédito</span>
-          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getCreditCardsTotal().amount)}</span>
+        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white">
+          <span className="text-lg font-semibold uppercase">total</span>
+          <span className="text-gray-100 uppercase">no pagado</span>
+          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().notPaid)}</span>
         </div>
       </div>
       {expenseSummaries.length ? (
         <div className="max-w-xl mx-auto p-4">
           <div className="flex justify-between items-center mb-2">
-            <p className="text-lg font-semibold">Gastos fijos</p>
+            <p className="text-lg font-semibold">Gastos</p>
             <LinkButton href={PAGES_URL.EXPENSES.CREATE}>
               <PlusIcon className="w-5 text-orange-400" />
               <span className="text-orange-400">Nuevo</span>
