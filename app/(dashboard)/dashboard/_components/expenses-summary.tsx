@@ -289,13 +289,14 @@ export default function ExpensesSummary({
                 </MenuItems>
               </Menu>
             ))}
+            <p className="text-lg font-semibold mt-4">Tarjetas de crédito</p>
             {creditCardExpenseSummaries.map((item) => (
               <Menu key={item.id}>
                 <MenuButton>
                   <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px]">
                     <div className="w-full rounded-[10px] px-2 flex flex-col">
                       <div className="flex-1 flex justify-between items-end font-medium">
-                        <span className="leading-tight lowercase first-letter:uppercase text-lg">
+                        <span className="leading-tight uppercase text-lg">
                           {item.creditCard.name}
                         </span>
                         <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
