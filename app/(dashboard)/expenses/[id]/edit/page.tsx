@@ -20,7 +20,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   const paymentType = await fetchPaymentType()
 
   return (
-    <main>
+    <main className='px-4 max-w-xl mx-auto'>
       <Breadcrumbs
         breadcrumbs={[
           {
