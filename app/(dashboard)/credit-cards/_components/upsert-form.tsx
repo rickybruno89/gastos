@@ -48,34 +48,6 @@ export default function CreditCardCreateUpsertForm({ creditCard }: { creditCard?
             ) : null}
           </div>
         </div>
-        <div>
-          <label htmlFor="taxesPercent" className="mb-2 block text-sm font-medium">
-            Impuestos de sellado
-          </label>
-          <div className="relative rounded-md">
-            <div className="relative w-20">
-              <input
-                defaultValue={creditCard?.taxesPercent}
-                id="taxesPercent"
-                name="taxesPercent"
-                type="number"
-                step="0.01"
-                placeholder="Ej: 1"
-                className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
-              />
-              <div className="pointer-events-none absolute py-[7px] top-0 right-3 text-black peer-focus:text-gray-900">
-                %
-              </div>
-            </div>
-            {state.errors?.taxesPercent ? (
-              <div id="creditCardName-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-                {state.errors.taxesPercent.map((error: string) => (
-                  <p key={error}>{error}</p>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </div>
         <div className="flex justify-between gap-8">
           <div>
             <label htmlFor="color" className="mb-2 block text-sm font-medium">
@@ -120,7 +92,9 @@ export default function CreditCardCreateUpsertForm({ creditCard }: { creditCard?
           >
             Cancelar
           </Link>
-          <Button type="submit" className='bg-orange-500 px-4 py-2 text-white hover:bg-gray-700'>{creditCard ? 'Modificar' : 'Crear'}</Button>
+          <Button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700">
+            {creditCard ? 'Modificar' : 'Crear'}
+          </Button>
         </div>
       </div>
     </form>

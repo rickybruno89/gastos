@@ -12,7 +12,6 @@ import { decryptString, encryptString, removeCurrencyMaskFromInput } from '@/lib
 type CreateCreditCardState = {
   errors?: {
     creditCardName?: string[]
-    taxesPercent?: string[]
   }
   message?: string | null
 }
@@ -54,7 +53,6 @@ const CreditCardSchema = z.object({
   creditCardName: z.string().min(1, { message: 'El nombre es requerido' }).toUpperCase(),
   color: z.string(),
   textColor: z.string(),
-  taxesPercent: z.coerce.number().gt(0, { message: 'El porcentaje tiene que ser mayor que 0' }),
 })
 
 const CreateCreditCardSchema = CreditCardSchema.omit({ id: true })
@@ -65,7 +63,6 @@ export const updateCreditCard = async (id: string, _prevState: CreateCreditCardS
       creditCardName: formData.get('creditCardName'),
       color: formData.get('color'),
       textColor: formData.get('textColor'),
-      taxesPercent: formData.get('taxesPercent'),
     })
 
     if (!validatedFields.success) {
@@ -75,7 +72,7 @@ export const updateCreditCard = async (id: string, _prevState: CreateCreditCardS
       }
     }
 
-    const { creditCardName, color, textColor, taxesPercent } = validatedFields.data
+    const { creditCardName, color, textColor } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -101,7 +98,6 @@ export const updateCreditCard = async (id: string, _prevState: CreateCreditCardS
         name: creditCardName,
         color,
         textColor,
-        taxesPercent,
         userId,
       },
       where: {
@@ -123,7 +119,6 @@ export const createCreditCard = async (_prevState: CreateCreditCardState, formDa
       creditCardName: formData.get('creditCardName'),
       color: formData.get('color'),
       textColor: formData.get('textColor'),
-      taxesPercent: formData.get('taxesPercent'),
     })
 
     if (!validatedFields.success) {
@@ -133,7 +128,7 @@ export const createCreditCard = async (_prevState: CreateCreditCardState, formDa
       }
     }
 
-    const { creditCardName, color, textColor, taxesPercent } = validatedFields.data
+    const { creditCardName, color, textColor } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -156,7 +151,6 @@ export const createCreditCard = async (_prevState: CreateCreditCardState, formDa
         name: creditCardName,
         color,
         textColor,
-        taxesPercent,
         userId,
       },
     })
