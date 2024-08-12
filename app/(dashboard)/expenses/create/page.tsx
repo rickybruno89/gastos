@@ -4,8 +4,6 @@ import { Metadata } from 'next'
 import React from 'react'
 import UpsertExpenseForm from '../_components/upsert-form'
 import { fetchPersonToShare } from '@/services/settings'
-import { fetchPaymentSource } from '@/services/settings'
-import { fetchPaymentType } from '@/services/settings'
 
 export const metadata: Metadata = {
   title: 'Nuevo Item',
@@ -13,11 +11,9 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   const personsToShare = await fetchPersonToShare()
-  const paymentSources = await fetchPaymentSource()
-  const paymentType = await fetchPaymentType()
 
   return (
-    <main className='px-4 max-w-xl mx-auto'>
+    <main className="px-4 max-w-xl mx-auto">
       <Breadcrumbs
         breadcrumbs={[
           {
@@ -32,7 +28,7 @@ export default async function Page() {
           },
         ]}
       />
-      <UpsertExpenseForm personsToShare={personsToShare} paymentSources={paymentSources} paymentTypes={paymentType} />
+      <UpsertExpenseForm personsToShare={personsToShare} />
     </main>
   )
 }

@@ -1,35 +1,20 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import ButtonDelete from '@/components/ui/button-delete'
-import { formatCurrency, formatLocaleDueDate } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { deleteExpenseItem } from '@/services/expense'
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import Link from 'next/link'
-import { EditIcon, MoreHorizontal, PlusIcon } from 'lucide-react'
-import ButtonTooltip from '@/components/ui/button-tooltip'
+import { PlusIcon } from 'lucide-react'
 import { Prisma } from '@prisma/client'
 import { PAGES_URL } from '@/lib/routes'
 import LinkButton from '@/components/ui/link-button'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { debounce } from 'lodash'
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import {
-  Menu,
-  MenuButton,
-  MenuHeading,
-  MenuItem,
-  MenuItems,
-  MenuSection,
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-} from '@headlessui/react'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 
 type DataWithInclude = Prisma.ExpenseGetPayload<{
   include: {
-    paymentSource: true
-    paymentType: true
     sharedWith: true
   }
 }>
@@ -84,7 +69,7 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
                 <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
                   <span>{item.sharedWith.map((person) => person.name).join(' - ')}</span>
                   <span className="leading-tight block lowercase first-letter:uppercase">
-                    {item.paymentType.name} - {item.paymentSource.name}
+                    {item.paymentChannel}
                   </span>
                 </div>
                 <div className="flex-1 flex justify-between items-end text-sm mt-2">

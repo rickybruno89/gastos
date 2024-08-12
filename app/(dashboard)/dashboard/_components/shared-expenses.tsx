@@ -1,14 +1,11 @@
 'use client'
 import { formatCurrency } from '@/lib/utils'
 import { Prisma } from '@prisma/client'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { useState } from 'react'
-import { Button, Description, Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
+import { Button, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 
 type ExpensesWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
-    paymentSource: true
-    paymentType: true
     expense: {
       include: {
         sharedWith: true
@@ -131,18 +128,19 @@ export default function SharedExpenses({
 
   return (
     <>
-      {sharedExpenses.length &&
-        sharedExpenses.map((shared) => (
-          <div
-            key={shared.id}
-            className="cursor-pointer shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight"
-            onClick={() => handleOpenModal(shared)}
-          >
-            <span className="text-lg font-semibold uppercase">{shared.name}</span>
-            <span className="text-gray-100 uppercase">Gastos compartidos</span>
-            <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(shared.total)}</span>
-          </div>
-        ))}
+      {sharedExpenses.length
+        ? sharedExpenses.map((shared) => (
+            <div
+              key={shared.id}
+              className="cursor-pointer shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight"
+              onClick={() => handleOpenModal(shared)}
+            >
+              <span className="text-lg font-semibold uppercase">{shared.name}</span>
+              <span className="text-gray-100 uppercase">Gastos compartidos</span>
+              <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(shared.total)}</span>
+            </div>
+          ))
+        : null}
       <Dialog
         open={isOpen}
         as="div"
@@ -160,20 +158,23 @@ export default function SharedExpenses({
                 <>
                   <DialogTitle as="h3" className="text-base/7 font-medium ">
                     <div className="flex justify-between text-white mb-4">
-                      <span className='font-bold text-lg leading-none'>{sharedPersonData.name}</span>
-                      <span className='font-bold text-lg leading-none'>{formatCurrency(sharedPersonData.total)}</span>
+                      <span className="font-bold text-lg leading-none">{sharedPersonData.name}</span>
+                      <span className="font-bold text-lg leading-none">{formatCurrency(sharedPersonData.total)}</span>
                     </div>
                   </DialogTitle>
                   <div className="flex flex-col gap-2 overflow-y-auto max-h-[590px] no-scrollbar">
                     {sharedPersonData.items.map((item) => (
-                      <div key={item.id} className="flex justify-between items-center p-2 rounded-md bg-gray-500 text-white">
+                      <div
+                        key={item.id}
+                        className="flex justify-between items-center p-2 rounded-md bg-gray-500 text-white"
+                      >
                         <div className="flex flex-col">
-                          <span className='font-bold'>{item.description}</span>
-                          <span className='text-gray-200'>{`Total ${formatCurrency(item.amount)}`}</span>
+                          <span className="font-bold">{item.description}</span>
+                          <span className="text-gray-200">{`Total ${formatCurrency(item.amount)}`}</span>
                         </div>
                         <div className="flex flex-col ">
                           <span className="font-bold text-right">{formatCurrency(item.amountToPay)}</span>
-                          <span className='text-gray-200'>{item.installments}</span>
+                          <span className="text-gray-200">{item.installments}</span>
                         </div>
                       </div>
                     ))}
@@ -192,74 +193,6 @@ export default function SharedExpenses({
           </div>
         </div>
       </Dialog>
-      {/* <section className="block xl:hidden" id="shared-content">
-        <Accordion type="single" collapsible onValueChange={handleScrollAccordion}>
-          <AccordionItem value="shared-content">
-            <AccordionTrigger className="max-w-fit py-1">
-              <p className="font-bold mr-5">Gastos compartidos</p>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-wrap gap-4">
-                {sharedExpenses.length ? (
-                  sharedExpenses.map((shared) => (
-                    <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col" key={shared.id}>
-                      <p className="font-bold">{shared.name}</p>
-                      {shared.items.map((item) => (
-                        <div key={item.id}>
-                          <div className="flex gap-8 justify-between items-center">
-                            <div className="flex flex-col">
-                              <span>{item.description}</span>
-                              <span>{`(${formatCurrency(item.amount)})`}</span>
-                            </div>
-                            <span className="font-bold text-right">{formatCurrency(item.amountToPay)}</span>
-                          </div>
-                          <div className="h-px bg-gray-500" />
-                        </div>
-                      ))}
-                      <div className="flex justify-end items-center gap-6 mt-4 font-bold">
-                        <span>TOTAL </span>
-                        <span>{formatCurrency(shared.total)}</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col">No hay datos para mostrar</div>
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </section>
-      <section className="hidden xl:block">
-        <p className="font-bold py-1">Gastos compartidos</p>
-        <div className="flex flex-wrap gap-4">
-          {sharedExpenses.length ? (
-            sharedExpenses.map((shared) => (
-              <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col" key={shared.id}>
-                <p className="font-bold">{shared.name}</p>
-                {shared.items.map((item) => (
-                  <div key={item.id}>
-                    <div className="flex gap-8 justify-between items-center">
-                      <div className="flex flex-col">
-                        <span>{item.description}</span>
-                        <span>{`(${formatCurrency(item.amount)})`}</span>
-                      </div>
-                      <span className="font-bold text-right">{formatCurrency(item.amountToPay)}</span>
-                    </div>
-                    <div className="h-px bg-gray-500" />
-                  </div>
-                ))}
-                <div className="flex justify-end items-center gap-6 mt-4 font-bold">
-                  <span>TOTAL </span>
-                  <span>{formatCurrency(shared.total)}</span>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="rounded-md bg-white p-4 md:p-6 w-fit flex flex-col">No hay datos para mostrar</div>
-          )}
-        </div>
-      </section> */}
     </>
   )
 }

@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
 import { decryptString, encryptString, removeCurrencyMaskFromInput } from '@/lib/utils'
-import { Expense, Prisma } from '@prisma/client'
+import { Expense, PaymentChannel, Prisma } from '@prisma/client'
 
 type CreateExpenseState = {
   errors?: {
@@ -16,8 +16,7 @@ type CreateExpenseState = {
     dueDate?: string[]
     amount?: string[]
     sharedWith?: string[]
-    paymentTypeId?: string[]
-    paymentSourceId?: string[]
+    paymentChannel?: string[]
   }
   message?: string | null
 }
@@ -29,12 +28,7 @@ const ExpenseSchema = z.object({
   notes: z.string().toUpperCase(),
   amount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
   sharedWith: z.string().array(),
-  paymentTypeId: z.string({
-    invalid_type_error: 'Por favor seleccione una forma de pago',
-  }),
-  paymentSourceId: z.string({
-    invalid_type_error: 'Por favor seleccione un canal de pago',
-  }),
+  paymentChannel: z.string(),
 })
 
 const CreateExpenseSchema = ExpenseSchema.omit({
@@ -49,8 +43,7 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
       dueDate: formData.get('dueDate'),
       amount: formData.get('amount'),
       sharedWith: formData.getAll('sharedWith'),
-      paymentTypeId: formData.get('paymentTypeId'),
-      paymentSourceId: formData.get('paymentSourceId'),
+      paymentChannel: formData.get('paymentChannel'),
     })
 
     if (!validatedFields.success) {
@@ -60,7 +53,7 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
       }
     }
 
-    const { description, notes, dueDate, amount, sharedWith, paymentTypeId, paymentSourceId } = validatedFields.data
+    const { description, notes, dueDate, amount, sharedWith, paymentChannel } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -73,8 +66,7 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
         sharedWith: {
           connect: sharedWith.map((personId) => ({ id: personId })),
         },
-        paymentTypeId,
-        paymentSourceId,
+        paymentChannel: paymentChannel as PaymentChannel,
         userId,
       },
     })
@@ -100,8 +92,7 @@ export const updateExpense = async (
       notes: formData.get('notes'),
       amount: formData.get('amount'),
       sharedWith: formData.getAll('sharedWith'),
-      paymentTypeId: formData.get('paymentTypeId'),
-      paymentSourceId: formData.get('paymentSourceId'),
+      paymentChannel: formData.get('paymentChannel'),
     })
 
     if (!validatedFields.success) {
@@ -111,7 +102,7 @@ export const updateExpense = async (
       }
     }
 
-    const { description, notes, dueDate, amount, sharedWith, paymentTypeId, paymentSourceId } = validatedFields.data
+    const { description, notes, dueDate, amount, sharedWith, paymentChannel } = validatedFields.data
 
     await prisma.expense.update({
       data: {
@@ -123,8 +114,7 @@ export const updateExpense = async (
           set: [],
           connect: sharedWith.map((personId) => ({ id: personId })),
         },
-        paymentTypeId,
-        paymentSourceId,
+        paymentChannel: paymentChannel as PaymentChannel,
       },
       where: {
         id,
@@ -145,8 +135,7 @@ export const updateExpense = async (
         data: {
           dueDate: dueDate || null,
           amount: removeCurrencyMaskFromInput(amount),
-          paymentTypeId,
-          paymentSourceId,
+          paymentChannel: paymentChannel as PaymentChannel,
         },
         where: {
           id: expensePaymentSummaryToUpdate.id,
@@ -168,8 +157,6 @@ export async function fetchExpenseItem(id: string) {
 
   type DataWithInclude = Prisma.ExpenseGetPayload<{
     include: {
-      paymentSource: true
-      paymentType: true
       sharedWith: true
     }
   }>
@@ -180,8 +167,6 @@ export async function fetchExpenseItem(id: string) {
         id,
       },
       include: {
-        paymentSource: true,
-        paymentType: true,
         sharedWith: true,
       },
     })) as Expense
@@ -196,8 +181,6 @@ export async function fetchExpenses() {
   noStore()
   type DataWithInclude = Prisma.ExpenseGetPayload<{
     include: {
-      paymentSource: true
-      paymentType: true
       sharedWith: true
     }
   }>
@@ -209,8 +192,6 @@ export async function fetchExpenses() {
         deleted: false,
       },
       include: {
-        paymentSource: true,
-        paymentType: true,
         sharedWith: true,
       },
       orderBy: {

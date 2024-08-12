@@ -4,17 +4,16 @@ import { PAGES_URL } from '@/lib/routes'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useFormState } from 'react-dom'
-import { PaymentSource, PaymentType, Person, Prisma } from '@prisma/client'
+import { Person, Prisma } from '@prisma/client'
 import LinkButton from '@/components/ui/link-button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { createExpense, updateExpense } from '@/services/expense'
 import { NumericFormat } from 'react-number-format'
 import { useSearchParams } from 'next/navigation'
+import { PAYMENT_CHANNELS } from '@/lib/utils'
 
 type ExpenseItemWithInclude = Prisma.ExpenseGetPayload<{
   include: {
-    paymentSource: true
-    paymentType: true
     sharedWith: true
   }
 }>
@@ -22,21 +21,15 @@ type ExpenseItemWithInclude = Prisma.ExpenseGetPayload<{
 export default function UpsertExpenseForm({
   expenseItem,
   personsToShare,
-  paymentTypes,
-  paymentSources,
 }: {
   expenseItem?: ExpenseItemWithInclude
   personsToShare: Person[]
-  paymentTypes: PaymentType[]
-  paymentSources: PaymentSource[]
 }) {
   const callbackUrl = useSearchParams().get('callbackUrl') || PAGES_URL.EXPENSES.BASE_PATH
 
   const initialState = { message: null, errors: {} }
 
-  const upsertExpenseItemWithId = expenseItem
-    ? updateExpense.bind(null, expenseItem.id, callbackUrl)
-    : createExpense
+  const upsertExpenseItemWithId = expenseItem ? updateExpense.bind(null, expenseItem.id, callbackUrl) : createExpense
 
   const [state, dispatch] = useFormState(upsertExpenseItemWithId, initialState)
 
@@ -131,80 +124,36 @@ export default function UpsertExpenseForm({
         </div>
 
         <div>
-          <label htmlFor="paymentTypeId" className="mb-2 block text-sm font-medium">
-            Seleccione la forma de pago a usar
+          <label htmlFor="paymentChannel" className="mb-2 block text-sm font-medium">
+            Seleccione método de pago
           </label>
           <div>
-            {!paymentTypes.length ? (
-              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
-                <PlusIcon className="w-5" />
-                Crear nueva forma de pago
-              </LinkButton>
-            ) : (
-              <select
-                name="paymentTypeId"
-                id="paymentTypeId"
-                aria-describedby="paymentTypeId"
-                className="w-full rounded-md"
-                defaultValue={expenseItem?.paymentTypeId}
-              >
-                <option disabled value="">
-                  Seleccione una opción
+            <select
+              name="paymentChannel"
+              id="paymentChannel"
+              aria-describedby="paymentChannel"
+              className="w-full rounded-md"
+              defaultValue={expenseItem?.paymentChannel}
+            >
+              <option disabled value="">
+                Seleccione una opción
+              </option>
+              {PAYMENT_CHANNELS.map((channel) => (
+                <option key={channel.prismaName} value={channel.prismaName}>
+                  {channel.parsedName.toUpperCase()}
                 </option>
-                {paymentTypes.map((paymentType) => (
-                  <option key={paymentType.id} value={paymentType.id}>
-                    {paymentType.name}
-                  </option>
-                ))}
-              </select>
-            )}
+              ))}
+            </select>
           </div>
-          {state.errors?.paymentTypeId ? (
+          {state.errors?.paymentChannel ? (
             <div id="customer-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-              {state.errors.paymentTypeId.map((error: string) => (
+              {state.errors.paymentChannel.map((error: string) => (
                 <p key={error}>{error}</p>
               ))}
             </div>
           ) : null}
         </div>
 
-        <div>
-          <label htmlFor="paymentSourceId" className="mb-2 block text-sm font-medium">
-            Seleccione un canal de pago
-          </label>
-          <div>
-            {!paymentSources.length ? (
-              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
-                <PlusIcon className="w-5" />
-                Crear nueva canal de pago
-              </LinkButton>
-            ) : (
-              <select
-                name="paymentSourceId"
-                id="paymentSourceId"
-                aria-describedby="paymentSourceId"
-                className="w-full rounded-md"
-                defaultValue={expenseItem?.paymentSourceId}
-              >
-                <option disabled value="">
-                  Seleccione una opción
-                </option>
-                {paymentSources.map((paymentSource) => (
-                  <option key={paymentSource.id} value={paymentSource.id}>
-                    {paymentSource.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-          {state.errors?.paymentSourceId ? (
-            <div id="paymentSourceId-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-              {state.errors.paymentSourceId.map((error: string) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
-        </div>
         <div>
           <label className="mb-2 block text-sm font-medium" htmlFor="dueDate">
             Fecha de vencimiento
@@ -257,7 +206,9 @@ export default function UpsertExpenseForm({
           >
             Cancelar
           </Link>
-          <Button type="submit" className='bg-orange-500 px-4 py-2 text-white hover:bg-gray-700'>Guardar</Button>
+          <Button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700">
+            Guardar
+          </Button>
         </div>
       </div>
     </form>

@@ -2,6 +2,7 @@ import { Decimal } from '@prisma/client/runtime/library'
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import crypto from 'crypto-js'
+import { PaymentChannel } from '@prisma/client'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -109,3 +110,9 @@ export const decryptString = (string: string) => {
     console.log('🚀 ~ decryptString ~ error:', error)
   }
 }
+
+export const PAYMENT_CHANNELS = [
+  { prismaName: 'BANCARIZADO', parsedName: 'bancarizado' },
+  { prismaName: 'DEBITO_AUTOMATICO', parsedName: 'débito automático' },
+  { prismaName: 'EFECTIVO', parsedName: 'efectivo' },
+]

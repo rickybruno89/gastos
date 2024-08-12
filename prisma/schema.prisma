@@ -43,8 +43,6 @@ model User {
   accounts                   Account[]
   sessions                   Session[]
   sharedPaymentPersons       Person[]
-  paymentTypes               PaymentType[]
-  paymentSources             PaymentSource[]
   expenses                   Expense[]
   expensePaymentSummaries    ExpensePaymentSummary[]
   creditCards                CreditCard[]
@@ -73,30 +71,10 @@ model Person {
   @@unique([name, userId])
 }
 
-model PaymentType {
-  id                         String                     @id @default(cuid())
-  name                       String // EFECTIVO - HOME BANKING - TRANSFERENCIA - DEBITO AUTOMATICO
-  expenses                   Expense[]
-  expensePaymentSummaries    ExpensePaymentSummary[]
-  user                       User                       @relation(fields: [userId], references: [id])
-  userId                     String
-  deleted                    Boolean                    @default(false)
-  deletedAt                  DateTime?
-
-  @@unique([userId, name])
-}
-
-model PaymentSource {
-  id                         String                     @id @default(cuid())
-  name                       String // EFECTIVO - GALICIA - MACRO - HSBC - LEMON - PERSONAL PAY
-  expenses                   Expense[]
-  expensePaymentSummaries    ExpensePaymentSummary[]
-  user                       User                       @relation(fields: [userId], references: [id])
-  userId                     String
-  deleted                    Boolean                    @default(false)
-  deletedAt                  DateTime?
-
-  @@unique([userId, name])
+enum PaymentChannel {
+  EFECTIVO
+  BANCARIZADO
+  DEBITO_AUTOMATICO
 }
 
 model CreditCard {
@@ -174,10 +152,7 @@ model Expense {
   amount           Float
   dueDate          String?
   sharedWith       Person[]
-  paymentType      PaymentType             @relation(fields: [paymentTypeId], references: [id])
-  paymentTypeId    String
-  paymentSource    PaymentSource           @relation(fields: [paymentSourceId], references: [id])
-  paymentSourceId  String
+  paymentChannel   PaymentChannel          @default(BANCARIZADO)
   user             User                    @relation(fields: [userId], references: [id])
   userId           String
   paymentSummaries ExpensePaymentSummary[]
@@ -188,21 +163,18 @@ model Expense {
 }
 
 model ExpensePaymentSummary {
-  id              String        @id @default(cuid())
-  expense         Expense       @relation(fields: [expenseId], references: [id])
-  expenseId       String
-  date            String
-  dueDate         String?
-  amount          Float
-  paid            Boolean       @default(false)
-  paymentType     PaymentType   @relation(fields: [paymentTypeId], references: [id])
-  paymentTypeId   String
-  paymentSource   PaymentSource @relation(fields: [paymentSourceId], references: [id])
-  paymentSourceId String
-  user            User          @relation(fields: [userId], references: [id])
-  userId          String
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id             String         @id @default(cuid())
+  expense        Expense        @relation(fields: [expenseId], references: [id])
+  expenseId      String
+  date           String
+  dueDate        String?
+  amount         Float
+  paid           Boolean        @default(false)
+  paymentChannel PaymentChannel @default(BANCARIZADO)
+  user           User           @relation(fields: [userId], references: [id])
+  userId         String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@unique([expenseId, date])
 }

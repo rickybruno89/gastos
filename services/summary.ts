@@ -19,8 +19,7 @@ export const addExpenseToSummary = async (date: string, expense: Expense) => {
         dueDate: expense.dueDate,
         amount: expense.amount,
         paid: false,
-        paymentTypeId: expense.paymentTypeId,
-        paymentSourceId: expense.paymentSourceId,
+        paymentChannel: expense.paymentChannel,
         userId,
       },
     })
@@ -69,8 +68,7 @@ export const generateExpenseSummaryForMonth = async (date: string) => {
         dueDate: expense.dueDate,
         amount: expense.amount,
         paid: false,
-        paymentTypeId: expense.paymentTypeId,
-        paymentSourceId: expense.paymentSourceId,
+        paymentChannel: expense.paymentChannel,
         userId,
       })),
     })
@@ -191,7 +189,7 @@ export const createSummaryForCreditCard = async (
 
     const userId = await getAuthUserId()
 
-    const { creditCardExpenseItems, date,  totalAmount, dueDate } = validatedFields.data
+    const { creditCardExpenseItems, date, totalAmount, dueDate } = validatedFields.data
 
     const existingSummaryForCreditCard = await prisma.creditCardPaymentSummary.findFirst({
       where: {
@@ -323,8 +321,6 @@ export async function fetchExpenseSummariesForMonth(date: string) {
 
   type DataWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
     include: {
-      paymentSource: true
-      paymentType: true
       expense: {
         include: {
           sharedWith: true
@@ -340,8 +336,6 @@ export async function fetchExpenseSummariesForMonth(date: string) {
         date,
       },
       include: {
-        paymentSource: true,
-        paymentType: true,
         expense: {
           include: {
             sharedWith: true,
@@ -406,8 +400,7 @@ export const setExpensePaymentSummaryPaid = async (expenseItem: ExpensePaymentSu
     await prisma.expense.update({
       data: {
         amount: expenseItem.amount,
-        paymentSourceId: expenseItem.paymentSourceId,
-        paymentTypeId: expenseItem.paymentTypeId,
+        paymentChannel: expenseItem.paymentChannel,
       },
       where: {
         id: expenseItem.expenseId,
@@ -417,8 +410,7 @@ export const setExpensePaymentSummaryPaid = async (expenseItem: ExpensePaymentSu
       data: {
         amount: expenseItem.amount,
         paid: true,
-        paymentSourceId: expenseItem.paymentSourceId,
-        paymentTypeId: expenseItem.paymentTypeId,
+        paymentChannel: expenseItem.paymentChannel,
       },
       where: {
         id: expenseItem.id,
@@ -559,89 +551,4 @@ export const deleteCreditCardPaymentSummary = async (id: string) => {
   revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardPaymentSummary!.date}`)
   revalidatePath(`${PAGES_URL.CREDIT_CARDS.DETAILS(creditCardPaymentSummary!.creditCardId)}`)
   redirect(`${PAGES_URL.CREDIT_CARDS.DETAILS(creditCardPaymentSummary!.creditCardId)}`)
-}
-
-export const updateAmountExpenseSummary = async (
-  expenseSummary: ExpensePaymentSummary,
-  amount: number,
-  date: string
-) => {
-  await prisma.expensePaymentSummary.update({
-    data: {
-      amount: amount || 0,
-    },
-    where: {
-      id: expenseSummary.id,
-    },
-  })
-  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
-  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
-}
-
-export const updatePaymentTypeExpenseSummary = async (
-  expenseSummary: ExpensePaymentSummary,
-  paymentTypeId: string,
-  date: string
-) => {
-  await prisma.expensePaymentSummary.update({
-    data: {
-      paymentTypeId,
-    },
-    where: {
-      id: expenseSummary.id,
-    },
-  })
-  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
-  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
-}
-
-export const updatePaymentSourceExpenseSummary = async (
-  expenseSummary: ExpensePaymentSummary,
-  paymentSourceId: string,
-  date: string
-) => {
-  await prisma.expensePaymentSummary.update({
-    data: {
-      paymentSourceId,
-    },
-    where: {
-      id: expenseSummary.id,
-    },
-  })
-  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
-  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
-}
-
-export const updateAmountCreditCardPaymentSummary = async (
-  creditCardExpenseSummary: CreditCardPaymentSummary,
-  amount: number,
-  date: string
-) => {
-  await prisma.creditCardPaymentSummary.update({
-    data: {
-      amount: amount || 0,
-    },
-    where: {
-      id: creditCardExpenseSummary.id,
-    },
-  })
-  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
-  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${date}`)
-}
-
-export const fetchPaymentSourceBalance = async (date: string) => {
-  noStore()
-  const userId = await getAuthUserId()
-  return await prisma.paymentSource.findMany({
-    where: {
-      userId,
-    },
-    include: {
-      expensePaymentSummaries: {
-        where: {
-          date,
-        },
-      },
-    },
-  })
 }

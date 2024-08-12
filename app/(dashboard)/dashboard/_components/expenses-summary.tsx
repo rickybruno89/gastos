@@ -20,8 +20,6 @@ import SharedExpenses from './shared-expenses'
 
 type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
-    paymentSource: true
-    paymentType: true
     expense: {
       include: {
         sharedWith: true
@@ -32,8 +30,6 @@ type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<
 
 type ExpensesWithInclude = Prisma.ExpenseGetPayload<{
   include: {
-    paymentSource: true
-    paymentType: true
     sharedWith: true
   }
 }>
@@ -95,27 +91,6 @@ export default function ExpensesSummary({
     await setNoNeedExpensePaymentSummary(item)
     setIsLoading(false)
   }
-
-  // const getStatusBadge = (expense: ExpensesPaymentSummaryWithInclude | CreditCardExpensesWithInclude) => {
-  //   switch (expense.paid) {
-  //     case true:
-  //       if (expense.amount === 0) return <Badge variant={'secondary'}>Omitido</Badge>
-  //       return (
-  //         <Badge className="bg-green-500">
-  //           <span className="flex justify-center gap-1 items-center">
-  //             <Check className="w-4 h-4" /> Pagado
-  //           </span>
-  //         </Badge>
-  //       )
-  //     case false:
-  //       if (expense.dueDate) {
-  //         if (expense.dueDate < getTodayDueDate()) return <Badge className="bg-red-900">Vencido</Badge>
-  //         if (expense.dueDate === getTodayDueDate())
-  //           return <Badge className="bg-red-500 animate-pulse">Vence hoy</Badge>
-  //       }
-  //       return <Badge className="bg-cyan-500">Pendiente</Badge>
-  //   }
-  // }
 
   const getExpenseStatus = (expense: ExpensesPaymentSummaryWithInclude | CreditCardExpensesWithInclude) => {
     switch (expense.paid) {
@@ -227,7 +202,7 @@ export default function ExpensesSummary({
                         </div>
                         <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
                           <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
-                          <span className="leading-tight block lowercase first-letter:uppercase">{`${item.paymentType.name} - ${item.paymentSource.name}`}</span>
+                          <span className="leading-tight block lowercase first-letter:uppercase">{item.paymentChannel}</span>
                         </div>
                         <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
                           <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>

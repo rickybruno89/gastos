@@ -1,5 +1,5 @@
 'use server'
-import { CreditCardPaymentSummary, PaymentType, Prisma } from '@prisma/client'
+import { CreditCardPaymentSummary, Prisma } from '@prisma/client'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth'
@@ -59,11 +59,7 @@ const CreditCardSchema = z.object({
 
 const CreateCreditCardSchema = CreditCardSchema.omit({ id: true })
 
-export const updateCreditCard = async (
-  id: string,
-  _prevState: CreateCreditCardState,
-  formData: FormData
-): Promise<PaymentType | any> => {
+export const updateCreditCard = async (id: string, _prevState: CreateCreditCardState, formData: FormData) => {
   try {
     const validatedFields = CreateCreditCardSchema.safeParse({
       creditCardName: formData.get('creditCardName'),
@@ -121,18 +117,13 @@ export const updateCreditCard = async (
   redirect(PAGES_URL.CREDIT_CARDS.BASE_PATH)
 }
 
-export const createCreditCard = async (
-  _prevState: CreateCreditCardState,
-  formData: FormData
-): Promise<PaymentType | any> => {
+export const createCreditCard = async (_prevState: CreateCreditCardState, formData: FormData) => {
   try {
     const validatedFields = CreateCreditCardSchema.safeParse({
       creditCardName: formData.get('creditCardName'),
       color: formData.get('color'),
       textColor: formData.get('textColor'),
       taxesPercent: formData.get('taxesPercent'),
-      paymentTypeId: formData.get('paymentTypeId'),
-      paymentSourceId: formData.get('paymentSourceId'),
     })
 
     if (!validatedFields.success) {
@@ -142,7 +133,7 @@ export const createCreditCard = async (
       }
     }
 
-    const { creditCardName, color, textColor, taxesPercent} = validatedFields.data
+    const { creditCardName, color, textColor, taxesPercent } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -502,7 +493,6 @@ export const deleteCreditCardExpenseItem = async (id: string) => {
 
 export const undoCCExpensePaymentSummaryPaid = async (item: CreditCardPaymentSummary) => {
   try {
- 
     await prisma.creditCardPaymentSummary.update({
       data: {
         paid: false,
