@@ -180,7 +180,7 @@ export default function ExpensesSummary({
           <div className="w-full rounded-[10px] px-2 flex flex-col">
             <div className="flex-1 flex justify-between items-center font-medium">
               <span className="leading-tight lowercase first-letter:uppercase text-lg">{expense.description}</span>
-              <span className="leading-tight text-xl text-money">{formatCurrency(expense.amount)}</span>
+              <span className="leading-tight text-xl">{formatCurrency(expense.amount)}</span>
             </div>
             <button
               className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"

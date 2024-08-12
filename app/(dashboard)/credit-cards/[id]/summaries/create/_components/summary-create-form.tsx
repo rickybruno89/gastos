@@ -101,7 +101,7 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="rounded-md bg-gray-50 p-4 md:p-6 w-full md:w-fit flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         <div>
           <label className="mb-2 block text-sm font-medium" htmlFor="date">
             Seleccione el mes para el resumen

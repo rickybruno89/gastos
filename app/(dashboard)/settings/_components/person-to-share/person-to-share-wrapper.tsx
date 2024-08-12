@@ -5,7 +5,7 @@ export default async function PersonToShareWrapper() {
   const personsToShare = await fetchPersonToShare()
 
   return (
-    <section className="bg-white rounded-lg p-4 md:p-6">
+    <section className="">
       <h1 className="text-xl mb-2">Personas para compartir gastos</h1>
       <PersonToShareForm />
       {personsToShare.length ? (

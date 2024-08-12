@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 }
 export default async function Page() {
   return (
-    <main>
+    <main className='px-4 max-w-xl mx-auto'>
       <Breadcrumbs
         breadcrumbs={[
           { label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH },

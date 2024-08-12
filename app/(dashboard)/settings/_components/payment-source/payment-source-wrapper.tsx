@@ -5,7 +5,7 @@ export default async function PaymentSourceWrapper() {
   const paymentSources = await fetchPaymentSource()
 
   return (
-    <section className="bg-white rounded-lg p-4 md:p-6">
+    <section className="">
       <h1 className="text-xl mb-2">Canales de pago</h1>
       <PaymentSourceForm />
       {paymentSources.length ? (

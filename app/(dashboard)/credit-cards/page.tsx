@@ -17,7 +17,7 @@ export default async function Page() {
     creditCardExpenseItems.reduce((sum, creditCardExpenseItem) => (sum += creditCardExpenseItem.installmentsAmount), 0)
 
   return (
-    <main>
+    <main className='px-4 max-w-xl mx-auto'>
       <Breadcrumbs
         breadcrumbs={[{ label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH, active: true }]}
       />

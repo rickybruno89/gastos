@@ -9,7 +9,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   const creditCard = await fetchCreditCardById(creditCardId)
 
   return (
-    <main>
+    <main className='px-4 max-w-xl mx-auto'>
       <Breadcrumbs
         breadcrumbs={[
           { label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH },

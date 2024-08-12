@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   return (
-    <main className="flex gap-4 flex-wrap flex-col">
+    <main className='px-4 max-w-xl mx-auto'>
       <Breadcrumbs
         breadcrumbs={[
           {

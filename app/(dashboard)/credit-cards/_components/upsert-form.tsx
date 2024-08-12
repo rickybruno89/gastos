@@ -21,7 +21,7 @@ export default function CreditCardCreateUpsertForm({ creditCard }: { creditCard?
 
   return (
     <form action={dispatch}>
-      <div className="rounded-md bg-gray-50 p-4 md:p-6 w-fit flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         <div>
           <label htmlFor="creditCardName" className="mb-2 block text-sm font-medium">
             Nombre
@@ -120,7 +120,7 @@ export default function CreditCardCreateUpsertForm({ creditCard }: { creditCard?
           >
             Cancelar
           </Link>
-          <Button type="submit">{creditCard ? 'Modificar' : 'Crear'}</Button>
+          <Button type="submit" className='bg-orange-500 px-4 py-2 text-white hover:bg-gray-700'>{creditCard ? 'Modificar' : 'Crear'}</Button>
         </div>
       </div>
     </form>

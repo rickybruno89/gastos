@@ -128,59 +128,6 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
           ))}
         </div>
       ) : (
-        // <section className="rounded-md bg-white">
-        //   <Table className="whitespace-nowrap">
-        //     <TableHeader>
-        //       <TableRow className="text-xs md:text-sm">
-        //         <TableHead className="sticky left-0 bg-white">Descripción</TableHead>
-        //         <TableHead>Forma de pago</TableHead>
-        //         <TableHead>Canal de pago</TableHead>
-        //         <TableHead>Compartido</TableHead>
-        //         <TableHead className="text-right">Monto</TableHead>
-        //         <TableHead className="text-right">Acciones</TableHead>
-        //       </TableRow>
-        //     </TableHeader>
-        //     <TableBody>
-        //       {filteredExpenses.map((item) => (
-        //         <TableRow key={item.id} className="text-xs md:text-sm">
-        //           <TableCell className="sticky left-0 bg-white">{item.description}</TableCell>
-        //           <TableCell>{item.paymentType.name}</TableCell>
-        //           <TableCell>{item.paymentSource.name}</TableCell>
-        //           <TableCell>{item.sharedWith.map((person) => person.name).join(' - ')}</TableCell>
-        //           <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
-        //           <TableCell className="text-right flex flex-nowrap items-center justify-end">
-        //             <div className="flex items-center gap-2 justify-self-end self-center col-span-2">
-        //               <ButtonTooltip
-        //                 action="click"
-        //                 content={
-        //                   <div>
-        //                     Notas:{' '}
-        //                     {item.notes ? (
-        //                       <span className="">{item.notes}</span>
-        //                     ) : (
-        //                       <span className="italic">No hay notas</span>
-        //                     )}
-        //                   </div>
-        //                 }
-        //                 trigger={<InformationCircleIcon className="w-6 h-6 text-blue-500" />}
-        //               />
-        //               <ButtonTooltip
-        //                 action="click"
-        //                 content="Editar item"
-        //                 trigger={
-        //                   <Link href={PAGES_URL.EXPENSES.EDIT(item.id)}>
-        //                     <EditIcon className="w-5 h-5" />
-        //                   </Link>
-        //                 }
-        //               />
-        //               <ButtonDelete action={deleteExpenseItem} id={item.id} />
-        //             </div>
-        //           </TableCell>
-        //         </TableRow>
-        //       ))}
-        //     </TableBody>
-        //   </Table>
-        // </section>
         <h1>No hay items </h1>
       )}
     </>
