@@ -101,7 +101,6 @@ export default function MonthSelector({ date }: { date: string }) {
   const [startOfCarousel, setStartOfCarousel] = useState(initialSlide === 0)
 
   const [flipped, setFlipped] = useState(false)
-  console.log("🚀 ~ MonthSelector ~ flipped:", flipped)
 
   const handleFlip = () => {
     setFlipped((prev) => !prev)
