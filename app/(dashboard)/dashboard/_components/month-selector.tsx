@@ -171,7 +171,7 @@ export default function MonthSelector({ date }: { date: string }) {
           {MONTH_LIST.map((month) => (
             <div
               key={month.number}
-              className={`cursor-pointer rounded-md p-1 flex justify-center items-center transition-all ease-in-out duration-200 hover:scale-110 hover:bg-orange-500 hover:text-white ${getMonthSelectedClass(
+              className={`cursor-pointer rounded-md p-1 flex justify-center items-center transition-all ease-in-out duration-200 hover:scale-110 hover:bg-gray-600 hover:text-white ${getMonthSelectedClass(
                 month.number
               )}`}
               onClick={() => handleMonthPick(month.number)}

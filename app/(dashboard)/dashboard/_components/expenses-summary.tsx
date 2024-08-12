@@ -29,6 +29,7 @@ import { undoCCExpensePaymentSummaryPaid } from '@/services/credit-card'
 import { Menu, MenuButton, MenuHeading, MenuItem, MenuItems, MenuSection, MenuSeparator } from '@headlessui/react'
 import LinkButton from '@/components/ui/link-button'
 import { PlusIcon } from '@heroicons/react/24/outline'
+import SharedExpenses from './shared-expenses'
 
 type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -53,8 +54,6 @@ type ExpensesWithInclude = Prisma.ExpenseGetPayload<{
 type CreditCardExpensesWithInclude = Prisma.CreditCardPaymentSummaryGetPayload<{
   include: {
     creditCard: true
-    paymentSource: true
-    paymentType: true
     itemHistoryPayment: {
       include: {
         creditCardExpenseItem: {
@@ -184,7 +183,7 @@ export default function ExpensesSummary({
               <span className="leading-tight text-xl text-money">{formatCurrency(expense.amount)}</span>
             </div>
             <button
-              className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-amber-500 transition-all ease-in-out duration-300"
+              className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
               onClick={() => addExpenseToSummary(date, expense)}
             >
               agregar al resumen actual
@@ -209,14 +208,17 @@ export default function ExpensesSummary({
           <span className="text-lg font-semibold uppercase">no pagado</span>
           <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().notPaid)}</span>
         </div>
+        <SharedExpenses expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} />
       </div>
       {expenseSummaries.length ? (
         <div className="max-w-xl mx-auto p-4">
           <div className="flex justify-between items-center mb-2">
             <p className="text-lg font-semibold">Gastos</p>
             <LinkButton href={PAGES_URL.EXPENSES.CREATE}>
-              <PlusIcon className="w-5 text-orange-400" />
-              <span className="text-orange-400">Nuevo</span>
+              <div className='hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500'>
+                <PlusIcon className="w-5 " />
+                <span className="">Nuevo</span>
+              </div>
             </LinkButton>
           </div>
           <div className="flex flex-col gap-2">

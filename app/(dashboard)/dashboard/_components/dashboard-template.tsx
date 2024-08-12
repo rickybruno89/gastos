@@ -27,7 +27,7 @@ export default async function DashboardTemplate({ date }: { date: string }) {
         date={date}
       />
       {/* <SourceBalance paymentSourceBalance={paymentSourceBalance} /> */}
-      <SharedExpenses expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} />
+     
     </div>
   )
 }
