@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useFormState } from 'react-dom'
 import { Checkbox } from '@/components/ui/checkbox'
 import { createSummaryForCreditCard } from '@/services/summary'
-import { Prisma } from '@prisma/client'
+import { CreditCardExpenseItem, Prisma } from '@prisma/client'
 import { formatCurrency, getToday, removeCurrencyMaskFromInput } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { NumericFormat } from 'react-number-format'
@@ -21,12 +21,14 @@ type CreditCardWithItems = Prisma.CreditCardGetPayload<{
   }
 }>
 
+type CreditCardExpenseItemWithChecked = CreditCardExpenseItem & { checked: boolean }
+
 export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCardWithItems }) {
   const initialState = { message: null, errors: {} }
   const createSummaryForCreditCardWithId = createSummaryForCreditCard.bind(null, creditCard.id)
 
   const [state, dispatch] = useFormState(createSummaryForCreditCardWithId, initialState)
-  const [selectedItems, setSelectedItems] = useState(
+  const [selectedItems, setSelectedItems] = useState<CreditCardExpenseItemWithChecked[]>(
     creditCard.creditCardExpenseItems.map((item) => ({ ...item, checked: false }))
   )
   const [total, setTotal] = useState(0)
@@ -73,6 +75,14 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedItems, taxes])
+
+  const handleDiscount = (itemToUpdate: CreditCardExpenseItemWithChecked) => {
+    const newPrice = itemToUpdate.installmentsAmount * ((100 - 15) / 100)
+    const newItems = selectedItems.map((selectedItem) =>
+      selectedItem.id === itemToUpdate.id ? { ...selectedItem, installmentsAmount: newPrice } : selectedItem
+    )
+    setSelectedItems(newItems)
+  }
 
   const handleSubmit = (e: any) => {
     e.preventDefault()
@@ -178,6 +188,7 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
                       checked={item.checked}
                       onCheckedChange={(e) => handleItemChecked(e as boolean, item.id)}
                     />
+                    <button onClick={() => handleDiscount(item)}>Aplicar descuento</button>
                   </div>
                 </div>
               ))}

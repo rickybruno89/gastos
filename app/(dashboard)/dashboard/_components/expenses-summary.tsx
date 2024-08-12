@@ -156,171 +156,106 @@ export default function ExpensesSummary({
 
   return (
     <section id="expense-content">
-      {expenseSummaries.length ? (
-        <>
-          <div className="max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
-            <div className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white leading-tight">
-              <span className="text-lg font-semibold uppercase">total</span>
-              <span className="text-gray-100 uppercase">gastos</span>
-              <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().amount)}</span>
+      <div className="max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
+        <div className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white leading-tight">
+          <span className="text-lg font-semibold uppercase">total</span>
+          <span className="text-gray-100 uppercase">gastos</span>
+          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().amount)}</span>
+        </div>
+        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-lime-500 to-money text-white">
+          <span className="text-lg font-semibold uppercase">pagado</span>
+          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().paid)}</span>
+        </div>
+        <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white">
+          <span className="text-lg font-semibold uppercase">no pagado</span>
+          <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().notPaid)}</span>
+        </div>
+        <SharedExpenses expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} />
+      </div>
+      <div className="max-w-xl mx-auto p-4">
+        <div className="flex justify-between items-center mb-2">
+          <p className="text-lg font-semibold">Gastos</p>
+          <LinkButton href={PAGES_URL.EXPENSES.CREATE}>
+            <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
+              <PlusIcon className="w-5 " />
+              <span className="">Nuevo</span>
             </div>
-            <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-lime-500 to-money text-white">
-              <span className="text-lg font-semibold uppercase">pagado</span>
-              <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().paid)}</span>
-            </div>
-            <div className="shadow-lg p-4 shrink-0  flex flex-col w-64 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white">
-              <span className="text-lg font-semibold uppercase">no pagado</span>
-              <span className="text-3xl font-bold mt-3 text-center">{formatCurrency(getTotals().notPaid)}</span>
-            </div>
-            <SharedExpenses
-              expenseSummaries={expenseSummaries}
-              creditCardExpenseSummaries={creditCardExpenseSummaries}
-            />
-          </div>
-          <div className="max-w-xl mx-auto p-4">
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-lg font-semibold">Gastos</p>
-              <LinkButton href={PAGES_URL.EXPENSES.CREATE}>
-                <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
-                  <PlusIcon className="w-5 " />
-                  <span className="">Nuevo</span>
-                </div>
-              </LinkButton>
-            </div>
-            <div className="flex flex-col gap-2">
-              {getNewExpenses()}
-              {expenseSummaries.map((item) => (
-                <Menu key={item.id}>
-                  <MenuButton>
-                    <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px]">
-                      <div className="w-full rounded-[10px] px-2 flex flex-col">
-                        <div className="flex-1 flex justify-between items-end font-medium">
-                          <span className="leading-tight lowercase first-letter:uppercase text-lg">
-                            {item.expense.description}
-                          </span>
-                          <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
-                        </div>
-                        <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                          <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
-                          <span className="leading-tight block lowercase first-letter:uppercase">{item.paymentChannel}</span>
-                        </div>
-                        <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                          <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
-                          {getExpenseStatus(item)}
-                        </div>
+          </LinkButton>
+        </div>
+        {expenseSummaries.length ? (
+          <div className="flex flex-col gap-2">
+            {getNewExpenses()}
+            {expenseSummaries.map((item) => (
+              <Menu key={item.id}>
+                <MenuButton>
+                  <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px]">
+                    <div className="w-full rounded-[10px] px-2 flex flex-col">
+                      <div className="flex-1 flex justify-between items-end font-medium">
+                        <span className="leading-tight lowercase first-letter:uppercase text-lg">
+                          {item.expense.description}
+                        </span>
+                        <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
+                      </div>
+                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                        <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
+                        <span className="leading-tight block lowercase first-letter:uppercase">
+                          {item.paymentChannel}
+                        </span>
+                      </div>
+                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                        <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
+                        {getExpenseStatus(item)}
                       </div>
                     </div>
-                  </MenuButton>
-                  <MenuItems
-                    anchor="bottom end"
-                    className="bg-white p-4 w-40 shadow-2xl rounded-xl -translate-y-[74px] -translate-x-3"
-                  >
-                    <MenuSection>
-                      <MenuHeading className="text-sm">Acciones</MenuHeading>
-                      {item.paid ? (
-                        <MenuItem>
-                          <div className="data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1">
-                            <button onClick={() => undoExpensePayment(item)}>Deshacer pago</button>
-                          </div>
-                        </MenuItem>
-                      ) : (
-                        <>
-                          <MenuItem>
-                            <Link
-                              className="block data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
-                              href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=/dashboard`}
-                            >
-                              Editar
-                            </Link>
-                          </MenuItem>
-                          <MenuItem>
-                            <button
-                              className="block w-full text-left data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
-                              onClick={() => dontPayExpense(item)}
-                            >
-                              Omitir pago
-                            </button>
-                          </MenuItem>
-                          <MenuItem>
-                            <button
-                              className="block w-full text-left data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
-                              onClick={() => payExpense(item)}
-                            >
-                              Pagar
-                            </button>
-                          </MenuItem>
-                        </>
-                      )}
-                    </MenuSection>
-                  </MenuItems>
-                </Menu>
-              ))}
-              {creditCardExpenseSummaries.length ? (
-                <>
-                  <p className="text-lg font-semibold mt-4">Tarjetas de crédito</p>
-                  {creditCardExpenseSummaries.map((item) => (
-                    <Menu key={item.id}>
-                      <MenuButton>
-                        <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px]">
-                          <div className="w-full rounded-[10px] px-2 flex flex-col">
-                            <div className="flex-1 flex justify-between items-end font-medium">
-                              <span className="leading-tight uppercase text-lg">{item.creditCard.name}</span>
-                              <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
-                            </div>
-                            <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                              <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
-                            </div>
-                            <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                              <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
-                              {getExpenseStatus(item)}
-                            </div>
-                          </div>
+                  </div>
+                </MenuButton>
+                <MenuItems
+                  anchor="bottom end"
+                  className="bg-white p-4 w-40 shadow-2xl rounded-xl -translate-y-[74px] -translate-x-3"
+                >
+                  <MenuSection>
+                    <MenuHeading className="text-sm">Acciones</MenuHeading>
+                    {item.paid ? (
+                      <MenuItem>
+                        <div className="data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1">
+                          <button onClick={() => undoExpensePayment(item)}>Deshacer pago</button>
                         </div>
-                      </MenuButton>
-                      <MenuItems
-                        anchor="bottom end"
-                        className="bg-white p-4 w-40 shadow-2xl rounded-xl -translate-y-[74px] -translate-x-3"
-                      >
-                        <MenuSection>
-                          <MenuHeading className="text-sm">Acciones</MenuHeading>
-                          <MenuItem>
-                            <Link
-                              className="block data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
-                              href={`${PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCardId, item.id)}`}
-                            >
-                              Ver detalle
-                            </Link>
-                          </MenuItem>
-                          {item.paid ? (
-                            <MenuItem>
-                              <div className="data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1">
-                                <button onClick={() => undoCCExpensePayment(item)}>Deshacer pago</button>
-                              </div>
-                            </MenuItem>
-                          ) : (
-                            <>
-                              <MenuItem>
-                                <button
-                                  className="block w-full text-left data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
-                                  onClick={() => payCCExpense(item)}
-                                >
-                                  Pagar
-                                </button>
-                              </MenuItem>
-                            </>
-                          )}
-                        </MenuSection>
-                      </MenuItems>
-                    </Menu>
-                  ))}
-                </>
-              ) : null}
-            </div>
+                      </MenuItem>
+                    ) : (
+                      <>
+                        <MenuItem>
+                          <Link
+                            className="block data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
+                            href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=/dashboard`}
+                          >
+                            Editar
+                          </Link>
+                        </MenuItem>
+                        <MenuItem>
+                          <button
+                            className="block w-full text-left data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
+                            onClick={() => dontPayExpense(item)}
+                          >
+                            Omitir pago
+                          </button>
+                        </MenuItem>
+                        <MenuItem>
+                          <button
+                            className="block w-full text-left data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
+                            onClick={() => payExpense(item)}
+                          >
+                            Pagar
+                          </button>
+                        </MenuItem>
+                      </>
+                    )}
+                  </MenuSection>
+                </MenuItems>
+              </Menu>
+            ))}
           </div>
-        </>
-      ) : (
-        <div className="p-4">
-          <div className="p-4 bg-gradient-to-r from-gray-500 to-gray-900 max-w-lg mx-auto rounded-xl text-white">
+        ) : (
+          <div className="p-4 bg-gradient-to-r from-gray-500 to-gray-900 rounded-xl text-white">
             <div className="flex gap-4 items-center">
               <ExclamationCircleIcon className="w-8 h-8 text-orange-500" />
               <span>No se generó el resumen para {formatLocaleDate(date)}</span>
@@ -332,8 +267,78 @@ export default function ExpensesSummary({
               Generar resumen
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      <div className="max-w-xl mx-auto p-4">
+        <p className="text-lg font-semibold mb-2">Tarjetas de crédito</p>
+        {creditCardExpenseSummaries.length ? (
+          <div className="flex flex-col gap-2">
+            {creditCardExpenseSummaries.map((item) => (
+              <Menu key={item.id}>
+                <MenuButton>
+                  <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px]">
+                    <div className="w-full rounded-[10px] px-2 flex flex-col">
+                      <div className="flex-1 flex justify-between items-end font-medium">
+                        <span className="leading-tight uppercase text-lg">{item.creditCard.name}</span>
+                        <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
+                      </div>
+                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                        <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
+                      </div>
+                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                        <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
+                        {getExpenseStatus(item)}
+                      </div>
+                    </div>
+                  </div>
+                </MenuButton>
+                <MenuItems
+                  anchor="bottom end"
+                  className="bg-white p-4 w-40 shadow-2xl rounded-xl -translate-y-[74px] -translate-x-3"
+                >
+                  <MenuSection>
+                    <MenuHeading className="text-sm">Acciones</MenuHeading>
+                    <MenuItem>
+                      <Link
+                        className="block data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
+                        href={`${PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCardId, item.id)}`}
+                      >
+                        Ver detalle
+                      </Link>
+                    </MenuItem>
+                    {item.paid ? (
+                      <MenuItem>
+                        <div className="data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1">
+                          <button onClick={() => undoCCExpensePayment(item)}>Deshacer pago</button>
+                        </div>
+                      </MenuItem>
+                    ) : (
+                      <>
+                        <MenuItem>
+                          <button
+                            className="block w-full text-left data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
+                            onClick={() => payCCExpense(item)}
+                          >
+                            Pagar
+                          </button>
+                        </MenuItem>
+                      </>
+                    )}
+                  </MenuSection>
+                </MenuItems>
+              </Menu>
+            ))}
+          </div>
+        ) : (
+          <div className="p-4 bg-gradient-to-r from-gray-500 to-gray-900 rounded-xl text-white">
+            <div className="flex gap-4 items-center">
+              <ExclamationCircleIcon className="w-8 h-8 text-orange-500" />
+              <span>No se encontro ningun sumen para tarjetas de crédito {formatLocaleDate(date)}</span>
+            </div>
+          </div>
+        )}
+      </div>
     </section>
   )
 }
