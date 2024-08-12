@@ -78,8 +78,6 @@ model PaymentType {
   name                       String // EFECTIVO - HOME BANKING - TRANSFERENCIA - DEBITO AUTOMATICO
   expenses                   Expense[]
   expensePaymentSummaries    ExpensePaymentSummary[]
-  creditCards                CreditCard[]
-  creditCardPaymentSummaries CreditCardPaymentSummary[]
   user                       User                       @relation(fields: [userId], references: [id])
   userId                     String
   deleted                    Boolean                    @default(false)
@@ -93,8 +91,6 @@ model PaymentSource {
   name                       String // EFECTIVO - GALICIA - MACRO - HSBC - LEMON - PERSONAL PAY
   expenses                   Expense[]
   expensePaymentSummaries    ExpensePaymentSummary[]
-  creditCards                CreditCard[]
-  creditCardPaymentSummaries CreditCardPaymentSummary[]
   user                       User                       @relation(fields: [userId], references: [id])
   userId                     String
   deleted                    Boolean                    @default(false)
@@ -109,10 +105,6 @@ model CreditCard {
   color                  String                     @default("#143273")
   textColor              String                     @default("#FFFFFF")
   taxesPercent           Float
-  paymentType            PaymentType                @relation(fields: [paymentTypeId], references: [id])
-  paymentTypeId          String
-  paymentSource          PaymentSource              @relation(fields: [paymentSourceId], references: [id])
-  paymentSourceId        String
   paymentSummaries       CreditCardPaymentSummary[]
   creditCardExpenseItems CreditCardExpenseItem[]
   user                   User                       @relation(fields: [userId], references: [id])
@@ -166,10 +158,6 @@ model CreditCardPaymentSummary {
   amount             Float
   paid               Boolean                        @default(false)
   dueDate            String
-  paymentType        PaymentType                    @relation(fields: [paymentTypeId], references: [id])
-  paymentTypeId      String
-  paymentSource      PaymentSource                  @relation(fields: [paymentSourceId], references: [id])
-  paymentSourceId    String
   itemHistoryPayment CreditCardSummaryExpenseItem[]
   creditCard         CreditCard                     @relation(fields: [creditCardId], references: [id])
   creditCardId       String

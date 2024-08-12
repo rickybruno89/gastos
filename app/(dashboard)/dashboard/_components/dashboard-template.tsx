@@ -20,11 +20,14 @@ export default async function DashboardTemplate({ date }: { date: string }) {
 
   return (
     <div>
-      <ExpensesSummary expenses={expenses} expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} date={date} />
-      {/* <div>
-        <SourceBalance paymentSourceBalance={paymentSourceBalance} />
-        <SharedExpenses expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} />
-      </div> */}
+      <ExpensesSummary
+        expenses={expenses}
+        expenseSummaries={expenseSummaries}
+        creditCardExpenseSummaries={creditCardExpenseSummaries}
+        date={date}
+      />
+      {/* <SourceBalance paymentSourceBalance={paymentSourceBalance} /> */}
+      <SharedExpenses expenseSummaries={expenseSummaries} creditCardExpenseSummaries={creditCardExpenseSummaries} />
     </div>
   )
 }

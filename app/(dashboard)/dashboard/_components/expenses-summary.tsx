@@ -195,7 +195,7 @@ export default function ExpensesSummary({
 
   return (
     <section id="expense-content">
-       <div className="max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
+      <div className="max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
         <div className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white leading-tight">
           <span className="text-lg font-semibold uppercase">total</span>
           <span className="text-gray-100 uppercase">gastos</span>
@@ -233,12 +233,12 @@ export default function ExpensesSummary({
                         <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
                       </div>
                       <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                        <span className="leading-tight block lowercase first-letter:uppercase">{`${item.paymentType.name} - ${item.paymentSource.name}`}</span>
                         <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
+                        <span className="leading-tight block lowercase first-letter:uppercase">{`${item.paymentType.name} - ${item.paymentSource.name}`}</span>
                       </div>
                       <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                        {getExpenseStatus(item)}
                         <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
+                        {getExpenseStatus(item)}
                       </div>
                     </div>
                   </div>
@@ -300,12 +300,11 @@ export default function ExpensesSummary({
                             <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
                           </div>
                           <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                            <span className="leading-tight block lowercase first-letter:uppercase">{`${item.paymentType.name} - ${item.paymentSource.name}`}</span>
                             <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
                           </div>
                           <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                            {getExpenseStatus(item)}
                             <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
+                            {getExpenseStatus(item)}
                           </div>
                         </div>
                       </div>
@@ -318,7 +317,7 @@ export default function ExpensesSummary({
                         <MenuHeading className="text-sm">Acciones</MenuHeading>
                         <MenuItem>
                           <Link
-                            className="w-full"
+                            className="block data-[focus]:bg-orange-500 data-[focus]:text-white rounded-md p-1"
                             href={`${PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCardId, item.id)}`}
                           >
                             Ver detalle

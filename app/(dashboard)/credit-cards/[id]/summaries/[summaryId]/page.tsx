@@ -29,11 +29,11 @@ export default async function Page({ params }: { params: { id: string; summaryId
           <div className="rounded-md bg-white p-4 md:p-6  mb-4 w-fit flex flex-col gap-4">
             {creditCardSummary.paid ? (
               <p className="text-green-500 text-lg">
-                {creditCardSummary.paymentType.name} - {creditCardSummary.paymentSource.name} (PAGADO)
+               PAGADO
               </p>
             ) : (
               <p className="text-red-500 text-lg">
-                {creditCardSummary.paymentType.name} - {creditCardSummary.paymentSource.name} (NO PAGADO)
+               NO PAGADO
               </p>
             )}
             {creditCardSummary.itemHistoryPayment.map((item) => (
