@@ -8,7 +8,7 @@ export default async function Page({ params }: { params: { id: string; summaryId
   const creditCardSummary = await fetchCreditCardSummaryById(summaryId)
 
   return (
-    <main className='px-4 max-w-xl mx-auto'>
+    <main className="px-4 max-w-xl mx-auto">
       <Breadcrumbs
         breadcrumbs={[
           { label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH },
@@ -28,13 +28,9 @@ export default async function Page({ params }: { params: { id: string; summaryId
           <h1 className="text-xl font-bold mb-2">Resumen {formatLocaleDate(creditCardSummary.date!)}</h1>
           <div className="rounded-md bg-white p-4 md:p-6  mb-4 w-fit flex flex-col gap-4">
             {creditCardSummary.paid ? (
-              <p className="text-green-500 text-lg">
-               PAGADO
-              </p>
+              <p className="text-green-500 text-lg">PAGADO</p>
             ) : (
-              <p className="text-red-500 text-lg">
-               NO PAGADO
-              </p>
+              <p className="text-red-500 text-lg">NO PAGADO</p>
             )}
             {creditCardSummary.itemHistoryPayment.map((item) => (
               <div key={item.id} className="flex flex-wrap gap-x-20 justify-between">
@@ -51,7 +47,9 @@ export default async function Page({ params }: { params: { id: string; summaryId
                 )}
               </div>
             ))}
-            <p></p>
+            <p className="text-right">
+              Impuesto y sellado: <span className="font-bold"> {formatCurrency(creditCardSummary.taxes)}</span>
+            </p>
             <p className="text-right">
               Total <span className="font-bold"> {formatCurrency(creditCardSummary.amount)}</span>
             </p>

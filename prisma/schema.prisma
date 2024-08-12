@@ -82,7 +82,6 @@ model CreditCard {
   name                   String
   color                  String                     @default("#143273")
   textColor              String                     @default("#FFFFFF")
-  taxesPercent           Float
   paymentSummaries       CreditCardPaymentSummary[]
   creditCardExpenseItems CreditCardExpenseItem[]
   user                   User                       @relation(fields: [userId], references: [id])
@@ -136,6 +135,7 @@ model CreditCardPaymentSummary {
   amount             Float
   paid               Boolean                        @default(false)
   dueDate            String
+  taxes              Float                          @default(0)
   itemHistoryPayment CreditCardSummaryExpenseItem[]
   creditCard         CreditCard                     @relation(fields: [creditCardId], references: [id])
   creditCardId       String

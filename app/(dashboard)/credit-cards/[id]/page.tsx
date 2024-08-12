@@ -31,7 +31,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   const { id } = params
   const creditCard = await fetchCreditCardById(id)
   return (
-    <main className='px-4 max-w-xl mx-auto'>
+    <main className="px-4 max-w-xl mx-auto">
       <Breadcrumbs
         breadcrumbs={[
           { label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH },
@@ -49,9 +49,6 @@ export default async function Page({ params }: { params: { id: string } }) {
             <div>
               <p>
                 Nombre: <span className="font-bold">{creditCard?.name}</span>{' '}
-              </p>
-              <p>
-                Impuesto de sellado: <span className="font-bold">{creditCard?.taxesPercent.toString()} %</span>{' '}
               </p>
             </div>
             <Link href={PAGES_URL.CREDIT_CARDS.EDIT(creditCard.id)} className="flex gap-2 text-blue-500">

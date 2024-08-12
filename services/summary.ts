@@ -141,6 +141,7 @@ type CreateCreditCardPaymentSummaryState = {
     creditCardExpenseItems?: string[]
     date?: string[]
     dueDate?: string[]
+    taxesAmount?: string[]
     totalAmount?: string[]
   }
   message?: string | null
@@ -158,6 +159,7 @@ const CreditCardPaymentSummarySchema = z.object({
     .array(),
   date: z.string().min(1, { message: 'Ingrese la fecha del resumen' }),
   dueDate: z.string().min(1, { message: 'Ingrese una fecha de vencimiento' }),
+  taxesAmount: z.string().min(1, { message: 'El impuesto y sellado tiene que tener algun valor' }),
   totalAmount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
 })
 
@@ -177,6 +179,7 @@ export const createSummaryForCreditCard = async (
       creditCardExpenseItems: creditCardExpenseItemsParsed,
       date: formData.get('date'),
       dueDate: formData.get('dueDate'),
+      taxesAmount: formData.get('taxesAmount'),
       totalAmount: formData.get('totalAmount'),
     })
 
@@ -189,7 +192,7 @@ export const createSummaryForCreditCard = async (
 
     const userId = await getAuthUserId()
 
-    const { creditCardExpenseItems, date, totalAmount, dueDate } = validatedFields.data
+    const { creditCardExpenseItems, date, taxesAmount, totalAmount, dueDate } = validatedFields.data
 
     const existingSummaryForCreditCard = await prisma.creditCardPaymentSummary.findFirst({
       where: {
@@ -210,6 +213,7 @@ export const createSummaryForCreditCard = async (
     await prisma.creditCardPaymentSummary.create({
       data: {
         amount: parseFloat(totalAmount),
+        taxes: parseFloat(taxesAmount),
         date,
         dueDate,
         paid: false,

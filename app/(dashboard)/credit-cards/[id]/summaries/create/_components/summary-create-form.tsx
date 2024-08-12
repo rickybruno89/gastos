@@ -27,18 +27,15 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
 
   const [state, dispatch] = useFormState(createSummaryForCreditCardWithId, initialState)
   const [selectedItems, setSelectedItems] = useState(
-    creditCard.creditCardExpenseItems.map((item) => ({ ...item, checked: getToday() >= item.paymentBeginning }))
+    creditCard.creditCardExpenseItems.map((item) => ({ ...item, checked: false }))
   )
   const [total, setTotal] = useState(0)
   const [subtotal, setSubtotal] = useState(0)
+  const [taxes, setTaxes] = useState(0)
   const [datePicker, setDatePicker] = useState(getToday())
 
   const handleChangeDatePicker = (date: string) => {
     setDatePicker(date)
-    const newSelectedItems = selectedItems.map((item) => {
-      return { ...item, checked: date >= item.paymentBeginning }
-    })
-    setSelectedItems(newSelectedItems)
   }
 
   const handleItemChecked = (checked: boolean, id: string) => {
@@ -68,10 +65,14 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
       return total
     }, 0)
 
-    setTotal(total + (total * creditCard.taxesPercent) / 100)
     setSubtotal(total)
+    if (taxes) {
+      setTotal(total + taxes)
+    } else {
+      setTotal(total)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedItems])
+  }, [selectedItems, taxes])
 
   const handleSubmit = (e: any) => {
     e.preventDefault()
@@ -84,19 +85,11 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
         return { id, installmentsAmount, installmentsPaid, installmentsQuantity }
       })
 
+    formData.set('taxesAmount', taxes.toString())
     formData.set('totalAmount', total.toString())
     formData.set('creditCardExpenseItems', JSON.stringify(selectedItemsToSend))
 
     dispatch(formData)
-  }
-
-  const getTaxesAmout = () => {
-    const totalAmount = selectedItems
-      .filter((item) => item.checked)
-      .reduce((totalAcc, current) => {
-        return (totalAcc += current.installmentsAmount)
-      }, 0)
-    return formatCurrency((totalAmount * creditCard.taxesPercent) / 100)
   }
 
   return (
@@ -201,10 +194,20 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
             <div>
               <span className="font-bold">Subtotal: {formatCurrency(subtotal)}</span>
             </div>
-            <div>
-              <p className="font-bold">
-                Impuestos y sellados: <span>{getTaxesAmout()}</span>
-              </p>
+            <div className="flex gap-2 justify-end items-center">
+              <p className="font-bold">Impuestos y sellados</p>
+              <NumericFormat
+                inputMode="decimal"
+                className="rounded-md w-36 px-2 py-1"
+                name="taxesAmount"
+                id="taxesAmount"
+                value={taxes}
+                prefix={'$ '}
+                thousandSeparator="."
+                decimalScale={2}
+                decimalSeparator=","
+                onChange={(e) => setTaxes(removeCurrencyMaskFromInput(e.target.value))}
+              />
             </div>
             <div className="flex gap-2 justify-end items-center">
               <p className="font-bold">Total</p>
