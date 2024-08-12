@@ -69,7 +69,7 @@ export default function Navbar({ session }: { session: Session | null }) {
           </div>
           <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
             <div className="flex flex-shrink-0 items-center">
-              <h1 className="animate-pulse text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-orange-500 text-shadow">
+              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-orange-500 text-shadow">
                 GastApp
               </h1>
             </div>

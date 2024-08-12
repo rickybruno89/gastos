@@ -165,7 +165,7 @@ export default function SharedExpenses({
                     </div>
                   </DialogTitle>
                   <div className="flex flex-col gap-2 overflow-y-auto max-h-[590px] no-scrollbar">
-                    {[...sharedPersonData.items,...sharedPersonData.items,...sharedPersonData.items, ...sharedPersonData.items, ...sharedPersonData.items, ...sharedPersonData.items].map((item) => (
+                    {sharedPersonData.items.map((item) => (
                       <div key={item.id} className="flex justify-between items-center p-2 rounded-md bg-gray-500 text-white">
                         <div className="flex flex-col">
                           <span className='font-bold'>{item.description}</span>
