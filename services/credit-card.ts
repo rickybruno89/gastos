@@ -116,8 +116,6 @@ export const updateCreditCard = async (
         color,
         textColor,
         taxesPercent,
-        paymentTypeId,
-        paymentSourceId,
         userId,
       },
       where: {
@@ -178,8 +176,6 @@ export const createCreditCard = async (
         color,
         textColor,
         taxesPercent,
-        paymentTypeId,
-        paymentSourceId,
         userId,
       },
     })
@@ -399,8 +395,6 @@ export async function fetchCreditCardById(id: string) {
         id,
       },
       include: {
-        paymentSource: true,
-        paymentType: true,
         paymentSummaries: {
           orderBy: {
             date: 'desc',

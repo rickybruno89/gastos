@@ -51,12 +51,6 @@ export default async function Page({ params }: { params: { id: string } }) {
                 Nombre: <span className="font-bold">{creditCard?.name}</span>{' '}
               </p>
               <p>
-                Canal de pago: <span className="font-bold">{creditCard?.paymentSource.name}</span>{' '}
-              </p>
-              <p>
-                Forma de pago: <span className="font-bold">{creditCard?.paymentType.name}</span>{' '}
-              </p>
-              <p>
                 Impuesto de sellado: <span className="font-bold">{creditCard?.taxesPercent.toString()} %</span>{' '}
               </p>
             </div>
