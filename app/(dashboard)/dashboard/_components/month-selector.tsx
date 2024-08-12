@@ -166,11 +166,11 @@ export default function MonthSelector({ date }: { date: string }) {
       >
         {/* Front side */}
         <div className="absolute w-full h-full flex items-center justify-center rotate-y-180 backface-hidden">
-          <div className="relative bg-orange-500 w-52 h-32 rounded-xl p-0.5 pt-8" >
+          <div className="relative bg-orange-500 w-52 h-32 rounded-xl p-0.5 pt-8">
             <div className="absolute w-full flex justify-center top-0.5">
               <span className="text-white font-semibold text-lg">{pickedYear}</span>
             </div>
-            <Edit className="absolute text-white w-5 cursor-pointer top-1 right-3" onClick={handleFlip}/>
+            <Edit className="absolute text-white w-5 cursor-pointer top-1 right-3" onClick={handleFlip} />
             <div className="bg-white w-full h-full rounded-xl text-4xl flex justify-center items-center">
               {MONTH_LIST.find((MONTH) => pickedMonth === MONTH.number)?.longName}
             </div>
@@ -180,25 +180,27 @@ export default function MonthSelector({ date }: { date: string }) {
         <div className="flex justify-center w-full absolute backface-hidden">
           <div className="bg-gray-100 rounded-md p-2 text-sm md:text-base w-full max-w-xl">
             <div className="relative w-[100px] mx-auto">
-              <Slider
-                ref={(slider) => {
-                  setSliderRef(slider)
-                }}
-                {...settings}
-              >
-                {yearsArray.map((item) => (
-                  <div key={item.index} className="w-full text-center">
-                    <h3 className="font-semibold">{item.year}</h3>
-                  </div>
-                ))}
-              </Slider>
-              {(!startOfCarousel && flipped) && (
+              {flipped ? (
+                <Slider
+                  ref={(slider) => {
+                    setSliderRef(slider)
+                  }}
+                  {...settings}
+                >
+                  {yearsArray.map((item) => (
+                    <div key={item.index} className="w-full text-center">
+                      <h3 className="font-semibold">{item.year}</h3>
+                    </div>
+                  ))}
+                </Slider>
+              ) : null}
+              {!startOfCarousel && flipped && (
                 <button className="absolute top-[2px] left-0" onClick={previous}>
                   <ChevronLeftIcon className="w-4" />
                 </button>
               )}
 
-              {(!endOfCarousel && flipped) && (
+              {!endOfCarousel && flipped && (
                 <button className="absolute top-[2px] right-0" onClick={next}>
                   <ChevronRightIcon className="w-4" />
                 </button>

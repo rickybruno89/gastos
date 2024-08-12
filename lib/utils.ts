@@ -48,7 +48,7 @@ export const getToday = () => {
   return `${year}-${formattedMonth}`
 }
 
-export const getTodayYear = () => getToday().split("-")[0]
+export const getTodayYear = () => getToday().split('-')[0]
 
 export const getTodayDueDate = () => {
   const now = new Date()
@@ -102,6 +102,10 @@ export const getNextMonthDueDate = (itemDate: string | null, date: string) => {
 export const encryptString = (string: string) => crypto.AES.encrypt(string, process.env.CRYPTO_SECRET!).toString()
 
 export const decryptString = (string: string) => {
-  const bytes = crypto.AES.decrypt(string, process.env.CRYPTO_SECRET!)
-  return bytes.toString(crypto.enc.Utf8)
+  try {
+    const bytes = crypto.AES.decrypt(string, process.env.CRYPTO_SECRET!)
+    return bytes.toString(crypto.enc.Utf8)
+  } catch (error) {
+    console.log('🚀 ~ decryptString ~ error:', error)
+  }
 }

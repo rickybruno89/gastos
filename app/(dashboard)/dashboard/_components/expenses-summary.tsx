@@ -1,5 +1,4 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import { formatCurrency, formatLocaleDate, formatLocaleDueDate, getTodayDueDate } from '@/lib/utils'
 import {
   generateExpenseSummaryForMonth,
@@ -13,20 +12,8 @@ import { CreditCardPaymentSummary, ExpensePaymentSummary, Prisma } from '@prisma
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { PAGES_URL } from '@/lib/routes'
-import { BellPlus, Check, EditIcon, MoreHorizontal } from 'lucide-react'
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, TableFooter } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons'
 import { undoCCExpensePaymentSummaryPaid } from '@/services/credit-card'
-import { Menu, MenuButton, MenuHeading, MenuItem, MenuItems, MenuSection, MenuSeparator } from '@headlessui/react'
+import { Menu, MenuButton, MenuHeading, MenuItem, MenuItems, MenuSection } from '@headlessui/react'
 import LinkButton from '@/components/ui/link-button'
 import { ExclamationCircleIcon, PlusIcon } from '@heroicons/react/24/outline'
 import SharedExpenses from './shared-expenses'

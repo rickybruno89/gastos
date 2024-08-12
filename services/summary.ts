@@ -373,7 +373,7 @@ export async function fetchExpenseSummariesForMonth(date: string) {
     })) as DataWithInclude[]
   } catch (error) {
     console.error('Error:', error)
-    throw new Error('Error al cargar Tarjetas de créditos')
+    throw new Error('Error al cargar gastos')
   }
 }
 
