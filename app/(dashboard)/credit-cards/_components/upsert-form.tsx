@@ -1,26 +1,16 @@
 'use client'
 import Link from 'next/link'
-import { PlusIcon } from '@heroicons/react/24/outline'
 import { useFormState } from 'react-dom'
 import { createCreditCard, updateCreditCard } from '@/services/credit-card'
 import { Button } from '@/components/ui/button'
-import { CreditCard, PaymentSource, PaymentType } from '@prisma/client'
+import { CreditCard } from '@prisma/client'
 import { PAGES_URL } from '@/lib/routes'
-import LinkButton from '@/components/ui/link-button'
 import { useState } from 'react'
 
 const DEFAULT_COLOR = '#143273'
 const DEFAULT_TEXT_COLOR = '#FFFFFF'
 
-export default function CreditCardCreateUpsertForm({
-  creditCard,
-  paymentTypes,
-  paymentSources,
-}: {
-  creditCard?: CreditCard
-  paymentTypes: PaymentType[]
-  paymentSources: PaymentSource[]
-}) {
+export default function CreditCardCreateUpsertForm({ creditCard }: { creditCard?: CreditCard }) {
   const initialState = { message: null, errors: {} }
   const upsertCreditCardWithId = creditCard ? updateCreditCard.bind(null, creditCard.id) : createCreditCard
   const [state, dispatch] = useFormState(upsertCreditCardWithId, initialState)
@@ -85,80 +75,6 @@ export default function CreditCardCreateUpsertForm({
               </div>
             ) : null}
           </div>
-        </div>
-        <div>
-          <label htmlFor="paymentTypeId" className="mb-2 block text-sm font-medium">
-            Seleccione la forma de pago a usar
-          </label>
-          <div>
-            {!paymentTypes.length ? (
-              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
-                <PlusIcon className="w-5" />
-                Crear nueva forma de pago
-              </LinkButton>
-            ) : (
-              <select
-                name="paymentTypeId"
-                id="paymentTypeId"
-                aria-describedby="paymentTypeId"
-                className="w-full rounded-md"
-                defaultValue={creditCard?.paymentTypeId || ''}
-              >
-                <option disabled value="">
-                  Seleccione una opción
-                </option>
-                {paymentTypes.map((paymentType) => (
-                  <option key={paymentType.id} value={paymentType.id}>
-                    {paymentType.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-          {state.errors?.paymentTypeId ? (
-            <div id="customer-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-              {state.errors.paymentTypeId.map((error: string) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
-        </div>
-        <div>
-          <label htmlFor="paymentSourceId" className="mb-2 block text-sm font-medium">
-            Seleccione un canal de pago
-          </label>
-          <div>
-            {!paymentSources.length ? (
-              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
-                <PlusIcon className="w-5" />
-                Crear nueva canal de pago
-              </LinkButton>
-            ) : (
-              <select
-                name="paymentSourceId"
-                id="paymentSourceId"
-                aria-describedby="paymentSourceId"
-                className="w-full rounded-md"
-                defaultValue={creditCard?.paymentSourceId || ''}
-              >
-                <option disabled value="">
-                  Seleccione una opción
-                </option>
-                {paymentSources.map((paymentSource) => (
-                  <option key={paymentSource.id} value={paymentSource.id}>
-                    {paymentSource.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-          {state.errors?.paymentSourceId ? (
-            <div id="paymentSourceId-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-              {state.errors.paymentSourceId.map((error: string) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
         </div>
         <div className="flex justify-between gap-8">
           <div>

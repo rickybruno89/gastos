@@ -3,14 +3,10 @@ import { PAGES_URL } from '@/lib/routes'
 import { fetchCreditCardById } from '@/services/credit-card'
 import React from 'react'
 import SummaryCreateForm from './_components/summary-create-form'
-import { fetchPaymentSource } from '@/services/settings'
-import { fetchPaymentType } from '@/services/settings'
 
 export default async function Page({ params }: { params: { id: string } }) {
   const creditCardId = params.id
   const creditCard = await fetchCreditCardById(creditCardId)
-  const paymentSources = await fetchPaymentSource()
-  const paymentType = await fetchPaymentType()
 
   return (
     <main>
@@ -29,7 +25,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         ]}
       />
       <h1 className="text-xl font-bold mb-2">Generar resumen </h1>
-      <SummaryCreateForm paymentSources={paymentSources} paymentTypes={paymentType} creditCard={creditCard!} />
+      <SummaryCreateForm creditCard={creditCard!} />
     </main>
   )
 }

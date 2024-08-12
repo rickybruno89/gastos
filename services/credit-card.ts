@@ -13,8 +13,6 @@ type CreateCreditCardState = {
   errors?: {
     creditCardName?: string[]
     taxesPercent?: string[]
-    paymentTypeId?: string[]
-    paymentSourceId?: string[]
   }
   message?: string | null
 }
@@ -57,12 +55,6 @@ const CreditCardSchema = z.object({
   color: z.string(),
   textColor: z.string(),
   taxesPercent: z.coerce.number().gt(0, { message: 'El porcentaje tiene que ser mayor que 0' }),
-  paymentTypeId: z.string({
-    invalid_type_error: 'Por favor seleccione una forma de pago',
-  }),
-  paymentSourceId: z.string({
-    invalid_type_error: 'Por favor seleccione un canal de pago',
-  }),
 })
 
 const CreateCreditCardSchema = CreditCardSchema.omit({ id: true })
@@ -78,8 +70,6 @@ export const updateCreditCard = async (
       color: formData.get('color'),
       textColor: formData.get('textColor'),
       taxesPercent: formData.get('taxesPercent'),
-      paymentTypeId: formData.get('paymentTypeId'),
-      paymentSourceId: formData.get('paymentSourceId'),
     })
 
     if (!validatedFields.success) {
@@ -89,7 +79,7 @@ export const updateCreditCard = async (
       }
     }
 
-    const { creditCardName, color, textColor, taxesPercent, paymentTypeId, paymentSourceId } = validatedFields.data
+    const { creditCardName, color, textColor, taxesPercent } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -152,7 +142,7 @@ export const createCreditCard = async (
       }
     }
 
-    const { creditCardName, color, textColor, taxesPercent, paymentTypeId, paymentSourceId } = validatedFields.data
+    const { creditCardName, color, textColor, taxesPercent} = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -377,8 +367,6 @@ export async function fetchCreditCardById(id: string) {
 
   type DataWithInclude = Prisma.CreditCardGetPayload<{
     include: {
-      paymentSource: true
-      paymentType: true
       paymentSummaries: true
       creditCardExpenseItems: {
         include: {

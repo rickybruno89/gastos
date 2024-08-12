@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useFormState } from 'react-dom'
 import { Checkbox } from '@/components/ui/checkbox'
 import { createSummaryForCreditCard } from '@/services/summary'
-import { PaymentSource, PaymentType, Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { formatCurrency, getToday, removeCurrencyMaskFromInput } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { NumericFormat } from 'react-number-format'
@@ -17,21 +17,11 @@ type CreditCardWithItems = Prisma.CreditCardGetPayload<{
         sharedWith: true
       }
     }
-    paymentSource: true
-    paymentType: true
     paymentSummaries: true
   }
 }>
 
-export default function SummaryCreateForm({
-  creditCard,
-  paymentTypes,
-  paymentSources,
-}: {
-  creditCard: CreditCardWithItems
-  paymentTypes: PaymentType[]
-  paymentSources: PaymentSource[]
-}) {
+export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCardWithItems }) {
   const initialState = { message: null, errors: {} }
   const createSummaryForCreditCardWithId = createSummaryForCreditCard.bind(null, creditCard.id)
 
@@ -112,61 +102,6 @@ export default function SummaryCreateForm({
   return (
     <form onSubmit={handleSubmit}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6 w-full md:w-fit flex flex-col gap-4">
-        <div>
-          <label htmlFor="paymentTypeId" className="mb-2 block text-sm font-medium">
-            Seleccione la forma de pago a usar
-          </label>
-          <div>
-            <select
-              name="paymentTypeId"
-              id="paymentTypeId"
-              aria-describedby="paymentTypeId"
-              className="w-full rounded-md"
-              defaultValue={creditCard.paymentTypeId}
-            >
-              {paymentTypes.map((paymentType) => (
-                <option key={paymentType.id} value={paymentType.id}>
-                  {paymentType.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {state.errors?.paymentTypeId ? (
-            <div id="paymentTypeId-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-              {state.errors.paymentTypeId.map((error: string) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div>
-          <label htmlFor="paymentSourceId" className="mb-2 block text-sm font-medium">
-            Seleccione un canal de pago
-          </label>
-          <div>
-            <select
-              name="paymentSourceId"
-              id="paymentSourceId"
-              aria-describedby="paymentSourceId"
-              className="w-full rounded-md"
-              defaultValue={creditCard.paymentSourceId}
-            >
-              {paymentSources.map((paymentSource) => (
-                <option key={paymentSource.id} value={paymentSource.id}>
-                  {paymentSource.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {state.errors?.paymentSourceId ? (
-            <div id="paymentSourceId-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-              {state.errors.paymentSourceId.map((error: string) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
-        </div>
         <div>
           <label className="mb-2 block text-sm font-medium" htmlFor="date">
             Seleccione el mes para el resumen

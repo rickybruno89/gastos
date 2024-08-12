@@ -88,8 +88,6 @@ export async function fetchCreditCardSummaryById(id: string) {
   type DataWithInclude = Prisma.CreditCardPaymentSummaryGetPayload<{
     include: {
       creditCard: true
-      paymentSource: true
-      paymentType: true
       itemHistoryPayment: {
         include: {
           creditCardExpenseItem: true
@@ -145,8 +143,6 @@ type CreateCreditCardPaymentSummaryState = {
     creditCardExpenseItems?: string[]
     date?: string[]
     dueDate?: string[]
-    paymentTypeId?: string[]
-    paymentSourceId?: string[]
     totalAmount?: string[]
   }
   message?: string | null
@@ -164,12 +160,6 @@ const CreditCardPaymentSummarySchema = z.object({
     .array(),
   date: z.string().min(1, { message: 'Ingrese la fecha del resumen' }),
   dueDate: z.string().min(1, { message: 'Ingrese una fecha de vencimiento' }),
-  paymentTypeId: z.string({
-    invalid_type_error: 'Por favor seleccione una forma de pago',
-  }),
-  paymentSourceId: z.string({
-    invalid_type_error: 'Por favor seleccione un canal de pago',
-  }),
   totalAmount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
 })
 
@@ -189,8 +179,6 @@ export const createSummaryForCreditCard = async (
       creditCardExpenseItems: creditCardExpenseItemsParsed,
       date: formData.get('date'),
       dueDate: formData.get('dueDate'),
-      paymentTypeId: formData.get('paymentTypeId'),
-      paymentSourceId: formData.get('paymentSourceId'),
       totalAmount: formData.get('totalAmount'),
     })
 
@@ -203,7 +191,7 @@ export const createSummaryForCreditCard = async (
 
     const userId = await getAuthUserId()
 
-    const { creditCardExpenseItems, date, paymentTypeId, paymentSourceId, totalAmount, dueDate } = validatedFields.data
+    const { creditCardExpenseItems, date,  totalAmount, dueDate } = validatedFields.data
 
     const existingSummaryForCreditCard = await prisma.creditCardPaymentSummary.findFirst({
       where: {
@@ -271,8 +259,6 @@ export async function fetchCreditCardSummariesForMonth(date: string) {
   type DataWithInclude = Prisma.CreditCardPaymentSummaryGetPayload<{
     include: {
       creditCard: true
-      paymentSource: true
-      paymentType: true
       itemHistoryPayment: {
         include: {
           creditCardExpenseItem: {

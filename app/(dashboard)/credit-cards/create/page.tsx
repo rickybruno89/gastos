@@ -1,7 +1,5 @@
 import { Metadata } from 'next'
 import Breadcrumbs from '@/components/ui/breadcrumbs'
-import { fetchPaymentSource } from '@/services/settings'
-import { fetchPaymentType } from '@/services/settings'
 import { PAGES_URL } from '@/lib/routes'
 import CreditCardCreateUpsertForm from '../_components/upsert-form'
 
@@ -9,8 +7,6 @@ export const metadata: Metadata = {
   title: 'Crear Tarjeta de Crédito',
 }
 export default async function Page() {
-  const paymentSources = await fetchPaymentSource()
-  const paymentType = await fetchPaymentType()
   return (
     <main>
       <Breadcrumbs
@@ -23,7 +19,7 @@ export default async function Page() {
           },
         ]}
       />
-      <CreditCardCreateUpsertForm paymentSources={paymentSources} paymentTypes={paymentType} />
+      <CreditCardCreateUpsertForm />
     </main>
   )
 }
