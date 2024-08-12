@@ -23,4 +23,29 @@
   .text-shadow {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   }
+
+  /* .bf-hidden {
+    backface-visibility: 'hidden'
+  }
+
+  .perspective-100 {
+    perspective: '100rem'
+  } */
+
+  .perspective {
+    perspective: 1000px;
+  }
+  
+  .transform-style {
+    transform-style: preserve-3d;
+  }
+  
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+  
 }

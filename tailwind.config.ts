@@ -25,6 +25,9 @@ const config: Config = {
         lusitana: ['var(--font-lusitana)'],
         kanit: ['var(--font-kanit)'],
       },
+      rotate: {
+        'y-180': 'rotateY(180deg)',
+      },
     },
   },
 
