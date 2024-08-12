@@ -17,7 +17,7 @@ export default async function Page() {
   const paymentType = await fetchPaymentType()
 
   return (
-    <main>
+    <main className='px-4 max-w-xl mx-auto'>
       <Breadcrumbs
         breadcrumbs={[
           {
