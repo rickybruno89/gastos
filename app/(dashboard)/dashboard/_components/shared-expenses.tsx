@@ -135,7 +135,7 @@ export default function SharedExpenses({
         sharedExpenses.map((shared) => (
           <div
             key={shared.id}
-            className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight"
+            className="cursor-pointer shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight"
             onClick={() => handleOpenModal(shared)}
           >
             <span className="text-lg font-semibold uppercase">{shared.name}</span>
