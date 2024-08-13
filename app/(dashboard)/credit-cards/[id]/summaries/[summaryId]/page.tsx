@@ -41,14 +41,13 @@ export default async function Page({ params }: { params: { id: string; summaryId
                     <span className="font-bold">{formatCurrency(item.installmentsAmount)}</span>
                   </p>
                 ) : (
-                  <p>
-                    Recurrente <span className="font-bold">{formatCurrency(item.installmentsAmount)}</span>
-                  </p>
+                  <span className="font-bold">{formatCurrency(item.installmentsAmount)}</span>
                 )}
               </div>
             ))}
             <p className="text-right">
-              Impuesto y sellado: <span className="font-bold"> {formatCurrency(creditCardSummary.taxes)}</span>
+              Otros importes (Impuestos, sellos, etc):
+              <span className="font-bold"> {formatCurrency(creditCardSummary.taxes)}</span>
             </p>
             <p className="text-right">
               Total <span className="font-bold"> {formatCurrency(creditCardSummary.amount)}</span>
