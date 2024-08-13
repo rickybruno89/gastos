@@ -7,6 +7,7 @@ import 'slick-carousel/slick/slick.css'
 import 'slick-carousel/slick/slick-theme.css'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { Edit } from 'lucide-react'
+import clsx from 'clsx'
 
 const MONTH_LIST = [
   {
@@ -100,10 +101,10 @@ export default function MonthSelector({ date }: { date: string }) {
   const [endOfCarousel, setEndOfCarousel] = useState(initialSlide === yearsArray.length - 1)
   const [startOfCarousel, setStartOfCarousel] = useState(initialSlide === 0)
 
-  const [flipped, setFlipped] = useState(false)
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
-  const handleFlip = () => {
-    setFlipped((prev) => !prev)
+  const toggleCalendar = () => {
+    setIsCalendarOpen((prev) => !prev)
   }
 
   useEffect(() => {
@@ -118,13 +119,13 @@ export default function MonthSelector({ date }: { date: string }) {
   const handleMonthPick = (monthNumber: string) => {
     const newDatePicker = { month: monthNumber, year: pickedYear }
     setPickedMonth(monthNumber)
-    handleChangeDate(newDatePicker)
-    handleFlip()
+    toggleCalendar()
+    setTimeout(() => {
+      handleChangeDate(newDatePicker)
+    }, 300)
   }
 
-  const getMonthSelectedClass = (monthNumber: string) => {
-    return monthNumber === pickedMonth ? 'bg-orange-500 text-white' : ''
-  }
+  const isMothSelected = (monthNumber: string) => monthNumber === pickedMonth
 
   const slideChange = (index: number) => {
     setPickedYear(yearsArray.find((item) => item.index === index)!.year!.toString())
@@ -157,72 +158,83 @@ export default function MonthSelector({ date }: { date: string }) {
     sliderRef!.slickPrev()
   }
 
-  return (
-    <div className="w-full perspective flex justify-center">
-      <div
-        className={`max-w-[420px] relative w-full duration-500 transform-style preserve-3d ${
-          !flipped ? 'rotate-y-180 h-32' : 'h-36 md:h-40'
-        }`}
-      >
-        {/* Front side */}
-        {!flipped ? (
-          <div className="absolute w-full h-full flex items-center justify-center rotate-y-180 backface-hidden">
-            <div className="relative bg-orange-500 w-52 h-32 rounded-xl p-0.5 pt-8">
-              <div className="absolute w-full flex justify-center top-0.5">
-                <span className="text-white font-semibold text-lg">{pickedYear}</span>
-              </div>
-              <Edit className="absolute text-white w-5 cursor-pointer top-1 right-3" onClick={handleFlip} />
-              <div className="bg-white w-full h-full rounded-xl text-4xl flex justify-center items-center">
-                {MONTH_LIST.find((MONTH) => pickedMonth === MONTH.number)?.longName}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex justify-center w-full absolute backface-hidden">
-            <div className="bg-gray-100 rounded-md p-2 text-sm md:text-base w-full max-w-xl">
-              <div className="relative w-[100px] mx-auto">
-                {flipped ? (
-                  <Slider
-                    ref={(slider) => {
-                      setSliderRef(slider)
-                    }}
-                    {...settings}
-                  >
-                    {yearsArray.map((item) => (
-                      <div key={item.index} className="w-full text-center">
-                        <h3 className="font-semibold">{item.year}</h3>
-                      </div>
-                    ))}
-                  </Slider>
-                ) : null}
-                {!startOfCarousel && flipped && (
-                  <button className="absolute top-[2px] left-0" onClick={previous}>
-                    <ChevronLeftIcon className="w-4" />
-                  </button>
-                )}
+  const positions: { [key: number]: string } = {
+    0: 'top-0 left-0',
+    1: 'top-0 left-1/4',
+    2: 'top-0 left-2/4',
+    3: 'top-0 left-3/4',
+    4: 'top-1/3 left-0',
+    5: 'top-1/3 left-1/4',
+    6: 'top-1/3 left-2/4',
+    7: 'top-1/3 left-3/4',
+    8: 'top-2/3 left-0',
+    9: 'top-2/3 left-1/4',
+    10: 'top-2/3 left-2/4',
+    11: 'top-2/3 left-3/4',
+  }
 
-                {!endOfCarousel && flipped && (
-                  <button className="absolute top-[2px] right-0" onClick={next}>
-                    <ChevronRightIcon className="w-4" />
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-4 mt-2 gap-3">
-                {MONTH_LIST.map((month) => (
-                  <div
-                    key={month.number}
-                    className={`cursor-pointer rounded-md p-1 flex justify-center items-center transition-all ease-in-out duration-200 hover:scale-110 hover:bg-gray-600 hover:text-white ${getMonthSelectedClass(
-                      month.number
-                    )}`}
-                    onClick={() => handleMonthPick(month.number)}
-                  >
-                    <h1>{month.name}</h1>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+  return (
+    <div className="w-full flex justify-center">
+      <div
+        className={clsx(
+          'relative transition-all duration-300 ease-in-out w-80 h-36 bg-orange-500 rounded-xl pt-8 px-0.5 pb-0.5',
+          !isCalendarOpen && '!w-44 !h-28'
         )}
+      >
+        <div className="absolute top-1 w-[100px] left-1/2 -translate-x-1/2 text-white text-center">
+          {isCalendarOpen ? (
+            <Slider
+              ref={(slider) => {
+                setSliderRef(slider)
+              }}
+              {...settings}
+            >
+              {yearsArray.map((item) => (
+                <div key={item.index} className="w-full text-center">
+                  <h3 className="font-semibold">{item.year}</h3>
+                </div>
+              ))}
+            </Slider>
+          ) : (
+            <span className="text-white font-semibold text-base">{pickedYear}</span>
+          )}
+          {!startOfCarousel && isCalendarOpen && (
+            <button className="absolute top-1 left-0" onClick={previous}>
+              <ChevronLeftIcon className="w-4" />
+            </button>
+          )}
+
+          {!endOfCarousel && isCalendarOpen && (
+            <button className="absolute top-1 right-0" onClick={next}>
+              <ChevronRightIcon className="w-4" />
+            </button>
+          )}
+        </div>
+        {!isCalendarOpen && (
+          <Edit className="absolute text-white w-5 cursor-pointer top-1 right-3" onClick={toggleCalendar} />
+        )}
+        <div className="bg-white rounded-xl  w-full h-full p-2">
+          <div className={clsx('relative flex flex-wrap w-full h-full justify-center items-center gap-2 ')}>
+            {MONTH_LIST.map((month, index) => (
+              <div
+                key={month.number}
+                className={clsx(
+                  'absolute w-[24%] cursor-pointer rounded-md p-1 flex justify-center items-center transition-all duration-300',
+                  positions[index],
+                  isCalendarOpen && 'hover:bg-gray-700 hover:text-white text-sm',
+                  !isCalendarOpen &&
+                    isMothSelected(month.number) &&
+                    '!top-1/2 !left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl',
+                  !isCalendarOpen && !isMothSelected(month.number) && 'scale-0',
+                  isCalendarOpen && isMothSelected(month.number) && 'bg-orange-500 text-white '
+                )}
+                onClick={() => handleMonthPick(month.number)}
+              >
+                <h1>{!isCalendarOpen && isMothSelected(month.number) ? month.longName : month.name}</h1>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
