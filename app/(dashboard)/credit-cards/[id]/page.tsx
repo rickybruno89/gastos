@@ -173,63 +173,6 @@ export default async function Page({ params }: { params: { id: string } }) {
                       </div>
                     </div>
                   </div>
-
-                  // <div key={item.id} className="flex flex-col">
-                  //   <div className="flex flex-col xl:grid lg:grid-cols-9 ">
-                  //     <p className="self-center col-span-2 font-bold">{item.description}</p>
-                  //     <p className="self-center">
-                  //       {item.recurrent ? formatCurrency(item.installmentsAmount) : formatCurrency(item.amount)}
-                  //     </p>
-                  //     <div className="self-center col-span-2">
-                  //       {item.recurrent ? (
-                  //         <p>Pago recurrente</p>
-                  //       ) : (
-                  //         <p>
-                  //           Cuota {item.installmentsPaid} de {item.installmentsQuantity} de{' '}
-                  //           {formatCurrency(item.installmentsAmount)}
-                  //         </p>
-                  //       )}
-                  //     </div>
-                  //     <p className="self-center">{formatLocaleDate(item.paymentBeginning)}</p>
-                  //     <div className="self-center col-span-2">
-                  //       {item.sharedWith.length ? (
-                  //         <p>
-                  //           Compartido con{' '}
-                  //           <span className="">{item.sharedWith.map((person) => person.name).join(' - ')}</span>
-                  //         </p>
-                  //       ) : (
-                  //         <p className="self-center">No compartido</p>
-                  //       )}
-                  //     </div>
-
-                  //     <div className="flex items-center gap-2 justify-self-end self-center">
-                  //       <ButtonTooltip
-                  //         action="click"
-                  //         content={
-                  //           <div>
-                  //             Notas:{' '}
-                  //             {item.notes ? (
-                  //               <span className="">{item.notes}</span>
-                  //             ) : (
-                  //               <span className="italic">No hay notas</span>
-                  //             )}
-                  //           </div>
-                  //         }
-                  //         trigger={<InformationCircleIcon className="w-6 h-6 text-blue-500" />}
-                  //       />
-                  //       <ButtonTooltip
-                  //         content="Editar item"
-                  //         trigger={
-                  //           <Link href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.EDIT(id, item.id)}>
-                  //             <EditIcon className="w-5 h-5" />
-                  //           </Link>
-                  //         }
-                  //       />
-                  //       <ButtonDelete action={deleteCreditCardExpenseItem} id={item.id} />
-                  //     </div>
-                  //   </div>
-                  //   <div className="my-2 h-px w-full bg-gray-300" />
-                  // </div>
                 ))
               ) : (
                 <h1>No hay items </h1>
