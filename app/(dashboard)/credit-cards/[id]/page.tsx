@@ -31,63 +31,71 @@ export default async function Page({ params }: { params: { id: string } }) {
   const { id } = params
   const creditCard = await fetchCreditCardById(id)
   return (
-    <main className="px-4 max-w-xl mx-auto">
-      <Breadcrumbs
-        breadcrumbs={[
-          { label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH },
-          {
-            label: `${creditCard?.name}`,
-            href: PAGES_URL.CREDIT_CARDS.DETAILS(id),
-            active: true,
-          },
-        ]}
-      />
+    <main className="max-w-xl mx-auto">
+      <div className="px-4">
+        <Breadcrumbs
+          breadcrumbs={[
+            { label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH },
+            {
+              label: `${creditCard?.name}`,
+              href: PAGES_URL.CREDIT_CARDS.DETAILS(id),
+              active: true,
+            },
+          ]}
+        />
+      </div>
+
       <div className="flex flex-col gap-4">
-        <section>
-          <h1 className="text-xl font-bold mb-2">Detalles</h1>
-          <div className="rounded-md bg-white p-4 flex flex-wrap gap-1 md:gap-4 w-fit">
-            <div>
-              <p>
-                Nombre: <span className="font-bold">{creditCard?.name}</span>{' '}
-              </p>
-            </div>
+        <section className="px-4">
+          <div className="flex gap-4">
+            <p className="text-lg font-semibold">{creditCard?.name}</p>{' '}
             <Link href={PAGES_URL.CREDIT_CARDS.EDIT(creditCard.id)} className="flex gap-2 text-blue-500">
               Editar <Edit className="w-5 " />
             </Link>
           </div>
         </section>
         <section>
-          <h1 className="text-xl font-bold mb-2">Resúmenes</h1>
-          <div className="flex flex-row flex-nowrap overflow-x-auto gap-x-4">
-            <GenerateSummaryButton creditCardId={id} />
+          <div className="px-4 flex justify-between items-center mb-2">
+            <p className="text-lg font-semibold">Resúmenes</p>
+            <LinkButton href={PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE(id)}>
+              <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
+                <PlusIcon className="w-5 " />
+                <span className="">Nuevo</span>
+              </div>
+            </LinkButton>
+          </div>
+          <div className="px-4 max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
             {creditCard!.paymentSummaries.map((summary, index) => (
-              <div
-                key={summary.id}
-                className="rounded-md bg-white p-4 md:p-6 flex flex-col justify-center  mb-4 whitespace-nowrap h-32"
-              >
-                <p className="uppercase font-bold">{formatLocaleDate(summary.date)}</p>
-                <p>Vence el {formatLocaleDueDate(summary.dueDate)}</p>
-                <p>{formatCurrency(summary.amount)} </p>
-                <div className="flex flex-wrap justify-between items-center">
-                  {summary.paid ? <p className="text-green-500">PAGADO</p> : <p className="text-red-500">NO PAGADO</p>}
-                  <div className="flex flex-row gap-2 justify-center items-center">
+              <div className="cursor-pointer shadow-lg px-4 py-2 shrink-0 flex flex-col w-52 justify-around rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight">
+                <span className="font-semibold uppercase">{formatLocaleDate(summary.date)}</span>
+                <span className="text-gray-100">Venc. {formatLocaleDueDate(summary.dueDate)}</span>
+                <span className="text-xl font-bold mt-1 text-center">{formatCurrency(summary.amount)}</span>
+                <div className="flex justify-between items-center">
+                  <div>
+                    {summary.paid ? (
+                      <span className="text-green-500">PAGADO</span>
+                    ) : (
+                      <span className="text-red-500">NO PAGADO</span>
+                    )}
+                  </div>
+                  <div className="flex gap-1 justify-center items-center">
                     {index === 0 ? <ButtonDelete action={deleteCreditCardPaymentSummary} id={summary.id} /> : null}
-                    <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(id, summary.id)}>
-                      <EyeIcon className="w-6 text-blue-500" />
-                    </Link>
+                    <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(id, summary.id)}>Ver</Link>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         </section>
-        <section>
-          <div className="flex flex-col gap-1 w-full rounded-md bg-white p-4 md:p-6">
-            <div className="flex gap-4 items-center mb-2">
-              <h1 className="text-xl font-bold">Items</h1>
+        <section className="px-4">
+          <div className="flex flex-col gap-1 w-full rounded-md bg-white">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-lg font-semibold">Gastos</p>
               <LinkButton href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.CREATE(id)}>
-                <PlusIcon className="w-5" />
-                Agregar
+                <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
+                  <PlusIcon className="w-5 " />
+                  <span className="">Agregar</span>
+                </div>
               </LinkButton>
             </div>
             {creditCard?.creditCardExpenseItems.length ? (
