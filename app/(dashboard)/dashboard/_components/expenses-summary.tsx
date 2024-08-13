@@ -13,17 +13,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { PAGES_URL } from '@/lib/routes'
 import { undoCCExpensePaymentSummaryPaid } from '@/services/credit-card'
-import {
-  Menu,
-  MenuButton,
-  MenuHeading,
-  MenuItem,
-  MenuItems,
-  MenuSection,
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-} from '@headlessui/react'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import LinkButton from '@/components/ui/link-button'
 import { ExclamationCircleIcon, PlusIcon } from '@heroicons/react/24/outline'
 import SharedExpenses from './shared-expenses'

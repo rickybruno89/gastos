@@ -1,5 +1,4 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { dispatchEmail } from '@/services/settings'
 import { useState } from 'react'

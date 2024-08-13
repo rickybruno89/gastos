@@ -2,7 +2,7 @@
 import { formatCurrency } from '@/lib/utils'
 import { Prisma } from '@prisma/client'
 import { useState } from 'react'
-import { Button, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 
 type ExpensesWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {

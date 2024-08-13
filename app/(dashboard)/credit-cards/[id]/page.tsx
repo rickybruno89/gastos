@@ -1,6 +1,5 @@
 import Breadcrumbs from '@/components/ui/breadcrumbs'
 import ButtonDelete from '@/components/ui/button-delete'
-import ButtonTooltip from '@/components/ui/button-tooltip'
 import LinkButton from '@/components/ui/link-button'
 import { PAGES_URL } from '@/lib/routes'
 import { formatCurrency, formatLocaleDate, formatLocaleDueDate } from '@/lib/utils'
@@ -9,7 +8,7 @@ import { deleteCreditCardPaymentSummary } from '@/services/summary'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import { PlusIcon } from '@heroicons/react/24/outline'
-import { Edit, EditIcon, EyeIcon } from 'lucide-react'
+import { Edit } from 'lucide-react'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import React from 'react'
@@ -67,7 +66,10 @@ export default async function Page({ params }: { params: { id: string } }) {
           </div>
           <div className="px-4 max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
             {creditCard!.paymentSummaries.map((summary, index) => (
-              <div key={summary.id} className="cursor-pointer shadow-lg px-4 py-2 shrink-0 flex flex-col w-52 justify-around rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight">
+              <div
+                key={summary.id}
+                className="cursor-pointer shadow-lg px-4 py-2 shrink-0 flex flex-col w-52 justify-around rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight"
+              >
                 <span className="font-semibold uppercase">{formatLocaleDate(summary.date)}</span>
                 <span className="text-gray-100">Venc. {formatLocaleDueDate(summary.dueDate)}</span>
                 <span className="text-xl font-bold mt-1 text-center">{formatCurrency(summary.amount)}</span>
@@ -114,7 +116,9 @@ export default async function Page({ params }: { params: { id: string } }) {
                           </span>
                         </div>
                         <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                          <span className="leading-tight block lowercase first-letter:uppercase">Comienzo del pago</span>
+                          <span className="leading-tight block lowercase first-letter:uppercase">
+                            Comienzo del pago
+                          </span>
                           <span>
                             {item.recurrent
                               ? 'Pago recurrente'
