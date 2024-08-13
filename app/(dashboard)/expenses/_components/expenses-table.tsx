@@ -68,15 +68,13 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
                 </div>
                 <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
                   <span>{item.sharedWith.map((person) => person.name).join(' - ')}</span>
-                  <span className="leading-tight block lowercase first-letter:uppercase">
-                    {item.paymentChannel}
-                  </span>
+                  <span className="leading-tight block lowercase first-letter:uppercase">{item.paymentChannel}</span>
                 </div>
                 <div className="flex-1 flex justify-between items-end text-sm mt-2">
                   <Popover className="relative">
-                    <PopoverButton className="flex justify-center items-center gap-1">
+                    <PopoverButton className="flex justify-center items-center gap-1 focus:outline-none p-0.5">
                       <InformationCircleIcon className="w-4 h-4 text-blue-500" />
-                      Notas
+                      <span>Notas</span>
                     </PopoverButton>
                     <PopoverPanel
                       anchor="bottom start"
@@ -94,7 +92,7 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
                     </PopoverPanel>
                   </Popover>
                   <Popover className="relative">
-                    <PopoverButton className="text-orange-500">Acciones</PopoverButton>
+                    <PopoverButton className="text-orange-500 focus:outline-none">Acciones</PopoverButton>
                     <PopoverPanel
                       anchor="bottom end"
                       className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px] transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
