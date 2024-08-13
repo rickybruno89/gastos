@@ -67,7 +67,7 @@ export default async function Page({ params }: { params: { id: string } }) {
           </div>
           <div className="px-4 max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
             {creditCard!.paymentSummaries.map((summary, index) => (
-              <div className="cursor-pointer shadow-lg px-4 py-2 shrink-0 flex flex-col w-52 justify-around rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight">
+              <div key={summary.id} className="cursor-pointer shadow-lg px-4 py-2 shrink-0 flex flex-col w-52 justify-around rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight">
                 <span className="font-semibold uppercase">{formatLocaleDate(summary.date)}</span>
                 <span className="text-gray-100">Venc. {formatLocaleDueDate(summary.dueDate)}</span>
                 <span className="text-xl font-bold mt-1 text-center">{formatCurrency(summary.amount)}</span>
