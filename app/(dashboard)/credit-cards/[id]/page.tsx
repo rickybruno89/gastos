@@ -103,7 +103,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                         <p>Pago recurrente</p>
                       ) : (
                         <p>
-                          {item.installmentsPaid}/{item.installmentsQuantity} cuotas de{' '}
+                          Cuota {item.installmentsPaid} de {item.installmentsQuantity} de{' '}
                           {formatCurrency(item.installmentsAmount)}
                         </p>
                       )}
