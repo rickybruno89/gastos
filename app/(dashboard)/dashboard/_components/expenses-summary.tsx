@@ -1,5 +1,11 @@
 'use client'
-import { formatCurrency, formatLocaleDate, formatLocaleDueDate, getTodayDueDate } from '@/lib/utils'
+import {
+  formatCurrency,
+  formatLocaleDate,
+  formatLocaleDueDate,
+  getPaymentChannelSafeText,
+  getTodayDueDate,
+} from '@/lib/utils'
 import {
   generateExpenseSummaryForMonth,
   setExpensePaymentSummaryPaid,
@@ -199,7 +205,7 @@ export default function ExpensesSummary({
                       <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
                         <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
                         <span className="leading-tight block lowercase first-letter:uppercase">
-                          {item.paymentChannel}
+                          {getPaymentChannelSafeText(item.paymentChannel)}
                         </span>
                       </div>
                       <div className="flex-1 flex justify-between items-end text-sm text-gray-400">

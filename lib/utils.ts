@@ -116,3 +116,6 @@ export const PAYMENT_CHANNELS = [
   { prismaName: 'DEBITO_AUTOMATICO', parsedName: 'débito automático' },
   { prismaName: 'EFECTIVO', parsedName: 'efectivo' },
 ]
+
+export const getPaymentChannelSafeText = (paymentChannel: PaymentChannel) =>
+  PAYMENT_CHANNELS.find((item) => item.prismaName === paymentChannel)?.parsedName || ''

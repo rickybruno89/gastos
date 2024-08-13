@@ -1,7 +1,7 @@
 'use client'
 import React, { useRef, useState } from 'react'
 import ButtonDelete from '@/components/ui/button-delete'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, getPaymentChannelSafeText } from '@/lib/utils'
 import { deleteExpenseItem } from '@/services/expense'
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import Link from 'next/link'
@@ -68,7 +68,7 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
                 </div>
                 <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
                   <span>{item.sharedWith.map((person) => person.name).join(' - ')}</span>
-                  <span className="leading-tight block lowercase first-letter:uppercase">{item.paymentChannel}</span>
+                  <span className="leading-tight block lowercase first-letter:uppercase"> {getPaymentChannelSafeText(item.paymentChannel)}</span>
                 </div>
                 <div className="flex-1 flex justify-between items-end text-sm mt-2">
                   <Popover className="relative">
