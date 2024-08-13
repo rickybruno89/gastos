@@ -1,5 +1,4 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import { createPersonToShare } from '@/services/settings'
 import { useRef, useState } from 'react'
 
