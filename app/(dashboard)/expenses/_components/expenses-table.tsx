@@ -79,7 +79,7 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
                       Notas
                     </PopoverButton>
                     <PopoverPanel
-                      anchor="bottom"
+                      anchor="bottom start"
                       transition
                       className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px] transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
                     >
@@ -96,9 +96,10 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
                   <Popover className="relative">
                     <PopoverButton className="text-orange-500">Acciones</PopoverButton>
                     <PopoverPanel
-                      anchor="bottom"
-                      className="flex flex-col bg-white p-1 shadow-2xl rounded-md w-fit max-w-[160px]"
+                      anchor="bottom end"
+                      className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px] transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
                     >
+                      <span>Acciones</span>
                       <Link
                         className="hover:bg-orange-500 hover:text-white rounded-md px-2 py-1"
                         href={PAGES_URL.EXPENSES.EDIT(item.id)}

@@ -103,7 +103,7 @@ export default function UpsertExpenseForm({
             <div className="relative ">
               <NumericFormat
                 inputMode="decimal"
-                className="rounded-md w-full"
+                className="rounded-md w-full focus-visible:ring-2 focus-visible:ring-orange-500"
                 prefix={'$ '}
                 thousandSeparator="."
                 decimalScale={2}

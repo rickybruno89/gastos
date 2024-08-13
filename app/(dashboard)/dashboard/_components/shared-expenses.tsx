@@ -182,12 +182,12 @@ export default function SharedExpenses({
                 </>
               )}
               <div className="mt-4">
-                <Button
+                <button
                   className="inline-flex items-center gap-2 rounded-md bg-orange-500 text-white py-1.5 px-3 text-sm/6 font-semibold  shadow-inner shadow-white/10 focus:outline-none data-[hover]:bg-gray-600 data-[focus]:outline-1"
                   onClick={() => setIsOpen(false)}
                 >
                   Cerrar
-                </Button>
+                </button>
               </div>
             </DialogPanel>
           </div>
