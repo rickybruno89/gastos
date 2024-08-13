@@ -102,9 +102,9 @@ export default async function Page({ params }: { params: { id: string } }) {
             <div className="flex flex-col gap-2">
               {creditCard?.creditCardExpenseItems.length ? (
                 creditCard.creditCardExpenseItems.map((item) => (
-                  <div key={item.id} className="flex bg-gray-50 p-3 rounded-xl gap-2 ">
-                    <div className="w-full rounded-[10px] px-2 flex flex-col">
-                      <div className="w-full rounded-[10px] px-2 flex flex-col">
+                  <div key={item.id} className="flex bg-gray-50 p-4 rounded-xl gap-2 ">
+                    <div className="w-full rounded-[10px]  flex flex-col">
+                      <div className="w-full rounded-[10px]  flex flex-col">
                         <div className="flex-1 flex justify-between items-end font-medium">
                           <span className="leading-tight lowercase first-letter:uppercase text-lg">
                             {item.description}
@@ -114,11 +114,11 @@ export default async function Page({ params }: { params: { id: string } }) {
                           </span>
                         </div>
                         <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                          <span className="leading-tight block lowercase first-letter:uppercase">Primer pago</span>
+                          <span className="leading-tight block lowercase first-letter:uppercase">Comienzo del pago</span>
                           <span>
                             {item.recurrent
                               ? 'Pago recurrente'
-                              : `Cuota ${item.installmentsPaid} de ${item.installmentsQuantity} de 
+                              : `Cuota ${item.installmentsPaid} de ${item.installmentsQuantity} 
                              ${formatCurrency(item.installmentsAmount)}`}
                           </span>
                         </div>

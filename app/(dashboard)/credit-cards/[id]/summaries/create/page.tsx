@@ -24,7 +24,7 @@ export default async function Page({ params }: { params: { id: string } }) {
           },
         ]}
       />
-      <h1 className="text-xl font-bold mb-2">Generar resumen </h1>
+      <h1 className="text-xl font-bold mb-2">Generar resumen</h1>
       <SummaryCreateForm creditCard={creditCard!} />
     </main>
   )

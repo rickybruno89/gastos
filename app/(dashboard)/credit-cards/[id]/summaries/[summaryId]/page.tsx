@@ -41,7 +41,7 @@ export default async function Page({ params }: { params: { id: string; summaryId
                     <span className='text-gray-500'>
                       {item.creditCardExpenseItem.recurrent
                         ? 'Pago recurrente'
-                        : `Cuota ${item.installmentsPaid} de ${item.installmentsQuantity} de`}
+                        : `Cuota ${item.installmentsPaid} de ${item.installmentsQuantity}`}
                     </span>
                   </div>
                   <div className="flex-1 flex justify-end items-end">

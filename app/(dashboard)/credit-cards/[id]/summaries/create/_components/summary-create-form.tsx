@@ -225,16 +225,16 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
             </div>
           </div>
           <div className="flex flex-col gap-1 text-right">
-            <div>
+            <div className="flex gap-1 justify-end items-center">
               <span className="font-bold">Subtotal: </span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
-            <div className="flex gap-2 justify-end items-center">
-              <span className="font-bold">Otros importes (Impuestos, sellos, etc): </span>
+            <div className="flex gap-1 justify-end items-center">
+              <span className="font-bold">Impuestos, sellos, etc: </span>
               <span>{formatCurrency(taxes)}</span>
             </div>
             <div className="flex gap-2 justify-end items-center">
-              <p className="font-bold">Total</p>
+              <p className="font-bold">Total: </p>
               <NumericFormat
                 inputMode="decimal"
                 className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
