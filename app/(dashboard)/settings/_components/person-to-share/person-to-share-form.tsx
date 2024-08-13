@@ -63,14 +63,19 @@ export default function PersonToShareForm() {
               <Button variant={'outline'} onClick={handleCancel}>
                 Cancelar
               </Button>
-              <Button type="submit" className='bg-orange-500 px-4 py-2 text-white hover:bg-gray-700'>Guardar</Button>
+              <Button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700">
+                Guardar
+              </Button>
             </div>
           </div>
         </form>
       ) : (
-        <Button variant={'outline'} onClick={() => setShowForm(true)}>
+        <button
+          className="w-fit uppercase text-sm text-orange-500 p-2 rounded-md hover:bg-orange-500 hover:text-white transition-all ease-in-out duration-300"
+          onClick={() => setShowForm(true)}
+        >
           Nueva Persona
-        </Button>
+        </button>
       )}
     </div>
   )

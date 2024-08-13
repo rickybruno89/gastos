@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   return (
-    <main className='px-4 max-w-xl mx-auto'>
+    <main className="px-4 max-w-xl mx-auto">
       <Breadcrumbs
         breadcrumbs={[
           {
@@ -23,11 +23,9 @@ export default async function Page() {
         ]}
       />
       <MailerTest />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Suspense fallback={<SkeletonLoadingSettings />}>
-          <PersonToShareWrapper />
-        </Suspense>
-      </div>
+      <Suspense fallback={<SkeletonLoadingSettings />}>
+        <PersonToShareWrapper />
+      </Suspense>
     </main>
   )
 }

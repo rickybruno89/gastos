@@ -35,9 +35,13 @@ export default function MailerTest() {
   }
   return (
     <div>
-      <Button disabled={loading} onClick={handleClick}>
+      <button
+        className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
+        disabled={loading}
+        onClick={handleClick}
+      >
         Mandar email de prueba
-      </Button>
+      </button>
     </div>
   )
 }
