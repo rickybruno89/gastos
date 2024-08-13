@@ -219,7 +219,7 @@ export default function MonthSelector({ date }: { date: string }) {
               <div
                 key={month.number}
                 className={clsx(
-                  'absolute w-[24%] cursor-pointer rounded-md p-1 flex justify-center items-center transition-all transform-gpu duration-300',
+                  'absolute w-[24%] cursor-pointer rounded-md p-1 flex justify-center items-center transition-all transform duration-300',
                   positions[index],
                   isCalendarOpen && 'hover:bg-gray-700 hover:text-white text-sm',
                   !isCalendarOpen &&
