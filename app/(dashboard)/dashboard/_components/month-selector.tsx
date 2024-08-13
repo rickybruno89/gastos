@@ -219,12 +219,12 @@ export default function MonthSelector({ date }: { date: string }) {
               <div
                 key={month.number}
                 className={clsx(
-                  'absolute w-[24%] cursor-pointer rounded-md p-1 flex justify-center items-center transition-all duration-300',
+                  'absolute w-[24%] cursor-pointer rounded-md p-1 flex justify-center items-center transition-all transform-gpu duration-300',
                   positions[index],
                   isCalendarOpen && 'hover:bg-gray-700 hover:text-white text-sm',
                   !isCalendarOpen &&
                     isMothSelected(month.number) &&
-                    '!top-1/2 !left-1/2 transition-all transform-gpu -translate-x-1/2 -translate-y-1/2 text-3xl',
+                    '!top-1/2 !left-1/2  -translate-x-1/2 -translate-y-1/2 text-3xl',
                   !isCalendarOpen && !isMothSelected(month.number) && 'scale-0',
                   isCalendarOpen && isMothSelected(month.number) && 'bg-orange-500 text-white '
                 )}
