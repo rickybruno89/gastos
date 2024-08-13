@@ -80,7 +80,8 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
                     </PopoverButton>
                     <PopoverPanel
                       anchor="bottom"
-                      className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px]"
+                      transition
+                      className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px] transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
                     >
                       <div>
                         <span>Notas: </span>
