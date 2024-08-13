@@ -1,4 +1,4 @@
-import Navbar from '@/components/ui/dashboard/Navbar'
+import Navbar from '@/components/Navbar'
 import { nextAuthOptions } from '@/lib/auth'
 import { getServerSession } from 'next-auth'
 import React from 'react'

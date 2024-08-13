@@ -20,7 +20,6 @@ import Link from 'next/link'
 import { PAGES_URL } from '@/lib/routes'
 import { undoCCExpensePaymentSummaryPaid } from '@/services/credit-card'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import LinkButton from '@/components/ui/link-button'
 import { ExclamationCircleIcon, PlusIcon } from '@heroicons/react/24/outline'
 import SharedExpenses from './shared-expenses'
 
@@ -181,12 +180,12 @@ export default function ExpensesSummary({
       <div className="max-w-xl mx-auto p-4">
         <div className="flex justify-between items-center mb-2">
           <p className="text-lg font-semibold">Gastos</p>
-          <LinkButton href={PAGES_URL.EXPENSES.CREATE}>
+          <Link href={PAGES_URL.EXPENSES.CREATE}>
             <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
               <PlusIcon className="w-5 " />
               <span className="">Nuevo</span>
             </div>
-          </LinkButton>
+          </Link>
         </div>
         {expenseSummaries.length ? (
           <div className="flex flex-col gap-2">

@@ -8,7 +8,6 @@ import Link from 'next/link'
 import { PlusIcon } from 'lucide-react'
 import { Prisma } from '@prisma/client'
 import { PAGES_URL } from '@/lib/routes'
-import LinkButton from '@/components/ui/link-button'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { debounce } from 'lodash'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
@@ -49,12 +48,12 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
         </div>
         <div className="flex justify-between items-center w-full">
           <p className="text-lg font-semibold">Items</p>
-          <LinkButton href={PAGES_URL.EXPENSES.CREATE}>
+          <Link href={PAGES_URL.EXPENSES.CREATE}>
             <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
               <PlusIcon className="w-5 " />
               <span className="">Nuevo</span>
             </div>
-          </LinkButton>
+          </Link>
         </div>
       </div>
       {filteredExpenses.length ? (

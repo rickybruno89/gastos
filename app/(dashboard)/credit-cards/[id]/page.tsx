@@ -1,6 +1,5 @@
 import Breadcrumbs from '@/components/ui/breadcrumbs'
 import ButtonDelete from '@/components/ui/button-delete'
-import LinkButton from '@/components/ui/link-button'
 import { PAGES_URL } from '@/lib/routes'
 import { formatCurrency, formatLocaleDate, formatLocaleDueDate } from '@/lib/utils'
 import { deleteCreditCardExpenseItem, fetchCreditCardById } from '@/services/credit-card'
@@ -57,12 +56,12 @@ export default async function Page({ params }: { params: { id: string } }) {
         <section>
           <div className="px-4 flex justify-between items-center mb-2">
             <p className="text-lg font-semibold">Resúmenes</p>
-            <LinkButton href={PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE(id)}>
+            <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE(id)}>
               <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
                 <PlusIcon className="w-5 " />
                 <span className="">Generar resumen</span>
               </div>
-            </LinkButton>
+            </Link>
           </div>
           <div className="px-4 max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
             {creditCard!.paymentSummaries.map((summary, index) => (
@@ -94,12 +93,12 @@ export default async function Page({ params }: { params: { id: string } }) {
           <div className="flex flex-col gap-1 w-full rounded-md bg-white">
             <div className="flex justify-between items-center mb-2">
               <p className="text-lg font-semibold">Gastos</p>
-              <LinkButton href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.CREATE(id)}>
+              <Link href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.CREATE(id)}>
                 <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
                   <PlusIcon className="w-5 " />
                   <span className="">Agregar gasto</span>
                 </div>
-              </LinkButton>
+              </Link>
             </div>
             <div className="flex flex-col gap-2">
               {creditCard?.creditCardExpenseItems.length ? (

@@ -1,13 +1,10 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import { PAGES_URL } from '@/lib/routes'
 import { createCreditCardExpenseItem, updateCreditCardExpenseItem } from '@/services/credit-card'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useFormState } from 'react-dom'
 import { Person, Prisma } from '@prisma/client'
-import LinkButton from '@/components/ui/link-button'
-import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useEffect, useState } from 'react'
 import { formatCurrency, getNextMonthDate, removeCurrencyMaskFromInput } from '@/lib/utils'
@@ -94,10 +91,10 @@ export default function UpsertCreditCardExpenseItemForm({
                   </label>
                 </div>
               ))}
-              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
+              <Link href={PAGES_URL.SETTINGS.BASE_PATH}>
                 <PlusIcon className="w-4" />
                 Crear persona
-              </LinkButton>
+              </Link>
               {state.errors?.sharedWith ? (
                 <div id="sharedWith-error" aria-live="polite" className="mt-2 text-sm text-red-500">
                   {state.errors.sharedWith.map((error: string) => (
@@ -152,11 +149,11 @@ export default function UpsertCreditCardExpenseItemForm({
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="false" id="false" />
-                <Label htmlFor="false">NO</Label>
+                <label htmlFor="false">NO</label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="true" id="true" />
-                <Label htmlFor="true">SI</Label>
+                <label htmlFor="true">SI</label>
               </div>
             </RadioGroup>
           </div>
@@ -286,7 +283,7 @@ export default function UpsertCreditCardExpenseItemForm({
           >
             Cancelar
           </Link>
-          <Button type="submit" className='bg-orange-500 px-4 py-2 text-white hover:bg-gray-700'>Aceptar</Button>
+          <button type="submit" className='bg-orange-500 px-4 py-2 text-white hover:bg-gray-700'>Aceptar</button>
         </div>
       </div>
     </form>

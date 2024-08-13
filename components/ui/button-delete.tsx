@@ -1,6 +1,5 @@
 'use client'
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
-import { Description } from '@radix-ui/react-toast'
+import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { useState } from 'react'
 
 export default function ButtonDelete({ action, id }: { action: (id: string) => void; id: string }) {

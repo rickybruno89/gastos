@@ -1,4 +1,3 @@
-import { lusitana } from '@/components/ui/fonts'
 import { getServerSession } from 'next-auth'
 import { nextAuthOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'

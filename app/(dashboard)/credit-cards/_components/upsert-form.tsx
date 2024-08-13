@@ -92,9 +92,9 @@ export default function CreditCardCreateUpsertForm({ creditCard }: { creditCard?
           >
             Cancelar
           </Link>
-          <Button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700">
+          <button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700">
             {creditCard ? 'Modificar' : 'Crear'}
-          </Button>
+          </button>
         </div>
       </div>
     </form>

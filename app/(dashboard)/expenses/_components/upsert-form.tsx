@@ -1,11 +1,9 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import { PAGES_URL } from '@/lib/routes'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useFormState } from 'react-dom'
 import { Person, Prisma } from '@prisma/client'
-import LinkButton from '@/components/ui/link-button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { createExpense, updateExpense } from '@/services/expense'
 import { NumericFormat } from 'react-number-format'
@@ -81,10 +79,10 @@ export default function UpsertExpenseForm({
                   </label>
                 </div>
               ))}
-              <LinkButton href={PAGES_URL.SETTINGS.BASE_PATH}>
+              <Link href={PAGES_URL.SETTINGS.BASE_PATH}>
                 <PlusIcon className="w-4" />
                 Crear persona
-              </LinkButton>
+              </Link>
               {state.errors?.sharedWith ? (
                 <div id="sharedWith-error" aria-live="polite" className="mt-2 text-sm text-red-500">
                   {state.errors.sharedWith.map((error: string) => (
@@ -206,9 +204,9 @@ export default function UpsertExpenseForm({
           >
             Cancelar
           </Link>
-          <Button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700">
+          <button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700">
             Guardar
-          </Button>
+          </button>
         </div>
       </div>
     </form>
