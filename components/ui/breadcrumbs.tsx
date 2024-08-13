@@ -22,11 +22,11 @@ export default function Breadcrumbs({
           </Link>
         </li>
         {breadcrumbs.map((breadcrumb, index) => (
-          <li key={breadcrumb.href} className={clsx("flex",
-            breadcrumb.active ? 'text-blue-500' : 'text-gray-500',
+          <li key={breadcrumb.href} className={clsx("flex text-sm",
+            breadcrumb.active ? 'text-orange-500' : 'text-gray-500',
           )} >
             {index <= breadcrumbs.length - 1 ? (
-              <svg className="w-5 h-auto fill-current mx-1 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0V0z" fill="none" /><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" /></svg>
+              <svg className="w-5 h-auto fill-current  text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0V0z" fill="none" /><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" /></svg>
             ) : null}
             <Link href={breadcrumb.href}>{breadcrumb.label}</Link>
 
