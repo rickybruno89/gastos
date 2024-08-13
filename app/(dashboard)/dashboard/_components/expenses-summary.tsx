@@ -193,7 +193,7 @@ export default function ExpensesSummary({
             {getNewExpenses()}
             {expenseSummaries.map((item) => (
               <Popover key={item.id} className="relative">
-                <PopoverButton className="flex justify-center items-center gap-1 w-full">
+                <PopoverButton className="flex justify-center items-center gap-1 w-full focus-visible:outline-none focus:outline-none">
                   <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px] w-full">
                     <div className="w-full rounded-[10px] px-2 flex flex-col">
                       <div className="flex-1 flex justify-between items-end font-medium">
@@ -273,7 +273,7 @@ export default function ExpensesSummary({
           <div className="flex flex-col gap-2">
             {creditCardExpenseSummaries.map((item) => (
               <Popover key={item.id} className="relative">
-                <PopoverButton className="flex justify-center items-center gap-1 w-full">
+                <PopoverButton className="flex justify-center items-center gap-1 w-full focus-visible:outline-none focus:outline-none">
                   <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px] w-full">
                     <div className="w-full rounded-[10px] px-2 flex flex-col">
                       <div className="flex-1 flex justify-between items-end font-medium">

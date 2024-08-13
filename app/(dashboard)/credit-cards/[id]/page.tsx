@@ -138,7 +138,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                         </div>
                         <div className="flex-1 flex justify-between items-end text-sm mt-2">
                           <Popover className="relative">
-                            <PopoverButton className="flex justify-center items-center gap-1 focus:outline-none p-0.5">
+                            <PopoverButton className="flex justify-center items-center gap-1 focus-visible:outline-none focus:outline-none p-0.5">
                               <InformationCircleIcon className="w-4 h-4 text-blue-500" />
                               <span>Notas</span>
                             </PopoverButton>
@@ -158,7 +158,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                             </PopoverPanel>
                           </Popover>
                           <Popover className="relative">
-                            <PopoverButton className="text-orange-500 focus:outline-none">Acciones</PopoverButton>
+                            <PopoverButton className="text-orange-500 focus-visible:outline-none focus:outline-none">Acciones</PopoverButton>
                             <PopoverPanel
                               anchor="bottom end"
                               className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px] transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
