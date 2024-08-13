@@ -61,7 +61,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             <LinkButton href={PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE(id)}>
               <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
                 <PlusIcon className="w-5 " />
-                <span className="">Nuevo</span>
+                <span className="">Generar resumen</span>
               </div>
             </LinkButton>
           </div>
@@ -95,7 +95,7 @@ export default async function Page({ params }: { params: { id: string } }) {
               <LinkButton href={PAGES_URL.CREDIT_CARDS.EXPENSE_ITEM.CREATE(id)}>
                 <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
                   <PlusIcon className="w-5 " />
-                  <span className="">Agregar</span>
+                  <span className="">Agregar gasto</span>
                 </div>
               </LinkButton>
             </div>
