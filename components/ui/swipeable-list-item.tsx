@@ -56,20 +56,14 @@ const SwipeableListItem: React.FC<SwipeableListItemProps> = ({ card, buttons }) 
       buttonItemsRef.current.style.transition = 'none'
       if (deltaX < threshold) {
         setIsSwiped(true)
-        buttonItemsRef.current.style.transition = 'transform 0.3s ease-in-out'
         listItemRef.current.style.transform = translateXPX
         buttonItemsRef.current.style.transform = 'translateX(0px)'
+        buttonItemsRef.current.style.transition = 'transform 0.3s ease-in-out'
       } else {
         if (isSwiped) {
           setIsSwiped(false)
           listItemRef.current.style.transform = 'translateX(0px)'
           buttonItemsRef.current.style.transform = 'translateX(100%)'
-          buttonItemsRef.current.style.transition = 'transform 0.3s ease-in-out'
-        } else {
-          setIsSwiped(true)
-          listItemRef.current.style.transform = translateXPX
-          buttonItemsRef.current.style.transform = 'translateX(0px)'
-
           buttonItemsRef.current.style.transition = 'transform 0.3s ease-in-out'
         }
       }
