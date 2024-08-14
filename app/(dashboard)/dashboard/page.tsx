@@ -11,7 +11,7 @@ const TITLE = 'Resumen mensual'
 export const metadata: Metadata = {
   title: TITLE,
 }
-const DashboardTemplate = lazy(() => import('./_components/dashboard-template'));
+const DashboardTemplate = lazy(() => import('./_components/dashboard-template'))
 
 export default async function Page({
   searchParams,

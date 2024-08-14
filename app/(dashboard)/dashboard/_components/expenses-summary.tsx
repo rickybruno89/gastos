@@ -23,6 +23,7 @@ import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { ExclamationCircleIcon, PlusIcon } from '@heroicons/react/24/outline'
 import SharedExpenses from './shared-expenses'
 import ButtonLoadingSpinner from '@/components/ui/button-loading-spinner'
+import SwipeableListItem from '@/components/ui/swipeable-list-item'
 
 export type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -54,6 +55,14 @@ export type CreditCardExpensesWithInclude = Prisma.CreditCardPaymentSummaryGetPa
     }
   }
 }>
+
+const handleDelete = (itemId: string) => {
+  console.log('Delete item', itemId)
+}
+
+const handleEdit = (itemId: string) => {
+  console.log('Edit item', itemId)
+}
 
 export default function ExpensesSummary({
   expenseSummaries,
@@ -171,6 +180,7 @@ export default function ExpensesSummary({
 
   return (
     <section id="expense-content">
+      <div className="w-full max-w-md mx-auto mt-8 "></div>
       <div className="max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
         <div className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white leading-tight">
           <span className="text-lg font-semibold uppercase">total</span>
@@ -201,63 +211,69 @@ export default function ExpensesSummary({
           <div className="flex flex-col gap-2">
             {getNewExpenses()}
             {expenseSummaries.map((item) => (
-              <Popover key={item.id} className="relative">
-                <PopoverButton className="flex justify-center items-center gap-1 w-full focus-visible:outline-none focus:outline-none">
-                  <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px] w-full">
-                    <div className="w-full rounded-[10px] px-2 flex flex-col">
-                      <div className="flex-1 flex justify-between items-end font-medium">
-                        <span className="leading-tight lowercase first-letter:uppercase text-lg">
-                          {item.expense.description}
-                        </span>
-                        <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
-                      </div>
-                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                        <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
-                        <span className="leading-tight block lowercase first-letter:uppercase">
-                          {getPaymentChannelSafeText(item.paymentChannel)}
-                        </span>
-                      </div>
-                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                        <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
-                        {getExpenseStatus(item)}
+              <SwipeableListItem
+                key={item.id}
+                onDelete={() => handleDelete(item.id)}
+                onEdit={() => handleEdit(item.id)}
+              >
+                <Popover key={item.id} className="relative">
+                  <PopoverButton className="flex justify-center items-center gap-1 w-full focus-visible:outline-none focus:outline-none">
+                    <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px] w-full">
+                      <div className="w-full rounded-[10px] px-2 flex flex-col">
+                        <div className="flex-1 flex justify-between items-end font-medium">
+                          <span className="leading-tight lowercase first-letter:uppercase text-lg">
+                            {item.expense.description}
+                          </span>
+                          <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
+                        </div>
+                        <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                          <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
+                          <span className="leading-tight block lowercase first-letter:uppercase">
+                            {getPaymentChannelSafeText(item.paymentChannel)}
+                          </span>
+                        </div>
+                        <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                          <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
+                          {getExpenseStatus(item)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </PopoverButton>
-                <PopoverPanel
-                  anchor="top end"
-                  transition
-                  className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px] transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
-                >
-                  <span>Acciones</span>
-                  {item.paid ? (
-                    <div className="hover:bg-orange-500 hover:text-white rounded-md p-1">
-                      <button onClick={() => undoExpensePayment(item)}>Deshacer pago</button>
-                    </div>
-                  ) : (
-                    <>
-                      <Link
-                        className="block hover:bg-orange-500 hover:text-white rounded-md p-1"
-                        href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=/dashboard`}
-                      >
-                        Editar
-                      </Link>
-                      <button
-                        className="block w-full text-left hover:bg-orange-500 hover:text-white rounded-md p-1"
-                        onClick={() => dontPayExpense(item)}
-                      >
-                        Omitir pago
-                      </button>
-                      <button
-                        className="block w-full text-left hover:bg-orange-500 hover:text-white rounded-md p-1"
-                        onClick={() => payExpense(item)}
-                      >
-                        Pagar
-                      </button>
-                    </>
-                  )}
-                </PopoverPanel>
-              </Popover>
+                  </PopoverButton>
+                  <PopoverPanel
+                    anchor="top end"
+                    transition
+                    className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px] transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
+                  >
+                    <span>Acciones</span>
+                    {item.paid ? (
+                      <div className="hover:bg-orange-500 hover:text-white rounded-md p-1">
+                        <button onClick={() => undoExpensePayment(item)}>Deshacer pago</button>
+                      </div>
+                    ) : (
+                      <>
+                        <Link
+                          className="block hover:bg-orange-500 hover:text-white rounded-md p-1"
+                          href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=/dashboard`}
+                        >
+                          Editar
+                        </Link>
+                        <button
+                          className="block w-full text-left hover:bg-orange-500 hover:text-white rounded-md p-1"
+                          onClick={() => dontPayExpense(item)}
+                        >
+                          Omitir pago
+                        </button>
+                        <button
+                          className="block w-full text-left hover:bg-orange-500 hover:text-white rounded-md p-1"
+                          onClick={() => payExpense(item)}
+                        >
+                          Pagar
+                        </button>
+                      </>
+                    )}
+                  </PopoverPanel>
+                </Popover>
+              </SwipeableListItem>
             ))}
           </div>
         ) : (
