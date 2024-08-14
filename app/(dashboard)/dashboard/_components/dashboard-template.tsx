@@ -18,9 +18,9 @@ export default async function DashboardTemplate({
   return (
     <div>
       <ExpensesSummary
-        expenses={expenses}
-        expenseSummaries={expenseSummaries}
-        creditCardExpenseSummaries={creditCardExpenseSummaries}
+        expensesRaw={expenses}
+        expenseSummariesRaw={expenseSummaries}
+        creditCardExpenseSummariesRaw={creditCardExpenseSummaries}
         date={date}
       />
     </div>

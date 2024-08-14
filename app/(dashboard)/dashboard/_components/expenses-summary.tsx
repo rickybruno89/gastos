@@ -19,11 +19,11 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PAGES_URL } from '@/lib/routes'
 import { undoCCExpensePaymentSummaryPaid } from '@/services/credit-card'
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { ExclamationCircleIcon, PlusIcon } from '@heroicons/react/24/outline'
 import SharedExpenses from './shared-expenses'
 import ButtonLoadingSpinner from '@/components/ui/button-loading-spinner'
 import SwipeableListItem from '@/components/ui/swipeable-list-item'
+import Spinner from '@/components/ui/spinner'
 
 export type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -56,30 +56,33 @@ export type CreditCardExpensesWithInclude = Prisma.CreditCardPaymentSummaryGetPa
   }
 }>
 
-const handleDelete = (itemId: string) => {
-  console.log('Delete item', itemId)
-}
-
-const handleEdit = (itemId: string) => {
-  console.log('Edit item', itemId)
-}
-
 export default function ExpensesSummary({
-  expenseSummaries,
-  expenses,
-  creditCardExpenseSummaries,
+  expenseSummariesRaw,
+  expensesRaw,
+  creditCardExpenseSummariesRaw,
   date,
 }: {
-  expenseSummaries: ExpensesPaymentSummaryWithInclude[]
-  expenses: ExpensesWithInclude[]
-  creditCardExpenseSummaries: CreditCardExpensesWithInclude[]
+  expenseSummariesRaw: ExpensesPaymentSummaryWithInclude[]
+  expensesRaw: ExpensesWithInclude[]
+  creditCardExpenseSummariesRaw: CreditCardExpensesWithInclude[]
   date: string
 }) {
   const [isLoading, setIsLoading] = useState(true)
 
+  const [expenseSummaries, setExpenseSummaries] = useState(
+    expenseSummariesRaw.map((item) => ({ ...item, isLoading: false }))
+  )
+  const [expenses, setExpenses] = useState(expensesRaw.map((item) => ({ ...item, isLoading: false })))
+  const [creditCardExpenseSummaries, setCreditCardExpenseSummaries] = useState(
+    creditCardExpenseSummariesRaw.map((item) => ({ ...item, isLoading: false }))
+  )
+
   useEffect(() => {
     setIsLoading(false)
-  }, [expenseSummaries, expenses, creditCardExpenseSummaries])
+    setExpenseSummaries(expenseSummariesRaw.map((item) => ({ ...item, isLoading: false })))
+    setExpenses(expensesRaw.map((item) => ({ ...item, isLoading: false })))
+    setCreditCardExpenseSummaries(creditCardExpenseSummariesRaw.map((item) => ({ ...item, isLoading: false })))
+  }, [expenseSummariesRaw, expensesRaw, creditCardExpenseSummariesRaw])
 
   const handleGenerarResumen = () => {
     setIsLoading(true)
@@ -87,33 +90,48 @@ export default function ExpensesSummary({
   }
 
   const undoExpensePayment = async (item: ExpensePaymentSummary) => {
-    setIsLoading(true)
+    const newExpenseSummaries = expenseSummaries.map((expenseSummary) => ({
+      ...expenseSummary,
+      isLoading: expenseSummary.id === item.id ? true : false,
+    }))
+    setExpenseSummaries(newExpenseSummaries)
     await undoExpensePaymentSummaryPaid(item)
-    setIsLoading(false)
-  }
-
-  const undoCCExpensePayment = async (item: CreditCardPaymentSummary) => {
-    setIsLoading(true)
-    await undoCCExpensePaymentSummaryPaid(item)
-    setIsLoading(false)
   }
 
   const payExpense = async (item: ExpensePaymentSummary) => {
-    setIsLoading(true)
+    const newExpenseSummaries = expenseSummaries.map((expenseSummary) => ({
+      ...expenseSummary,
+      isLoading: expenseSummary.id === item.id ? true : false,
+    }))
+    setExpenseSummaries(newExpenseSummaries)
     await setExpensePaymentSummaryPaid(item)
-    setIsLoading(false)
-  }
-
-  const payCCExpense = async (item: CreditCardPaymentSummary) => {
-    setIsLoading(true)
-    await setCreditCardPaymentSummaryPaid(item)
-    setIsLoading(false)
   }
 
   const dontPayExpense = async (item: ExpensePaymentSummary) => {
-    setIsLoading(true)
+    const newExpenseSummaries = expenseSummaries.map((expenseSummary) => ({
+      ...expenseSummary,
+      isLoading: expenseSummary.id === item.id ? true : false,
+    }))
+    setExpenseSummaries(newExpenseSummaries)
     await setNoNeedExpensePaymentSummary(item)
-    setIsLoading(false)
+  }
+
+  const undoCCExpensePayment = async (item: CreditCardPaymentSummary) => {
+    const newCreditCardExpenseSummaries = creditCardExpenseSummaries.map((creditCardExpense) => ({
+      ...creditCardExpense,
+      isLoading: creditCardExpense.id === item.id ? true : false,
+    }))
+    setCreditCardExpenseSummaries(newCreditCardExpenseSummaries)
+    await undoCCExpensePaymentSummaryPaid(item)
+  }
+
+  const payCCExpense = async (item: CreditCardPaymentSummary) => {
+    const newCreditCardExpenseSummaries = creditCardExpenseSummaries.map((creditCardExpense) => ({
+      ...creditCardExpense,
+      isLoading: creditCardExpense.id === item.id ? true : false,
+    }))
+    setCreditCardExpenseSummaries(newCreditCardExpenseSummaries)
+    await setCreditCardPaymentSummaryPaid(item)
   }
 
   const getExpenseStatus = (expense: ExpensesPaymentSummaryWithInclude | CreditCardExpensesWithInclude) => {
@@ -214,25 +232,29 @@ export default function ExpensesSummary({
               <SwipeableListItem
                 key={item.id}
                 card={
-                  <div className="flex bg-gray-50 p-3 rounded-l-xl gap-2 h-[86px] w-full">
-                    <div className="w-full rounded-[10px] px-2 flex flex-col">
-                      <div className="flex-1 flex justify-between items-end font-medium">
-                        <span className="leading-tight lowercase first-letter:uppercase text-lg">
-                          {item.expense.description}
-                        </span>
-                        <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
+                  <div className="flex bg-gray-50 p-3 rounded-l-xl gap-2 h-[86px] w-full items-center justify-center">
+                    {item.isLoading ? (
+                      <Spinner />
+                    ) : (
+                      <div className="w-full px-2 flex flex-col">
+                        <div className="flex-1 flex justify-between items-end font-medium">
+                          <span className="leading-tight lowercase first-letter:uppercase text-lg">
+                            {item.expense.description}
+                          </span>
+                          <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
+                        </div>
+                        <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                          <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
+                          <span className="leading-tight block lowercase first-letter:uppercase">
+                            {getPaymentChannelSafeText(item.paymentChannel)}
+                          </span>
+                        </div>
+                        <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                          <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
+                          {getExpenseStatus(item)}
+                        </div>
                       </div>
-                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                        <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
-                        <span className="leading-tight block lowercase first-letter:uppercase">
-                          {getPaymentChannelSafeText(item.paymentChannel)}
-                        </span>
-                      </div>
-                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                        <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
-                        {getExpenseStatus(item)}
-                      </div>
-                    </div>
+                    )}
                   </div>
                 }
                 buttons={
@@ -299,20 +321,24 @@ export default function ExpensesSummary({
               <SwipeableListItem
                 key={item.id}
                 card={
-                  <div className="flex bg-gray-50 p-3 rounded-l-xl gap-2 h-[86px] w-full">
-                    <div className="w-full rounded-[10px] px-2 flex flex-col">
-                      <div className="flex-1 flex justify-between items-end font-medium">
-                        <span className="leading-tight uppercase text-lg">{item.creditCard.name}</span>
-                        <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
+                  <div className="flex bg-gray-50 p-3 rounded-l-xl gap-2 h-[86px] w-full justify-center items-center">
+                    {item.isLoading ? (
+                      <Spinner />
+                    ) : (
+                      <div className="w-full px-2 flex flex-col">
+                        <div className="flex-1 flex justify-between items-end font-medium">
+                          <span className="leading-tight uppercase text-lg">{item.creditCard.name}</span>
+                          <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
+                        </div>
+                        <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                          <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
+                        </div>
+                        <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
+                          <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
+                          {getExpenseStatus(item)}
+                        </div>
                       </div>
-                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                        <span className="leading-tight block lowercase first-letter:uppercase">Vencimiento</span>
-                      </div>
-                      <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
-                        <span>{item.dueDate ? formatLocaleDueDate(item.dueDate) : '-'}</span>
-                        {getExpenseStatus(item)}
-                      </div>
-                    </div>
+                    )}
                   </div>
                 }
                 buttons={
