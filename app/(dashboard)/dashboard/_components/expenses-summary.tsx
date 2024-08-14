@@ -24,6 +24,7 @@ import SharedExpenses from './shared-expenses'
 import ButtonLoadingSpinner from '@/components/ui/button-loading-spinner'
 import SwipeableListItem from '@/components/ui/swipeable-list-item'
 import Spinner from '@/components/ui/spinner'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 export type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
@@ -78,7 +79,10 @@ export default function ExpensesSummary({
   )
 
   useEffect(() => {
-    setIsLoading(false)
+    setIsLoading(true)
+    setTimeout(() => {
+      setIsLoading(false)
+    }, 700)
     setExpenseSummaries(expenseSummariesRaw.map((item) => ({ ...item, isLoading: false })))
     setExpenses(expensesRaw.map((item) => ({ ...item, isLoading: false })))
     setCreditCardExpenseSummaries(creditCardExpenseSummariesRaw.map((item) => ({ ...item, isLoading: false })))
@@ -196,9 +200,11 @@ export default function ExpensesSummary({
         </div>
       ))
 
-  return (
+  return isLoading ? (
+    <LoadingSpinner />
+  ) : (
     <section id="expense-content">
-      <div className="w-full max-w-md mx-auto mt-8 "></div>
+      <div className="w-full max-w-md mx-auto mt-8 " />
       <div className="max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto p-4 flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
         <div className="shadow-lg p-4 shrink-0 flex flex-col w-64 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white leading-tight">
           <span className="text-lg font-semibold uppercase">total</span>
