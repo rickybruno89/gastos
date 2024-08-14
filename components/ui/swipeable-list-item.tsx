@@ -49,7 +49,7 @@ const SwipeableListItem: React.FC<SwipeableListItemProps> = ({ card, buttons }) 
 
   const handleTouchEnd = () => {
     if (listItemRef.current && buttonItemsRef.current) {
-      const threshold = -65 // Threshold to trigger swipe action
+      const threshold = -100 // Threshold to trigger swipe action
       const deltaX = currentX.current - startX.current
 
       listItemRef.current.style.transition = 'transform 0.3s ease-in-out'
@@ -60,11 +60,11 @@ const SwipeableListItem: React.FC<SwipeableListItemProps> = ({ card, buttons }) 
         buttonItemsRef.current.style.transform = 'translateX(0px)'
         buttonItemsRef.current.style.transition = 'transform 0.3s ease-in-out'
       } else {
+        listItemRef.current.style.transform = 'translateX(0px)'
+        buttonItemsRef.current.style.transform = 'translateX(100%)'
+        buttonItemsRef.current.style.transition = 'transform 0.3s ease-in-out'
         if (isSwiped) {
           setIsSwiped(false)
-          listItemRef.current.style.transform = 'translateX(0px)'
-          buttonItemsRef.current.style.transform = 'translateX(100%)'
-          buttonItemsRef.current.style.transition = 'transform 0.3s ease-in-out'
         }
       }
     }
