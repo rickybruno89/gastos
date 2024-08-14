@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 
 type SwipeableListItemProps = {
   card: React.ReactNode
@@ -22,6 +22,44 @@ const SwipeableListItem: React.FC<SwipeableListItemProps> = ({ card, buttons }) 
   const listItemRef = useRef<HTMLDivElement | null>(null)
   const buttonItemsRef = useRef<HTMLDivElement | null>(null)
   const [isSwiped, setIsSwiped] = useState(false)
+
+  // simulator example
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     if (listItemRef.current && buttonItemsRef.current) {
+  //       const moveXExample = -50
+  //       listItemRef.current.style.transition = 'transform 0.2s ease-in-out'
+  //       buttonItemsRef.current.style.transition = 'transform 0.2s ease-in-out'
+  //       const buttonsX = parseInt(translateXPX.split('-')[1].replace('px)', ''))
+  //       // first example
+  //       listItemRef.current.style.transform = `translateX(${moveXExample}px)`
+  //       buttonItemsRef.current.style.transform = `translateX(${moveXExample + buttonsX}px)`
+  //       setTimeout(() => {
+  //         // second example
+  //         if (listItemRef.current && buttonItemsRef.current) {
+  //           listItemRef.current.style.transform = `translateX(${moveXExample / 2}px)`
+  //           buttonItemsRef.current.style.transform = `translateX(${moveXExample / 2 + buttonsX}px)`
+  //         }
+  //         setTimeout(() => {
+  //           // second example
+  //           if (listItemRef.current && buttonItemsRef.current) {
+  //             listItemRef.current.style.transform = `translateX(${moveXExample * 3}px)`
+  //             buttonItemsRef.current.style.transform = `translateX(${moveXExample * 3 + buttonsX}px)`
+  //           }
+  //           setTimeout(() => {
+  //             // second example
+  //             if (listItemRef.current && buttonItemsRef.current) {
+  //               listItemRef.current.style.transition = 'transform 0.4s ease-in-out'
+  //               buttonItemsRef.current.style.transition = 'transform 0.4s ease-in-out'
+  //               listItemRef.current.style.transform = `translateX(0px)`
+  //               buttonItemsRef.current.style.transform = `translateX(100%)`
+  //             }
+  //           }, 200)
+  //         }, 200)
+  //       }, 200)
+  //     }
+  //   }, 2000)
+  // }, [])
 
   const handleTouchStart = (e: React.TouchEvent) => {
     buttonItemsRef.current!.style.transition = 'none'
@@ -83,10 +121,7 @@ const SwipeableListItem: React.FC<SwipeableListItemProps> = ({ card, buttons }) 
       </div>
 
       {/* List item content */}
-      <div
-        ref={listItemRef}
-        className={`transform transition-transform duration-300 ease-in-out`}
-      >
+      <div ref={listItemRef} className={`transform transition-transform duration-300 ease-in-out`}>
         {card}
       </div>
     </div>

@@ -214,7 +214,7 @@ export default function ExpensesSummary({
               <SwipeableListItem
                 key={item.id}
                 card={
-                  <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px] w-full">
+                  <div className="flex bg-gray-50 p-3 rounded-l-xl gap-2 h-[86px] w-full">
                     <div className="w-full rounded-[10px] px-2 flex flex-col">
                       <div className="flex-1 flex justify-between items-end font-medium">
                         <span className="leading-tight lowercase first-letter:uppercase text-lg">
@@ -238,7 +238,7 @@ export default function ExpensesSummary({
                 buttons={
                   item.paid ? (
                     <button
-                      className="w-20 flex justify-center items-center p-2 bg-red-700 text-white rounded-xl"
+                      className="w-20 flex justify-center items-center p-2 bg-red-700 text-white rounded-r-xl"
                       onClick={() => undoExpensePayment(item)}
                     >
                       Deshacer pago
@@ -246,7 +246,7 @@ export default function ExpensesSummary({
                   ) : (
                     <>
                       <Link
-                        className="w-20 flex justify-center items-center p-2 text-center bg-violet-600 text-white rounded-l-xl"
+                        className="w-20 flex justify-center items-center p-2 text-center bg-violet-600 text-white "
                         href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=/dashboard`}
                       >
                         Editar
@@ -299,7 +299,7 @@ export default function ExpensesSummary({
               <SwipeableListItem
                 key={item.id}
                 card={
-                  <div className="flex bg-gray-50 p-3 rounded-xl gap-2 h-[86px] w-full">
+                  <div className="flex bg-gray-50 p-3 rounded-l-xl gap-2 h-[86px] w-full">
                     <div className="w-full rounded-[10px] px-2 flex flex-col">
                       <div className="flex-1 flex justify-between items-end font-medium">
                         <span className="leading-tight uppercase text-lg">{item.creditCard.name}</span>
@@ -318,14 +318,14 @@ export default function ExpensesSummary({
                 buttons={
                   <>
                     <Link
-                      className="w-20 flex justify-center items-center text-center p-2 bg-violet-600 text-white rounded-l-xl"
+                      className="w-20 flex justify-center items-center text-center p-2 bg-violet-600 text-white"
                       href={`${PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCardId, item.id)}`}
                     >
                       Ver detalle
                     </Link>
                     {item.paid ? (
                       <button
-                        className="w-20 flex justify-center items-center p-2 bg-orange-500 text-white"
+                        className="w-20 flex justify-center items-center p-2 bg-orange-500 text-white rounded-r-xl"
                         onClick={() => undoCCExpensePayment(item)}
                       >
                         Deshacer pago
