@@ -21,6 +21,7 @@ const SwipeableListItem: React.FC<SwipeableListItemProps> = ({ card, buttons }) 
   const startX = useRef(0)
   const currentX = useRef(0)
   const listItemRef = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0]
@@ -28,6 +29,9 @@ const SwipeableListItem: React.FC<SwipeableListItemProps> = ({ card, buttons }) 
     currentX.current = touch.clientX
     if (listItemRef.current) {
       listItemRef.current.style.transition = 'none'
+    }
+    if (containerRef.current) {
+      containerRef.current.style.overflowY = 'hidden' // Disable vertical scroll
     }
   }
 
@@ -51,11 +55,16 @@ const SwipeableListItem: React.FC<SwipeableListItemProps> = ({ card, buttons }) 
 
       listItemRef.current.style.transition = 'transform 0.3s ease-in-out'
     }
+
+    if (containerRef.current) {
+      containerRef.current.style.overflowY = 'auto' // Re-enable vertical scroll
+    }
   }
 
   return (
     <div
-      className="relative w-full overflow-hidden touch-pan-y"
+      ref={containerRef}
+      className="relative w-full overflow-x-hidden overflow-y-auto touch-pan-y" // Ensure vertical scroll is enabled when not swiping
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
