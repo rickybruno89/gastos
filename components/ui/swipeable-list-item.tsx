@@ -85,7 +85,7 @@ const SwipeableListItem: React.FC<SwipeableListItemProps> = ({ card, buttons }) 
       {/* List item content */}
       <div
         ref={listItemRef}
-        className={`transform transition-transform duration-300 ease-in-out ${isSwiped ? 'mr-2' : ''}`}
+        className={`transform transition-transform duration-300 ease-in-out`}
       >
         {card}
       </div>

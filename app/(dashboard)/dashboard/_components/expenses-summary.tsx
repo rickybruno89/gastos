@@ -238,7 +238,7 @@ export default function ExpensesSummary({
                 buttons={
                   item.paid ? (
                     <button
-                      className="w-20 flex justify-center items-center p-2 bg-red-700 text-white rounded-md"
+                      className="w-20 flex justify-center items-center p-2 bg-red-700 text-white rounded-xl"
                       onClick={() => undoExpensePayment(item)}
                     >
                       Deshacer pago
@@ -246,7 +246,7 @@ export default function ExpensesSummary({
                   ) : (
                     <>
                       <Link
-                        className="w-20 flex justify-center items-center p-2 text-center bg-violet-600 text-white rounded-l-md"
+                        className="w-20 flex justify-center items-center p-2 text-center bg-violet-600 text-white rounded-l-xl"
                         href={`${PAGES_URL.EXPENSES.EDIT(item.expenseId)}?callbackUrl=/dashboard`}
                       >
                         Editar
@@ -258,7 +258,7 @@ export default function ExpensesSummary({
                         Omitir pago
                       </button>
                       <button
-                        className="w-20 flex justify-center items-center p-2 bg-money rounded-r-md text-white"
+                        className="w-20 flex justify-center items-center p-2 bg-money rounded-r-xl text-white"
                         onClick={() => payExpense(item)}
                       >
                         Pagar
@@ -318,7 +318,7 @@ export default function ExpensesSummary({
                 buttons={
                   <>
                     <Link
-                      className="w-20 flex justify-center items-center text-center p-2 bg-violet-600 text-white rounded-l-md"
+                      className="w-20 flex justify-center items-center text-center p-2 bg-violet-600 text-white rounded-l-xl"
                       href={`${PAGES_URL.CREDIT_CARDS.SUMMARY.DETAIL(item.creditCardId, item.id)}`}
                     >
                       Ver detalle
@@ -333,7 +333,7 @@ export default function ExpensesSummary({
                     ) : (
                       <>
                         <button
-                          className="w-20 flex justify-center items-center p-2 bg-money rounded-r-md text-white"
+                          className="w-20 flex justify-center items-center p-2 bg-money rounded-r-xl text-white"
                           onClick={() => payCCExpense(item)}
                         >
                           Pagar
