@@ -40,7 +40,6 @@ const SwipeableListItem: React.FC<SwipeableListItemProps> = ({ card, buttons }) 
     if (listItemRef.current && buttonItemsRef.current) {
       const translateX = Math.min(0, deltaX) // Only allow swiping to the left
       listItemRef.current.style.transform = `translateX(${translateX}px)`
-      buttonItemsRef.current.style.transform = `translateX(${deltaX}px)`
     }
   }
 
