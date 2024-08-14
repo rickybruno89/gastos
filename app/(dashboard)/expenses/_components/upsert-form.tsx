@@ -9,6 +9,8 @@ import { createExpense, updateExpense } from '@/services/expense'
 import { NumericFormat } from 'react-number-format'
 import { useSearchParams } from 'next/navigation'
 import { PAYMENT_CHANNELS } from '@/lib/utils'
+import { useEffect, useState } from 'react'
+import ButtonLoadingSpinner from '@/components/ui/button-loading-spinner'
 
 type ExpenseItemWithInclude = Prisma.ExpenseGetPayload<{
   include: {
@@ -23,16 +25,31 @@ export default function UpsertExpenseForm({
   expenseItem?: ExpenseItemWithInclude
   personsToShare: Person[]
 }) {
+  const [isLoading, setIsLoading] = useState(false)
   const callbackUrl = useSearchParams().get('callbackUrl') || PAGES_URL.EXPENSES.BASE_PATH
-
   const initialState = { message: null, errors: {} }
 
   const upsertExpenseItemWithId = expenseItem ? updateExpense.bind(null, expenseItem.id, callbackUrl) : createExpense
 
   const [state, dispatch] = useFormState(upsertExpenseItemWithId, initialState)
 
+  useEffect(() => {
+    setIsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    setIsLoading(false)
+  }, [state])
+
+  const handleSave = (formData: FormData) => {
+    setIsLoading(true)
+    setTimeout(() => {
+      dispatch(formData)
+    }, 1000)
+  }
+
   return (
-    <form action={dispatch}>
+    <form action={handleSave}>
       <div className="flex flex-col gap-4">
         <div>
           <label className="mb-2 block text-sm font-medium" htmlFor="description">
@@ -80,7 +97,7 @@ export default function UpsertExpenseForm({
                 </div>
               ))}
               <Link href={PAGES_URL.SETTINGS.BASE_PATH}>
-              <div className='flex justify-center items-center gap-2 text-orange-500'>
+                <div className="flex justify-center items-center gap-2 text-orange-500">
                   <PlusIcon className="w-4" />
                   Crear persona
                 </div>
@@ -206,8 +223,12 @@ export default function UpsertExpenseForm({
           >
             Cancelar
           </Link>
-          <button type="submit" className="bg-orange-500 px-4 py-2 text-white font-semibold hover:bg-gray-700 rounded-md">
-            Guardar
+
+          <button
+            type="submit"
+            className="bg-orange-500 px-4 py-2 text-white font-semibold hover:bg-gray-700 rounded-md"
+          >
+            {isLoading ? <ButtonLoadingSpinner /> : 'Guardar'}
           </button>
         </div>
       </div>

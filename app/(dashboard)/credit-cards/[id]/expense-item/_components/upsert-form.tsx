@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import { formatCurrency, getNextMonthDate, removeCurrencyMaskFromInput } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { NumericFormat } from 'react-number-format'
+import ButtonLoadingSpinner from '@/components/ui/button-loading-spinner'
 
 type CreditCardExpenseItemWithSharedPerson = Prisma.CreditCardExpenseItemGetPayload<{
   include: {
@@ -36,6 +37,23 @@ export default function UpsertCreditCardExpenseItemForm({
   const [totalAmount, setTotalAmount] = useState(creditCardExpenseItem?.amount || 0)
   const [installmentsQuantity, setInstallmentsQuantity] = useState(creditCardExpenseItem?.installmentsQuantity || 1)
 
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    setIsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    setIsLoading(false)
+  }, [state])
+
+  const handleSave = (formData: FormData) => {
+    setIsLoading(true)
+    setTimeout(() => {
+      dispatch(formData)
+    }, 1000)
+  }
+
   useEffect(() => {
     if (isRecurrent) {
       setTotalAmount(creditCardExpenseItem?.installmentsAmount || totalAmount)
@@ -46,7 +64,7 @@ export default function UpsertCreditCardExpenseItemForm({
   }, [isRecurrent])
 
   return (
-    <form action={dispatch}>
+    <form action={handleSave}>
       <div className="flex flex-col gap-4">
         <div>
           <label className="mb-2 block text-sm font-medium">Descripcion</label>
@@ -285,8 +303,12 @@ export default function UpsertCreditCardExpenseItemForm({
           >
             Cancelar
           </Link>
-          <button type="submit" className="bg-orange-500 px-4 py-2 text-white font-semibold hover:bg-gray-700 rounded-md">
-            Aceptar
+
+          <button
+            type="submit"
+            className="bg-orange-500 px-4 py-2 text-white font-semibold hover:bg-gray-700 rounded-md"
+          >
+            {isLoading ? <ButtonLoadingSpinner /> : 'Guardar'}
           </button>
         </div>
       </div>
