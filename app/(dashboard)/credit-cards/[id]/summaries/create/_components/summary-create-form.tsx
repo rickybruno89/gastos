@@ -9,6 +9,7 @@ import { formatCurrency, getToday, removeCurrencyMaskFromInput } from '@/lib/uti
 import { useEffect, useState } from 'react'
 import { NumericFormat } from 'react-number-format'
 import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import ButtonLoadingSpinner from '@/components/ui/button-loading-spinner'
 
 type CreditCardWithItems = Prisma.CreditCardGetPayload<{
   include: {
@@ -38,6 +39,11 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [itemIdToApplyDiscount, setItemIdToApplyDiscount] = useState<string | null>()
   const [discount, setDiscount] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    setIsLoading(false)
+  }, [state])
 
   const handleChangeDatePicker = (date: string) => {
     setDatePicker(date)
@@ -108,6 +114,7 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
 
   const handleSubmit = (e: any) => {
     e.preventDefault()
+    setIsLoading(true)
     const formData = new FormData(e.currentTarget)
 
     const selectedItemsToSend = selectedItems
@@ -202,7 +209,9 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
                       decimalScale={2}
                       decimalSeparator=","
                     />
-                    <button className='text-orange-500' onClick={() => handleOpenDialog(item.id)}>Desc.</button>
+                    <button className="text-orange-500" onClick={() => handleOpenDialog(item.id)}>
+                      Desc.
+                    </button>
                     <Checkbox
                       className="h-8 w-8 rounded-md"
                       id={`creditCardExpenseItems[${item.id}]`}
@@ -261,7 +270,7 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
             type="submit"
             className="w-fit uppercase text-xs font-medium text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
           >
-            Generar resumen
+            {isLoading ? <ButtonLoadingSpinner /> : 'Generar resumen'}
           </button>
         </div>
       </div>

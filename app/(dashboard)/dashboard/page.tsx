@@ -1,15 +1,17 @@
 import { Metadata } from 'next'
 import { formatLocaleDate, getToday } from '@/lib/utils'
-import DashboardTemplate from './_components/dashboard-template'
-import { Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import MonthSelector from './_components/month-selector'
 import LoadingSpinner from '@/components/ui/loading-spinner'
+import { fetchCreditCardSummariesForMonth, fetchExpenseSummariesForMonth } from '@/services/summary'
+import { fetchExpenses } from '@/services/expense'
 
 const TITLE = 'Resumen mensual'
 
 export const metadata: Metadata = {
   title: TITLE,
 }
+const DashboardTemplate = lazy(() => import('./_components/dashboard-template'));
 
 export default async function Page({
   searchParams,
@@ -19,6 +21,9 @@ export default async function Page({
   }
 }) {
   const date = searchParams.date || getToday()
+  const expenseSummaries = await fetchExpenseSummariesForMonth(date)
+  const creditCardExpenseSummaries = await fetchCreditCardSummariesForMonth(date)
+  const expenses = await fetchExpenses()
 
   return (
     <main className="flex flex-col mb-20">
@@ -34,7 +39,12 @@ export default async function Page({
         }
       >
         <h1 className="text-center mt-4">{TITLE + ' ' + formatLocaleDate(date)}</h1>
-        <DashboardTemplate date={date} />
+        <DashboardTemplate
+          expenseSummaries={expenseSummaries}
+          creditCardExpenseSummaries={creditCardExpenseSummaries}
+          expenses={expenses}
+          date={date}
+        />
       </Suspense>
     </main>
   )

@@ -15,15 +15,16 @@ import {
   setCreditCardPaymentSummaryPaid,
 } from '@/services/summary'
 import { CreditCardPaymentSummary, ExpensePaymentSummary, Prisma } from '@prisma/client'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PAGES_URL } from '@/lib/routes'
 import { undoCCExpensePaymentSummaryPaid } from '@/services/credit-card'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { ExclamationCircleIcon, PlusIcon } from '@heroicons/react/24/outline'
 import SharedExpenses from './shared-expenses'
+import ButtonLoadingSpinner from '@/components/ui/button-loading-spinner'
 
-type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
+export type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<{
   include: {
     expense: {
       include: {
@@ -33,13 +34,13 @@ type ExpensesPaymentSummaryWithInclude = Prisma.ExpensePaymentSummaryGetPayload<
   }
 }>
 
-type ExpensesWithInclude = Prisma.ExpenseGetPayload<{
+export type ExpensesWithInclude = Prisma.ExpenseGetPayload<{
   include: {
     sharedWith: true
   }
 }>
 
-type CreditCardExpensesWithInclude = Prisma.CreditCardPaymentSummaryGetPayload<{
+export type CreditCardExpensesWithInclude = Prisma.CreditCardPaymentSummaryGetPayload<{
   include: {
     creditCard: true
     itemHistoryPayment: {
@@ -65,7 +66,16 @@ export default function ExpensesSummary({
   creditCardExpenseSummaries: CreditCardExpensesWithInclude[]
   date: string
 }) {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    setIsLoading(false)
+  }, [expenseSummaries, expenses, creditCardExpenseSummaries])
+
+  const handleGenerarResumen = () => {
+    setIsLoading(true)
+    generateExpenseSummaryForMonth(date)
+  }
 
   const undoExpensePayment = async (item: ExpensePaymentSummary) => {
     setIsLoading(true)
@@ -256,12 +266,18 @@ export default function ExpensesSummary({
               <ExclamationCircleIcon className="w-8 h-8 text-orange-500" />
               <span>No se generó el resumen para {formatLocaleDate(date)}</span>
             </div>
-            <button
-              className="bg-orange-500 text-white hover:bg-gray-600 px-2 py-1 rounded-md text-base mt-4"
-              onClick={() => generateExpenseSummaryForMonth(date)}
-            >
-              Generar resumen
-            </button>
+            {isLoading ? (
+              <div className="">
+                <ButtonLoadingSpinner />
+              </div>
+            ) : (
+              <button
+                className="bg-orange-500 text-white hover:bg-gray-600 px-2 py-1 rounded-md text-base mt-4"
+                onClick={handleGenerarResumen}
+              >
+                Generar Resumen
+              </button>
+            )}
           </div>
         )}
       </div>

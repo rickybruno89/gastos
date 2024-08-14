@@ -1,15 +1,20 @@
-import {
-  fetchCreditCardSummariesForMonth,
-  fetchExpenseSummariesForMonth,
-} from '@/services/summary'
-import ExpensesSummary from './expenses-summary'
-import { fetchExpenses } from '@/services/expense'
+import ExpensesSummary, {
+  CreditCardExpensesWithInclude,
+  ExpensesPaymentSummaryWithInclude,
+  ExpensesWithInclude,
+} from './expenses-summary'
 
-export default async function DashboardTemplate({ date }: { date: string }) {
-  const expenseSummaries = await fetchExpenseSummariesForMonth(date)
-  const creditCardExpenseSummaries = await fetchCreditCardSummariesForMonth(date)
-  const expenses = await fetchExpenses()
-
+export default async function DashboardTemplate({
+  expenseSummaries,
+  expenses,
+  creditCardExpenseSummaries,
+  date,
+}: {
+  expenseSummaries: ExpensesPaymentSummaryWithInclude[]
+  expenses: ExpensesWithInclude[]
+  creditCardExpenseSummaries: CreditCardExpensesWithInclude[]
+  date: string
+}) {
   return (
     <div>
       <ExpensesSummary

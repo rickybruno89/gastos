@@ -16,16 +16,6 @@ export const metadata: Metadata = {
   title: 'Tarjeta de Crédito',
 }
 
-const GenerateSummaryButton = ({ creditCardId }: { creditCardId: string }) => (
-  <Link
-    href={PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE(creditCardId)}
-    className="p-4 md:p-6 flex flex-col whitespace-nowrap w-40 h-32  rounded-md border border-dashed border-blue-400 items-center justify-center gap-1 text-blue-400 cursor-pointer"
-  >
-    <PlusIcon className="w-12" />
-    Generar resumen
-  </Link>
-)
-
 export default async function Page({ params }: { params: { id: string } }) {
   const { id } = params
   const creditCard = await fetchCreditCardById(id)
@@ -67,7 +57,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             {creditCard!.paymentSummaries.map((summary, index) => (
               <div
                 key={summary.id}
-                className="cursor-pointer shadow-lg px-4 py-2 shrink-0 flex flex-col w-52 justify-around rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight"
+                className="cursor-pointer shadow-lg px-4 py-2 shrink-0 flex flex-col w-60 justify-around rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight"
               >
                 <span className="font-semibold uppercase">{formatLocaleDate(summary.date)}</span>
                 <span className="text-gray-100">Venc. {formatLocaleDueDate(summary.dueDate)}</span>
