@@ -215,7 +215,7 @@ export default function ExpensesSummary({
                   </div>
                 </PopoverButton>
                 <PopoverPanel
-                  anchor="bottom end"
+                  anchor="top end"
                   transition
                   className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px] transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
                 >
@@ -290,7 +290,7 @@ export default function ExpensesSummary({
                   </div>
                 </PopoverButton>
                 <PopoverPanel
-                  anchor="bottom end"
+                  anchor="top end"
                   transition
                   className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px] transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
                 >

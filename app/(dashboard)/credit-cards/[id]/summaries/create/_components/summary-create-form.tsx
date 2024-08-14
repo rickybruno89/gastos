@@ -202,7 +202,7 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
                       decimalScale={2}
                       decimalSeparator=","
                     />
-                    <button onClick={() => handleOpenDialog(item.id)}>Desc.</button>
+                    <button className='text-orange-500' onClick={() => handleOpenDialog(item.id)}>Desc.</button>
                     <Checkbox
                       className="h-8 w-8 rounded-md"
                       id={`creditCardExpenseItems[${item.id}]`}

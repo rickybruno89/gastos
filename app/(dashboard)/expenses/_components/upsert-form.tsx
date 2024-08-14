@@ -80,8 +80,10 @@ export default function UpsertExpenseForm({
                 </div>
               ))}
               <Link href={PAGES_URL.SETTINGS.BASE_PATH}>
-                <PlusIcon className="w-4" />
-                Crear persona
+              <div className='flex justify-center items-center gap-2 text-orange-500'>
+                  <PlusIcon className="w-4" />
+                  Crear persona
+                </div>
               </Link>
               {state.errors?.sharedWith ? (
                 <div id="sharedWith-error" aria-live="polite" className="mt-2 text-sm text-red-500">
@@ -204,7 +206,7 @@ export default function UpsertExpenseForm({
           >
             Cancelar
           </Link>
-          <button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700">
+          <button type="submit" className="bg-orange-500 px-4 py-2 text-white font-semibold hover:bg-gray-700 rounded-md">
             Guardar
           </button>
         </div>

@@ -59,8 +59,8 @@ export default function PersonToShareForm() {
               ) : null}
             </div>
             <div className="flex justify-end gap-4">
-              <button onClick={handleCancel}>Cancelar</button>
-              <button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700">
+              <button className="px-4 py-2 font-semibold hover:bg-gray-700 rounded-md" onClick={handleCancel}>Cancelar</button>
+              <button type="submit" className="bg-orange-500 px-4 py-2 text-white font-semibold hover:bg-gray-700 rounded-md">
                 Guardar
               </button>
             </div>

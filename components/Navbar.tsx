@@ -59,7 +59,7 @@ export default function Navbar({ session }: { session: Session | null }) {
             {/* Mobile menu button*/}
             <DisclosureButton
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-              className=" group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              className=" group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus-visible:outline-none focus:outline-none"
             >
               <span className="absolute -inset-0.5" />
               <span className="sr-only">Abrir menu</span>
