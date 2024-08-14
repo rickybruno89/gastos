@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { getTodayYear } from '@/lib/utils'
+import { getToday, getTodayYear } from '@/lib/utils'
 import Slider, { Settings } from 'react-slick'
 import 'slick-carousel/slick/slick.css'
 import 'slick-carousel/slick/slick-theme.css'
@@ -112,16 +112,22 @@ export default function MonthSelector({ date }: { date: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleChangeDate = (newDatePicker: DatePicker) => {
-    router.push(`${pathname}?date=${newDatePicker.year}-${newDatePicker.month}`)
+  const handleMonthPick = (monthNumber: string) => {
+    setPickedMonth(monthNumber)
+    goToDate(pickedYear, monthNumber)
   }
 
-  const handleMonthPick = (monthNumber: string) => {
-    const newDatePicker = { month: monthNumber, year: pickedYear }
-    setPickedMonth(monthNumber)
+  const goToday = () => {
+    const [year, month] = getToday().split('-')
+    setPickedYear(year)
+    setPickedMonth(month)
+    goToDate(year, month)
+  }
+
+  const goToDate = (year: string, month: string) => {
     toggleCalendar()
     setTimeout(() => {
-      handleChangeDate(newDatePicker)
+      router.push(`${pathname}?date=${year}-${month}`)
     }, 300)
   }
 
@@ -177,7 +183,7 @@ export default function MonthSelector({ date }: { date: string }) {
     <div className="w-full flex justify-center">
       <div
         className={clsx(
-          'relative transition-all duration-300 ease-in-out w-80 h-36 bg-orange-500 rounded-xl pt-8 px-0.5 pb-0.5',
+          'relative transition-all duration-300 ease-in-out w-80 h-44 bg-orange-500 rounded-xl pt-8 px-0.5 pb-0.5',
           !isCalendarOpen && '!w-44 !h-28'
         )}
       >
@@ -210,10 +216,17 @@ export default function MonthSelector({ date }: { date: string }) {
             </button>
           )}
         </div>
-        {!isCalendarOpen && (
+        {!isCalendarOpen ? (
           <Edit className="absolute text-white w-5 cursor-pointer top-1 right-3" onClick={toggleCalendar} />
+        ) : (
+          <button
+            className="absolute font-semibold text-white cursor-pointer bottom-1 left-1/2 -translate-x-1/2"
+            onClick={goToday}
+          >
+            Ir a hoy
+          </button>
         )}
-        <div className="bg-white rounded-xl  w-full h-full p-2">
+        <div className="bg-white rounded-xl w-full h-full max-h-28 p-2">
           <div className={clsx('relative flex flex-wrap w-full h-full justify-center items-center gap-2 ')}>
             {MONTH_LIST.map((month, index) => (
               <div
