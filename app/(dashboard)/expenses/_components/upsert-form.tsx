@@ -11,6 +11,10 @@ import { useSearchParams } from 'next/navigation'
 import { PAYMENT_CHANNELS } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import ButtonLoadingSpinner from '@/components/ui/button-loading-spinner'
+import { useRouter } from 'next/navigation'
+import Lottie from 'react-lottie'
+import * as checkAnimation from '../../../../public/animations/check.json'
+import * as loadingAnimation from '../../../../public/animations/loading.json'
 
 type ExpenseItemWithInclude = Prisma.ExpenseGetPayload<{
   include: {
@@ -27,7 +31,8 @@ export default function UpsertExpenseForm({
 }) {
   const [isLoading, setIsLoading] = useState(false)
   const callbackUrl = useSearchParams().get('callbackUrl') || PAGES_URL.EXPENSES.BASE_PATH
-  const initialState = { message: null, errors: {} }
+  const initialState = { message: null, errors: {}, success: false }
+  const router = useRouter()
 
   const upsertExpenseItemWithId = expenseItem ? updateExpense.bind(null, expenseItem.id, callbackUrl) : createExpense
 
@@ -38,14 +43,60 @@ export default function UpsertExpenseForm({
   }, [])
 
   useEffect(() => {
-    setIsLoading(false)
+    setTimeout(() => {
+      if (state.success) {
+        setIsLoading(false)
+        setTimeout(() => {
+          router.replace(callbackUrl)
+        }, 3000)
+      }
+    }, 3000)
   }, [state])
 
-  const handleSave = (formData: FormData) => {
+  const handleSave = async (formData: FormData) => {
     setIsLoading(true)
-    setTimeout(() => {
-      dispatch(formData)
-    }, 1000)
+    dispatch(formData)
+  }
+
+  if (state.success && !isLoading) {
+    return (
+      <div className="cursor-default flex flex-col justify-center gap-10 items-center h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <Lottie
+          options={{
+            loop: false,
+            autoplay: true,
+            animationData: checkAnimation,
+          }}
+          height={'auto'}
+          width={'50%'}
+          isStopped={false}
+          isPaused={false}
+          speed={0.7}
+          isClickToPauseDisabled={true}
+        />
+        <h1 className="font-bold text-2xl text-orange-400">Gasto creado</h1>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="cursor-default flex flex-col justify-center gap-10 items-center h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <Lottie
+          options={{
+            loop: true,
+            autoplay: true,
+            animationData: loadingAnimation,
+          }}
+          height={'auto'}
+          width={'50%'}
+          isStopped={false}
+          isPaused={false}
+          isClickToPauseDisabled={true}
+        />
+        <span className="font-bold text-2xl text-purple-500 animate-pulse">Cargando...</span>
+      </div>
+    )
   }
 
   return (

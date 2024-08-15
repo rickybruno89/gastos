@@ -18,7 +18,8 @@ type CreateExpenseState = {
     sharedWith?: string[]
     paymentChannel?: string[]
   }
-  message?: string | null
+  message?: string | null,
+  success?: boolean
 }
 
 const ExpenseSchema = z.object({
@@ -50,6 +51,7 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
       return {
         errors: validatedFields.error.flatten().fieldErrors,
         message: 'Error',
+        success: false,
       }
     }
 
@@ -70,13 +72,17 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
         userId,
       },
     })
+    revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
+    return {
+      success: true,
+      message: 'Gasto creado exitosamente',
+    }
   } catch (error) {
     return {
       message: 'Error en base de datos',
+      success: false,
     }
   }
-  revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
-  redirect(PAGES_URL.EXPENSES.BASE_PATH)
 }
 
 export const updateExpense = async (
