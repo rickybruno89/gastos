@@ -18,7 +18,7 @@ type CreateExpenseState = {
     sharedWith?: string[]
     paymentChannel?: string[]
   }
-  message?: string | null,
+  message?: string | null
   success?: boolean
 }
 
@@ -75,7 +75,7 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
     revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
     return {
       success: true,
-      message: 'Gasto creado exitosamente',
+      message: 'Gasto creado',
     }
   } catch (error) {
     return {
@@ -105,6 +105,7 @@ export const updateExpense = async (
       return {
         errors: validatedFields.error.flatten().fieldErrors,
         message: 'Error',
+        sucess: false,
       }
     }
 
@@ -148,14 +149,18 @@ export const updateExpense = async (
         },
       })
     }
+    revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
+    revalidatePath(callbackUrl)
+    return {
+      message: 'Gasto actualizado',
+      success: true,
+    }
   } catch (error) {
     return {
       message: 'Error en base de datos',
+      success: false,
     }
   }
-  revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
-  revalidatePath(callbackUrl)
-  redirect(callbackUrl)
 }
 
 export async function fetchExpenseItem(id: string) {

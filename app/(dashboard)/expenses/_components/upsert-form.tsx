@@ -48,9 +48,9 @@ export default function UpsertExpenseForm({
         setIsLoading(false)
         setTimeout(() => {
           router.replace(callbackUrl)
-        }, 3000)
+        }, 2500)
       }
-    }, 3000)
+    }, 2500)
   }, [state])
 
   const handleSave = async (formData: FormData) => {
@@ -74,7 +74,7 @@ export default function UpsertExpenseForm({
           speed={0.7}
           isClickToPauseDisabled={true}
         />
-        <h1 className="font-bold text-2xl text-orange-400">Gasto creado</h1>
+        <h1 className="font-bold text-2xl text-orange-400">{state.message}</h1>
       </div>
     )
   }
