@@ -30,7 +30,6 @@ export default function UpsertExpenseForm({
   personsToShare: Person[]
 }) {
   const [isLoading, setIsLoading] = useState(false)
-  const [loadingButton, setLoadingButton] = useState(false)
   const callbackUrl = useSearchParams().get('callbackUrl') || PAGES_URL.EXPENSES.BASE_PATH
   const initialState = { message: null, errors: {}, success: false }
   const router = useRouter()
@@ -44,67 +43,61 @@ export default function UpsertExpenseForm({
   }, [])
 
   useEffect(() => {
-    setLoadingButton(false)
     if (state.success) {
-      setIsLoading(true)
       setTimeout(() => {
         setIsLoading(false)
         setTimeout(() => {
           router.replace(callbackUrl)
         }, 2500)
       }, 2500)
+    } else {
+      setIsLoading(false)
     }
   }, [state])
 
-  const handleSave = async (formData: FormData) => {
-    setLoadingButton(true)
+  const handleSave = (formData: FormData) => {
+    setIsLoading(true)
     dispatch(formData)
-  }
-
-  if (state.success && !isLoading) {
-    return (
-      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
-        <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-          <Lottie
-            options={{
-              loop: false,
-              autoplay: true,
-              animationData: checkAnimation,
-            }}
-            isStopped={false}
-            isPaused={false}
-            speed={0.7}
-            isClickToPauseDisabled={true}
-          />
-          <h1 className="font-bold text-2xl text-orange-400 text-center">{state.message}</h1>
-        </div>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
-        <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-          <Lottie
-            options={{
-              loop: true,
-              autoplay: true,
-              animationData: loadingAnimation,
-            }}
-            isStopped={false}
-            isPaused={false}
-            isClickToPauseDisabled={true}
-          />
-          <span className="font-bold text-2xl text-purple-500 animate-pulse">Cargando...</span>
-        </div>
-      </div>
-    )
   }
 
   return (
     <form action={handleSave}>
-      <div className="flex flex-col gap-4">
+      {state.success && !isLoading ? (
+        <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+          <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+            <Lottie
+              options={{
+                loop: false,
+                autoplay: true,
+                animationData: checkAnimation,
+              }}
+              isStopped={false}
+              isPaused={false}
+              speed={0.7}
+              isClickToPauseDisabled={true}
+            />
+            <h1 className="font-bold text-2xl text-orange-400 text-center">{state.message}</h1>
+          </div>
+        </div>
+      ) : null}
+      {isLoading ? (
+        <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+          <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+            <Lottie
+              options={{
+                loop: true,
+                autoplay: true,
+                animationData: loadingAnimation,
+              }}
+              isStopped={false}
+              isPaused={false}
+              isClickToPauseDisabled={true}
+            />
+            <span className="font-bold text-2xl text-purple-500 animate-pulse">Guardando...</span>
+          </div>
+        </div>
+      ) : null}
+      <div className={`flex-col gap-4 ${!state.success && !isLoading ? 'flex' : 'hidden'}`}>
         <div>
           <label className="mb-2 block text-sm font-medium" htmlFor="description">
             Descripcion
@@ -282,7 +275,7 @@ export default function UpsertExpenseForm({
             type="submit"
             className="bg-orange-500 px-4 py-2 text-white font-semibold hover:bg-gray-700 rounded-md"
           >
-            {loadingButton ? <ButtonLoadingSpinner /> : 'Guardar'}
+            Guardar
           </button>
         </div>
       </div>
