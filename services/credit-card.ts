@@ -30,6 +30,7 @@ type CreateCreditCardExpenseItemState = {
     creditCardId?: string[]
   }
   message?: string | null
+  success?: boolean
 }
 
 const CreditCardExpenseItemSchema = z.object({
@@ -184,6 +185,7 @@ export const createCreditCardExpenseItem = async (
       return {
         errors: validatedFields.error.flatten().fieldErrors,
         message: 'Error',
+        success: false,
       }
     }
 
@@ -211,6 +213,7 @@ export const createCreditCardExpenseItem = async (
       return {
         errors: { description: ['La tarjeta no existe'] },
         message: 'Error',
+        success: false,
       }
     }
 
@@ -233,13 +236,17 @@ export const createCreditCardExpenseItem = async (
         userId,
       },
     })
+    revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
+    return {
+      message: 'Gasto creado',
+      success: true,
+    }
   } catch (error) {
     return {
       message: 'Error en base de datos',
+      success: false,
     }
   }
-  revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
-  redirect(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
 }
 
 export const updateCreditCardExpenseItem = async (
@@ -257,6 +264,7 @@ export const updateCreditCardExpenseItem = async (
     return {
       errors: { description: ['El Item no existe'] },
       message: 'Error',
+      success: false,
     }
   }
   try {
@@ -275,6 +283,7 @@ export const updateCreditCardExpenseItem = async (
       return {
         errors: validatedFields.error.flatten().fieldErrors,
         message: 'Error',
+        success: false,
       }
     }
 
@@ -310,13 +319,17 @@ export const updateCreditCardExpenseItem = async (
         id,
       },
     })
+    revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(existingCreditCardExpenseItem.creditCardId))
+    return {
+      message: 'Gasto actualizado',
+      success: true,
+    }
   } catch (error) {
     return {
       message: 'Error en base de datos',
+      success: false,
     }
   }
-  revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(existingCreditCardExpenseItem.creditCardId))
-  redirect(PAGES_URL.CREDIT_CARDS.DETAILS(existingCreditCardExpenseItem.creditCardId))
 }
 
 export async function fetchCreditCards() {

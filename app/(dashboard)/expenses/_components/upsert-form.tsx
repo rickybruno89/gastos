@@ -43,18 +43,18 @@ export default function UpsertExpenseForm({
   }, [])
 
   useEffect(() => {
-    setTimeout(() => {
-      if (state.success) {
+    if (state.success) {
+      setIsLoading(true)
+      setTimeout(() => {
         setIsLoading(false)
         setTimeout(() => {
           router.replace(callbackUrl)
         }, 2500)
-      }
-    }, 2500)
+      }, 2500)
+    }
   }, [state])
 
   const handleSave = async (formData: FormData) => {
-    setIsLoading(true)
     dispatch(formData)
   }
 

@@ -11,6 +11,10 @@ import { formatCurrency, getNextMonthDate, removeCurrencyMaskFromInput } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { NumericFormat } from 'react-number-format'
 import ButtonLoadingSpinner from '@/components/ui/button-loading-spinner'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Lottie from 'react-lottie'
+import * as checkAnimation from '../../../../../../public/animations/check.json'
+import * as loadingAnimation from '../../../../../../public/animations/loading.json'
 
 type CreditCardExpenseItemWithSharedPerson = Prisma.CreditCardExpenseItemGetPayload<{
   include: {
@@ -26,7 +30,10 @@ export default function UpsertCreditCardExpenseItemForm({
   creditCardExpenseItem?: CreditCardExpenseItemWithSharedPerson
   personsToShare: Person[]
 }) {
-  const initialState = { message: null, errors: {} }
+  const initialState = { message: null, errors: {}, success: false }
+
+  const callbackUrl = useSearchParams().get('callbackUrl') || PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId)
+
   const upsertCreditCardExpenseItemWithId = creditCardExpenseItem
     ? updateCreditCardExpenseItem.bind(null, creditCardExpenseItem.id)
     : createCreditCardExpenseItem.bind(null, creditCardId)
@@ -36,22 +43,27 @@ export default function UpsertCreditCardExpenseItemForm({
   const [isRecurrent, setIsRecurrent] = useState<boolean>(creditCardExpenseItem?.recurrent || false)
   const [totalAmount, setTotalAmount] = useState(creditCardExpenseItem?.amount || 0)
   const [installmentsQuantity, setInstallmentsQuantity] = useState(creditCardExpenseItem?.installmentsQuantity || 1)
-
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     setIsLoading(false)
   }, [])
 
   useEffect(() => {
-    setIsLoading(false)
+    if (state.success) {
+      setIsLoading(true)
+      setTimeout(() => {
+        setIsLoading(false)
+        setTimeout(() => {
+          router.replace(callbackUrl)
+        }, 2500)
+      }, 2500)
+    }
   }, [state])
 
   const handleSave = (formData: FormData) => {
-    setIsLoading(true)
-    setTimeout(() => {
-      dispatch(formData)
-    }, 1000)
+    dispatch(formData)
   }
 
   useEffect(() => {
@@ -62,6 +74,47 @@ export default function UpsertCreditCardExpenseItemForm({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecurrent])
+
+  if (state.success && !isLoading) {
+    return (
+      <div className="cursor-default flex flex-col justify-center gap-10 items-center h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <Lottie
+          options={{
+            loop: false,
+            autoplay: true,
+            animationData: checkAnimation,
+          }}
+          height={'auto'}
+          width={'50%'}
+          isStopped={false}
+          isPaused={false}
+          speed={0.7}
+          isClickToPauseDisabled={true}
+        />
+        <h1 className="font-bold text-2xl text-orange-400">{state.message}</h1>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="cursor-default flex flex-col justify-center gap-10 items-center h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <Lottie
+          options={{
+            loop: true,
+            autoplay: true,
+            animationData: loadingAnimation,
+          }}
+          height={'auto'}
+          width={'50%'}
+          isStopped={false}
+          isPaused={false}
+          isClickToPauseDisabled={true}
+        />
+        <span className="font-bold text-2xl text-purple-500 animate-pulse">Cargando...</span>
+      </div>
+    )
+  }
 
   return (
     <form action={handleSave}>
