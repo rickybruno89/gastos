@@ -77,41 +77,41 @@ export default function UpsertCreditCardExpenseItemForm({
 
   if (state.success && !isLoading) {
     return (
-      <div className="cursor-default flex flex-col justify-center gap-10 items-center h-screen fixed top-0 z-50 bg-white left-0 w-full">
-        <Lottie
-          options={{
-            loop: false,
-            autoplay: true,
-            animationData: checkAnimation,
-          }}
-          height={'auto'}
-          width={'50%'}
-          isStopped={false}
-          isPaused={false}
-          speed={0.7}
-          isClickToPauseDisabled={true}
-        />
-        <h1 className="font-bold text-2xl text-orange-400">{state.message}</h1>
+      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <div className="max-w-[150px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+          <Lottie
+            options={{
+              loop: false,
+              autoplay: true,
+              animationData: checkAnimation,
+            }}
+            isStopped={false}
+            isPaused={false}
+            speed={0.7}
+            isClickToPauseDisabled={true}
+          />
+          <h1 className="font-bold text-2xl text-orange-400">{state.message}</h1>
+        </div>
       </div>
     )
   }
 
   if (isLoading) {
     return (
-      <div className="cursor-default flex flex-col justify-center gap-10 items-center h-screen fixed top-0 z-50 bg-white left-0 w-full">
-        <Lottie
-          options={{
-            loop: true,
-            autoplay: true,
-            animationData: loadingAnimation,
-          }}
-          height={'auto'}
-          width={'50%'}
-          isStopped={false}
-          isPaused={false}
-          isClickToPauseDisabled={true}
-        />
-        <span className="font-bold text-2xl text-purple-500 animate-pulse">Cargando...</span>
+      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <div className="max-w-[150px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+          <Lottie
+            options={{
+              loop: true,
+              autoplay: true,
+              animationData: loadingAnimation,
+            }}
+            isStopped={false}
+            isPaused={false}
+            isClickToPauseDisabled={true}
+          />
+          <span className="font-bold text-2xl text-purple-500 animate-pulse">Cargando...</span>
+        </div>
       </div>
     )
   }

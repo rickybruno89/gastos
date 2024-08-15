@@ -230,6 +230,7 @@ export const deleteExpenseItem = async (id: string) => {
     return {
       errors: { description: ['El Item no existe'] },
       message: 'Error',
+      success: false,
     }
   }
   try {
@@ -242,11 +243,15 @@ export const deleteExpenseItem = async (id: string) => {
         id,
       },
     })
+    revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
+    return {
+      message: 'Gasto eliminado',
+      success: true,
+    }
   } catch (error) {
     return {
       message: 'Error en base de datos',
+      success: false,
     }
   }
-  revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
-  redirect(PAGES_URL.EXPENSES.BASE_PATH)
 }

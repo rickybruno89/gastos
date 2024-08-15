@@ -1,5 +1,5 @@
 'use client'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import ButtonDelete from '@/components/ui/button-delete'
 import { formatCurrency, getPaymentChannelSafeText } from '@/lib/utils'
 import { deleteExpenseItem } from '@/services/expense'
@@ -11,6 +11,10 @@ import { PAGES_URL } from '@/lib/routes'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { debounce } from 'lodash'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
+import { useRouter } from 'next/navigation'
+import Lottie from 'react-lottie'
+import * as checkAnimation from '../../../../public/animations/check.json'
+import * as loadingAnimation from '../../../../public/animations/loading.json'
 
 type DataWithInclude = Prisma.ExpenseGetPayload<{
   include: {
@@ -20,6 +24,13 @@ type DataWithInclude = Prisma.ExpenseGetPayload<{
 
 export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[] }) {
   const [filteredExpenses, setFilteredExpenses] = useState(expenses)
+  const [isLoading, setIsLoading] = useState(false)
+  const [state, setState] = useState({ success: false, message: '' })
+  const router = useRouter()
+
+  useEffect(() => {
+    setFilteredExpenses(expenses)
+  }, [expenses])
 
   const handleSearchDebouncedRef = useRef(
     debounce((searchValue) => {
@@ -30,6 +41,62 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target
     handleSearchDebouncedRef(value)
+  }
+
+  const handleDelete = async (id: string) => {
+    setIsLoading(true)
+    const response = await deleteExpenseItem(id)
+    if (response.success) {
+      setState({ success: true, message: response.message })
+      setTimeout(() => {
+        setIsLoading(false)
+        setTimeout(() => {
+          setState({ success: false, message: '' })
+          router.replace(PAGES_URL.EXPENSES.BASE_PATH)
+        }, 2500)
+      }, 2500)
+    }
+  }
+
+  if (state.success && !isLoading) {
+    return (
+      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <div className="max-w-[150px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+          <Lottie
+            options={{
+              loop: false,
+              autoplay: true,
+              animationData: checkAnimation,
+            }}
+            isStopped={false}
+            isPaused={false}
+            speed={0.7}
+            isClickToPauseDisabled={true}
+          />
+          <h1 className="font-bold text-2xl text-orange-400">{state.message}</h1>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <div className="max-w-[150px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+          <Lottie
+            options={{
+              loop: true,
+              autoplay: true,
+              animationData: loadingAnimation,
+            }}
+            isStopped={false}
+            isPaused={false}
+            isClickToPauseDisabled={true}
+          />
+          <span className="font-bold text-2xl text-purple-500 animate-pulse">Cargando...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -67,7 +134,10 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
                 </div>
                 <div className="flex-1 flex justify-between items-end text-sm text-gray-400">
                   <span>{item.sharedWith.map((person) => person.name).join(' - ')}</span>
-                  <span className="leading-tight block lowercase first-letter:uppercase"> {getPaymentChannelSafeText(item.paymentChannel)}</span>
+                  <span className="leading-tight block lowercase first-letter:uppercase">
+                    {' '}
+                    {getPaymentChannelSafeText(item.paymentChannel)}
+                  </span>
                 </div>
                 <div className="flex-1 flex justify-between items-end text-sm mt-2">
                   <Popover className="relative">
@@ -91,7 +161,9 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
                     </PopoverPanel>
                   </Popover>
                   <Popover className="relative">
-                    <PopoverButton className="text-orange-500 focus-visible:outline-none focus:outline-none">Acciones</PopoverButton>
+                    <PopoverButton className="text-orange-500 focus-visible:outline-none focus:outline-none">
+                      Acciones
+                    </PopoverButton>
                     <PopoverPanel
                       anchor="top end"
                       className="flex flex-col bg-white p-4 shadow-2xl rounded-md w-fit h-fit !max-w-[250px] transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
@@ -103,7 +175,7 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
                       >
                         Editar
                       </Link>
-                      <ButtonDelete action={deleteExpenseItem} id={item.id}></ButtonDelete>
+                      <ButtonDelete action={handleDelete} id={item.id}></ButtonDelete>
                     </PopoverPanel>
                   </Popover>
                 </div>
