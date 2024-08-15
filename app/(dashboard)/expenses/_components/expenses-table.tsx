@@ -61,7 +61,7 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
   if (state.success && !isLoading) {
     return (
       <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
-        <div className="max-w-[150px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+          <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
           <Lottie
             options={{
               loop: false,
@@ -73,7 +73,7 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
             speed={0.7}
             isClickToPauseDisabled={true}
           />
-          <h1 className="font-bold text-2xl text-orange-400">{state.message}</h1>
+          <h1 className="font-bold text-2xl text-orange-400 text-center">{state.message}</h1>
         </div>
       </div>
     )
@@ -82,7 +82,7 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
-        <div className="max-w-[150px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+          <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
           <Lottie
             options={{
               loop: true,
