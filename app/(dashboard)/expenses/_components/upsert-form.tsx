@@ -30,6 +30,7 @@ export default function UpsertExpenseForm({
   personsToShare: Person[]
 }) {
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingButton, setLoadingButton] = useState(false)
   const callbackUrl = useSearchParams().get('callbackUrl') || PAGES_URL.EXPENSES.BASE_PATH
   const initialState = { message: null, errors: {}, success: false }
   const router = useRouter()
@@ -43,6 +44,7 @@ export default function UpsertExpenseForm({
   }, [])
 
   useEffect(() => {
+    setLoadingButton(false)
     if (state.success) {
       setIsLoading(true)
       setTimeout(() => {
@@ -55,6 +57,7 @@ export default function UpsertExpenseForm({
   }, [state])
 
   const handleSave = async (formData: FormData) => {
+    setLoadingButton(true)
     dispatch(formData)
   }
 
@@ -279,7 +282,7 @@ export default function UpsertExpenseForm({
             type="submit"
             className="bg-orange-500 px-4 py-2 text-white font-semibold hover:bg-gray-700 rounded-md"
           >
-            {isLoading ? <ButtonLoadingSpinner /> : 'Guardar'}
+            {loadingButton ? <ButtonLoadingSpinner /> : 'Guardar'}
           </button>
         </div>
       </div>
