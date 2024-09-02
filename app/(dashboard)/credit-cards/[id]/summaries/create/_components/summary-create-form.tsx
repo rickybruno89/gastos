@@ -127,7 +127,8 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
     setIsDialogOpen(false)
   }
 
-  const handleOpenDialog = (item: CreditCardExpenseItemWithChecked) => {
+  const handleOpenDialog = (e: any, item: CreditCardExpenseItemWithChecked) => {
+    e.preventDefault()
     setItemIdToApplyDiscount(item.id)
     setIsDialogOpen(true)
     setItemDiscount(item.discount)
@@ -141,7 +142,6 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
 
   const handleSubmit = (formData: FormData) => {
     setIsLoading(true)
-    console.log('here')
 
     const selectedItemsToSend = selectedItems
       .filter((item) => item.checked)
@@ -158,189 +158,191 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
   }
 
   return (
-    <form action={handleSubmit}>
-      {state.success && !isLoading ? (
-        <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
-          <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-            <Lottie
-              options={{
-                loop: false,
-                autoplay: true,
-                animationData: checkAnimation,
-              }}
-              isStopped={false}
-              isPaused={false}
-              speed={0.7}
-              isClickToPauseDisabled={true}
-            />
-            <h1 className="font-bold text-2xl text-orange-400 text-center">{state.message}</h1>
+    <>
+      <form action={handleSubmit}>
+        {state.success && !isLoading ? (
+          <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+            <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+              <Lottie
+                options={{
+                  loop: false,
+                  autoplay: true,
+                  animationData: checkAnimation,
+                }}
+                isStopped={false}
+                isPaused={false}
+                speed={0.7}
+                isClickToPauseDisabled={true}
+              />
+              <h1 className="font-bold text-2xl text-orange-400 text-center">{state.message}</h1>
+            </div>
           </div>
-        </div>
-      ) : null}
-      {isLoading ? (
-        <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
-          <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-            <Lottie
-              options={{
-                loop: true,
-                autoplay: true,
-                animationData: loadingAnimation,
-              }}
-              isStopped={false}
-              isPaused={false}
-              isClickToPauseDisabled={true}
-            />
-            <span className="font-bold text-2xl text-purple-500 animate-pulse">Guardando...</span>
+        ) : null}
+        {isLoading ? (
+          <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+            <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+              <Lottie
+                options={{
+                  loop: true,
+                  autoplay: true,
+                  animationData: loadingAnimation,
+                }}
+                isStopped={false}
+                isPaused={false}
+                isClickToPauseDisabled={true}
+              />
+              <span className="font-bold text-2xl text-purple-500 animate-pulse">Guardando...</span>
+            </div>
           </div>
-        </div>
-      ) : null}
-      <div className={`flex-col gap-4 ${!state.success && !isLoading ? 'flex' : 'hidden'}`}>
-        <div>
-          <label className="mb-2 block text-sm font-medium" htmlFor="date">
-            Seleccione el mes para el resumen
-          </label>
+        ) : null}
+        <div className={`flex-col gap-4 ${!state.success && !isLoading ? 'flex' : 'hidden'}`}>
           <div>
-            <input
-              id="date"
-              value={datePicker}
-              onChange={(e) => handleChangeDatePicker(e.target.value)}
-              name="date"
-              type="month"
-              className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
-            />
-          </div>
-          {state.errors?.date ? (
-            <div id="date-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-              {state.errors.date.map((error: string) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium" htmlFor="date">
-            Fecha de vencimiento
-          </label>
-          <div>
-            <input
-              id="dueDate"
-              name="dueDate"
-              type="date"
-              className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
-            />
-          </div>
-          {state.errors?.dueDate ? (
-            <div id="dueDate-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-              {state.errors.dueDate.map((error: string) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <p className="mb-2 block text-sm font-medium">Seleccione los items a pagar</p>
-          <div>
-            <div className="flex flex-col gap-4">
-              {selectedItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-4">
-                  <label
-                    htmlFor={`creditCardExpenseItems[${item.id}]`}
-                    className="flex flex-wrap gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 items-center"
-                  >
-                    <div>
-                      <p className="font-bold">{item.description}</p>
-                      {item.recurrent ? (
-                        <p>Pago recurrente</p>
-                      ) : (
-                        <p>
-                          Cuota {item.installmentsPaid + 1} de {item.installmentsQuantity}
-                        </p>
-                      )}
-                      {item.paymentBeginning > datePicker ? (
-                        <div className="text-purple-500">
-                          <p>Comienzo del pago: </p>
-                          <p>{formatLocaleDate(item.paymentBeginning)}</p>
-                        </div>
-                      ) : null}
-                    </div>
-                  </label>
-                  <div className="flex justify-end items-center gap-2">
-                    <NumericFormat
-                      inputMode="decimal"
-                      className="rounded-md w-32 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
-                      value={item.installmentsAmount}
-                      onChange={(e) => handleItemAmountChange(e.target.value, item.id)}
-                      prefix={'$ '}
-                      thousandSeparator="."
-                      decimalScale={2}
-                      decimalSeparator=","
-                    />
-                    <button className="text-orange-500" onClick={() => handleOpenDialog(item)}>
-                      {item.discount ? `(- ${formatCurrency(item.discount)})` : 'Desc.'}
-                    </button>
-                    <Checkbox
-                      className="h-8 w-8 rounded-md"
-                      id={`creditCardExpenseItems[${item.id}]`}
-                      name="creditCardExpenseItems"
-                      value={item.id}
-                      checked={item.checked}
-                      onCheckedChange={(e) => handleItemChecked(e as boolean, item.id)}
-                    />
-                  </div>
-                </div>
-              ))}
-              {state.errors?.creditCardExpenseItems ? (
-                <div id="creditCardExpenseItems-error" aria-live="polite" className="mt-2 text-sm text-red-500">
-                  {state.errors.creditCardExpenseItems.map((error: string) => (
-                    <p key={error}>{error}</p>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex flex-col gap-1 text-right">
-            <div className="flex gap-1 justify-end items-center">
-              <span className="font-bold">Subtotal: </span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            <div className="flex gap-1 justify-end items-center">
-              <span className="font-bold">Impuestos, sellos, etc: </span>
-              <span>{formatCurrency(taxes)}</span>
-            </div>
-            <div className="flex gap-2 justify-end items-center">
-              <p className="font-bold">Total: </p>
-              <NumericFormat
-                inputMode="decimal"
-                className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
-                name="totalAmount"
-                id="totalAmount"
-                value={total}
-                prefix={'$ '}
-                thousandSeparator="."
-                decimalScale={2}
-                decimalSeparator=","
-                onChange={handleTotalChange}
+            <label className="mb-2 block text-sm font-medium" htmlFor="date">
+              Seleccione el mes para el resumen
+            </label>
+            <div>
+              <input
+                id="date"
+                value={datePicker}
+                onChange={(e) => handleChangeDatePicker(e.target.value)}
+                name="date"
+                type="month"
+                className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
               />
             </div>
+            {state.errors?.date ? (
+              <div id="date-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+                {state.errors.date.map((error: string) => (
+                  <p key={error}>{error}</p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium" htmlFor="date">
+              Fecha de vencimiento
+            </label>
+            <div>
+              <input
+                id="dueDate"
+                name="dueDate"
+                type="date"
+                className="peer block w-full rounded-md border border-gray-200  text-sm outline-2 placeholder:text-gray-500"
+              />
+            </div>
+            {state.errors?.dueDate ? (
+              <div id="dueDate-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+                {state.errors.dueDate.map((error: string) => (
+                  <p key={error}>{error}</p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <p className="mb-2 block text-sm font-medium text-right">Seleccione los items a pagar</p>
+            <div>
+              <div className="flex flex-col gap-4">
+                {selectedItems.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between gap-4">
+                    <label
+                      htmlFor={`creditCardExpenseItems[${item.id}]`}
+                      className="flex flex-wrap gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 items-center"
+                    >
+                      <div>
+                        <p className="font-bold">{item.description}</p>
+                        {item.recurrent ? (
+                          <p>Pago recurrente</p>
+                        ) : (
+                          <p>
+                            Cuota {item.installmentsPaid + 1} de {item.installmentsQuantity}
+                          </p>
+                        )}
+                        {item.paymentBeginning > datePicker ? (
+                          <div className="text-purple-500">
+                            <p>Comienzo del pago: </p>
+                            <p>{formatLocaleDate(item.paymentBeginning)}</p>
+                          </div>
+                        ) : null}
+                      </div>
+                    </label>
+                    <div className="flex justify-end items-center gap-2">
+                      <NumericFormat
+                        inputMode="decimal"
+                        className="rounded-md w-32 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
+                        value={item.installmentsAmount}
+                        onChange={(e) => handleItemAmountChange(e.target.value, item.id)}
+                        prefix={'$ '}
+                        thousandSeparator="."
+                        decimalScale={2}
+                        decimalSeparator=","
+                      />
+                      <button className="text-orange-500" onClick={(e) => handleOpenDialog(e, item)}>
+                        {item.discount ? `(- ${formatCurrency(item.discount)})` : 'Desc.'}
+                      </button>
+                      <Checkbox
+                        className="h-8 w-8 rounded-md"
+                        id={`creditCardExpenseItems[${item.id}]`}
+                        name="creditCardExpenseItems"
+                        value={item.id}
+                        checked={item.checked}
+                        onCheckedChange={(e) => handleItemChecked(e as boolean, item.id)}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {state.errors?.creditCardExpenseItems ? (
+                  <div id="creditCardExpenseItems-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+                    {state.errors.creditCardExpenseItems.map((error: string) => (
+                      <p key={error}>{error}</p>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <div className="flex gap-1 justify-end items-center">
+                <span className="font-bold">Subtotal: </span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
+              <div className="flex gap-1 justify-end items-center">
+                <span className="font-bold">Impuestos, sellos, etc: </span>
+                <span>{formatCurrency(taxes)}</span>
+              </div>
+              <div className="flex gap-2 justify-end items-center">
+                <p className="font-bold">Total: </p>
+                <NumericFormat
+                  inputMode="decimal"
+                  className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
+                  name="totalAmount"
+                  id="totalAmount"
+                  value={total}
+                  prefix={'$ '}
+                  thousandSeparator="."
+                  decimalScale={2}
+                  decimalSeparator=","
+                  onChange={handleTotalChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-4">
+            <Link
+              href={PAGES_URL.CREDIT_CARDS.DETAILS(creditCardWithItems.id)}
+              className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
+            >
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              className="w-fit uppercase text-xs font-medium text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
+            >
+              {isLoading ? <ButtonLoadingSpinner /> : 'Generar resumen'}
+            </button>
           </div>
         </div>
-
-        <div className="mt-6 flex justify-end gap-4">
-          <Link
-            href={PAGES_URL.CREDIT_CARDS.DETAILS(creditCardWithItems.id)}
-            className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            className="w-fit uppercase text-xs font-medium text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
-          >
-            {isLoading ? <ButtonLoadingSpinner /> : 'Generar resumen'}
-          </button>
-        </div>
-      </div>
+      </form>
       <Dialog
         open={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
@@ -387,6 +389,6 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
           </div>
         </div>
       </Dialog>
-    </form>
+    </>
   )
 }

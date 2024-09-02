@@ -100,7 +100,7 @@ export default function CreditCardSummaries({ creditCard }: { creditCard: DataWi
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="px-4 max-w-xl mx-auto">
+      <section className="w-full px-4 max-w-xl mx-auto">
         <div className="flex gap-4">
           <p className="text-lg font-semibold">{creditCardData?.name}</p>{' '}
           <Link href={PAGES_URL.CREDIT_CARDS.EDIT(creditCardData.id)} className="flex gap-2 text-blue-500">
@@ -144,7 +144,7 @@ export default function CreditCardSummaries({ creditCard }: { creditCard: DataWi
           ))}
         </div>
       </section>
-      <section className="max-w-xl mx-auto px-4">
+      <section className="w-full max-w-xl mx-auto px-4">
         <div className="flex flex-col gap-1 w-full rounded-md bg-white">
           <div className="flex justify-between items-center mb-2">
             <p className="text-lg font-semibold">Gastos</p>
