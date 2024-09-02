@@ -8,6 +8,8 @@ import 'slick-carousel/slick/slick-theme.css'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { Edit } from 'lucide-react'
 import clsx from 'clsx'
+import Lottie from 'react-lottie'
+import * as loadingAnimation from '../../../../public/animations/loading.json'
 
 const MONTH_LIST = [
   {
@@ -102,17 +104,20 @@ export default function MonthSelector({ date }: { date: string }) {
   const [startOfCarousel, setStartOfCarousel] = useState(initialSlide === 0)
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const toggleCalendar = () => {
     setIsCalendarOpen((prev) => !prev)
   }
 
   useEffect(() => {
-    router.push(`${pathname}?date=${pickedYear}-${pickedMonth}`)
+    // router.push(`${pathname}?date=${pickedYear}-${pickedMonth}`)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    setIsLoading(false)
+  }, [date])
 
   const handleMonthPick = (monthNumber: string) => {
+    setIsLoading(true)
     setPickedMonth(monthNumber)
     goToDate(pickedYear, monthNumber)
   }
@@ -181,6 +186,23 @@ export default function MonthSelector({ date }: { date: string }) {
 
   return (
     <div className="w-full flex justify-center">
+       {isLoading ? (
+        <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+          <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+            <Lottie
+              options={{
+                loop: true,
+                autoplay: true,
+                animationData: loadingAnimation,
+              }}
+              isStopped={false}
+              isPaused={false}
+              isClickToPauseDisabled={true}
+            />
+            <span className="font-bold text-2xl text-purple-500 animate-pulse">Cargando...</span>
+          </div>
+        </div>
+      ) : null}
       <div
         className={clsx(
           'relative transition-all duration-300 ease-in-out w-80 h-44 bg-orange-500 rounded-xl pt-8 px-0.5 pb-0.5',

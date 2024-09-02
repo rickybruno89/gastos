@@ -162,7 +162,7 @@ export default function CreditCardSummaries({ creditCard }: { creditCard: DataWi
                   <div className="w-full rounded-[10px]  flex flex-col">
                     <div className="w-full rounded-[10px]  flex flex-col">
                       <div className="flex-1 flex justify-between items-end font-medium">
-                        <span className="leading-tight lowercase first-letter:uppercase text-lg">
+                        <span className="leading-tight uppercase text-lg">
                           {item.description}
                         </span>
                         <span className="leading-tight text-xl">
