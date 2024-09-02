@@ -145,6 +145,7 @@ type CreateCreditCardPaymentSummaryState = {
     totalAmount?: string[]
   }
   message?: string | null
+  success?: boolean
 }
 
 const CreditCardPaymentSummarySchema = z.object({
@@ -187,6 +188,7 @@ export const createSummaryForCreditCard = async (
       return {
         errors: validatedFields.error.flatten().fieldErrors,
         message: 'Error',
+        success: false,
       }
     }
 
@@ -207,6 +209,7 @@ export const createSummaryForCreditCard = async (
           date: ['Ya existe un resumen para la fecha'],
         },
         message: 'Error',
+        success: false,
       }
     }
 
@@ -244,14 +247,18 @@ export const createSummaryForCreditCard = async (
     )
 
     await Promise.all(promises)
+    revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
+    revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+    return {
+      message: 'Resumen creado',
+      success: true,
+    }
   } catch (error) {
     return {
       message: 'Error en base de datos',
+      success: false,
     }
   }
-  revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
-  revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
-  redirect(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
 }
 
 export async function fetchCreditCardSummariesForMonth(date: string) {
