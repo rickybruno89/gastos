@@ -383,6 +383,13 @@ export default function ExpensesSummary({
               <ExclamationCircleIcon className="w-8 h-8 text-orange-500" />
               <span>No se encontro ningun sumen para tarjetas de crédito {formatLocaleDate(date)}</span>
             </div>
+            <p className='my-2'>Para generar el resumen de las tarjetas, debe ir a &quot;Tarjetas de Crédito&quot; desde el menu de navegacion o haga clic en el siguiente enlace</p>
+            <Link
+              className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
+              href={PAGES_URL.CREDIT_CARDS.BASE_PATH}
+            >
+              Ir a tarjetas
+            </Link>
           </div>
         )}
       </div>
