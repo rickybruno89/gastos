@@ -20,8 +20,8 @@ export default async function Page({ params }: { params: { id: string } }) {
   const { id } = params
   const creditCard = await fetchCreditCardById(id)
   return (
-    <main className="max-w-xl mx-auto">
-      <div className="px-4">
+    <main className="">
+      <div className="max-w-xl mx-auto px-4">
         <Breadcrumbs
           breadcrumbs={[
             { label: 'Tarjetas de crédito', href: PAGES_URL.CREDIT_CARDS.BASE_PATH },
@@ -35,7 +35,7 @@ export default async function Page({ params }: { params: { id: string } }) {
       </div>
 
       <div className="flex flex-col gap-4">
-        <section className="px-4">
+        <section className="px-4 max-w-xl mx-auto">
           <div className="flex gap-4">
             <p className="text-lg font-semibold">{creditCard?.name}</p>{' '}
             <Link href={PAGES_URL.CREDIT_CARDS.EDIT(creditCard.id)} className="flex gap-2 text-blue-500">
@@ -44,7 +44,7 @@ export default async function Page({ params }: { params: { id: string } }) {
           </div>
         </section>
         <section>
-          <div className="px-4 flex justify-between items-center mb-2">
+          <div className="px-4 flex justify-between items-center mb-2 max-w-xl mx-auto">
             <p className="text-lg font-semibold">Resúmenes</p>
             <Link href={PAGES_URL.CREDIT_CARDS.SUMMARY.CREATE(id)}>
               <div className="hover:bg-gray-600 flex px-2 py-1 rounded-md hover:text-white text-orange-500">
@@ -53,11 +53,11 @@ export default async function Page({ params }: { params: { id: string } }) {
               </div>
             </Link>
           </div>
-          <div className="px-4 max-w-xl md:overflow-x-visible md:flex-wrap md:mx-auto flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
+          <div className="px-4 w-full flex gap-2 justify-start flex-nowrap overflow-x-auto no-scrollbar">
             {creditCard!.paymentSummaries.map((summary, index) => (
               <div
                 key={summary.id}
-                className="cursor-pointer shadow-lg px-4 py-2 shrink-0 flex flex-col w-60 justify-around rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight"
+                className="shadow-lg px-4 py-2 shrink-0 flex flex-col w-60 justify-around rounded-xl bg-gradient-to-r from-gray-500 to-gray-900 text-white leading-tight"
               >
                 <span className="font-semibold uppercase">{formatLocaleDate(summary.date)}</span>
                 <span className="text-gray-100">Venc. {formatLocaleDueDate(summary.dueDate)}</span>
@@ -79,7 +79,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             ))}
           </div>
         </section>
-        <section className="px-4">
+        <section className="max-w-xl mx-auto px-4">
           <div className="flex flex-col gap-1 w-full rounded-md bg-white">
             <div className="flex justify-between items-center mb-2">
               <p className="text-lg font-semibold">Gastos</p>

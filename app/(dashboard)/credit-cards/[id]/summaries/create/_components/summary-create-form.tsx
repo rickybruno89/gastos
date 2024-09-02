@@ -5,7 +5,7 @@ import { useFormState } from 'react-dom'
 import { Checkbox } from '@/components/ui/checkbox'
 import { createSummaryForCreditCard } from '@/services/summary'
 import { CreditCardExpenseItem, Prisma } from '@prisma/client'
-import { formatCurrency, getToday, removeCurrencyMaskFromInput } from '@/lib/utils'
+import { formatCurrency, formatLocaleDate, getToday, removeCurrencyMaskFromInput } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { NumericFormat } from 'react-number-format'
 import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
@@ -22,7 +22,7 @@ type CreditCardWithItems = Prisma.CreditCardGetPayload<{
   }
 }>
 
-type CreditCardExpenseItemWithChecked = CreditCardExpenseItem & { checked: boolean }
+type CreditCardExpenseItemWithChecked = CreditCardExpenseItem & { checked: boolean; discount: number }
 
 export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCardWithItems }) {
   const initialState = { message: null, errors: {} }
@@ -30,7 +30,7 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
 
   const [state, dispatch] = useFormState(createSummaryForCreditCardWithId, initialState)
   const [selectedItems, setSelectedItems] = useState<CreditCardExpenseItemWithChecked[]>(
-    creditCard.creditCardExpenseItems.map((item) => ({ ...item, checked: false }))
+    creditCard.creditCardExpenseItems.map((item) => ({ ...item, checked: false, discount: 0 }))
   )
   const [total, setTotal] = useState(0)
   const [subtotal, setSubtotal] = useState(0)
@@ -38,7 +38,7 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
   const [datePicker, setDatePicker] = useState(getToday())
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [itemIdToApplyDiscount, setItemIdToApplyDiscount] = useState<string | null>()
-  const [discount, setDiscount] = useState(0)
+  const [itemDiscount, setItemDiscount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -90,25 +90,24 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
 
   const handleDiscount = () => {
     const itemToUpdate = selectedItems.find((item) => item.id === itemIdToApplyDiscount)
-    const newPrice = itemToUpdate!.installmentsAmount - discount
     const newItems = selectedItems.map((selectedItem) =>
-      selectedItem.id === itemToUpdate!.id ? { ...selectedItem, installmentsAmount: newPrice } : selectedItem
+      selectedItem.id === itemToUpdate!.id ? { ...selectedItem, discount: itemDiscount } : selectedItem
     )
     setItemIdToApplyDiscount(null)
-    setDiscount(0)
+    setItemDiscount(0)
     setSelectedItems(newItems)
     setIsDialogOpen(false)
   }
 
-  const handleOpenDialog = (itemId: string) => {
-    setItemIdToApplyDiscount(itemId)
+  const handleOpenDialog = (item: CreditCardExpenseItemWithChecked) => {
+    setItemIdToApplyDiscount(item.id)
     setIsDialogOpen(true)
-    setDiscount(0)
+    setItemDiscount(item.discount)
   }
 
   const handleCloseDialog = () => {
     setItemIdToApplyDiscount(null)
-    setDiscount(0)
+    setItemDiscount(0)
     setIsDialogOpen(false)
   }
 
@@ -196,6 +195,12 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
                           Cuota {item.installmentsPaid + 1} de {item.installmentsQuantity}
                         </p>
                       )}
+                      {item.paymentBeginning > datePicker ? (
+                        <div className="text-purple-500">
+                          <p>Comienzo del pago: </p>
+                          <p>{formatLocaleDate(item.paymentBeginning)}</p>
+                        </div>
+                      ) : null}
                     </div>
                   </label>
                   <div className="flex justify-end items-center gap-2">
@@ -209,8 +214,8 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
                       decimalScale={2}
                       decimalSeparator=","
                     />
-                    <button className="text-orange-500" onClick={() => handleOpenDialog(item.id)}>
-                      Desc.
+                    <button className="text-orange-500" onClick={() => handleOpenDialog(item)}>
+                      {item.discount ? `(- ${formatCurrency(item.discount)})` : 'Desc.'}
                     </button>
                     <Checkbox
                       className="h-8 w-8 rounded-md"
@@ -294,12 +299,12 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
                   className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
                   name="discount"
                   id="discount"
-                  value={discount}
+                  value={itemDiscount}
                   prefix={'$ '}
                   thousandSeparator="."
                   decimalScale={2}
                   decimalSeparator=","
-                  onChange={(e) => setDiscount(removeCurrencyMaskFromInput(e.target.value))}
+                  onChange={(e) => setItemDiscount(removeCurrencyMaskFromInput(e.target.value))}
                 />
               </div>
               <div className="flex gap-4 mt-4">
