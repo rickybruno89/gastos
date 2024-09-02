@@ -555,11 +555,16 @@ export const deleteCreditCardPaymentSummary = async (id: string) => {
 
   try {
     await prisma.$transaction(prismaTransactions)
+    revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardPaymentSummary!.date}`)
+    revalidatePath(`${PAGES_URL.CREDIT_CARDS.DETAILS(creditCardPaymentSummary!.creditCardId)}`)
+    return {
+      message: 'Resumen eliminado',
+      success: true,
+    }
   } catch (error) {
-    console.error('Error:', error)
-    throw new Error('Error al cargar Tarjetas de créditos')
+    return {
+      message: 'Error en base de datos',
+      success: false,
+    }
   }
-  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardPaymentSummary!.date}`)
-  revalidatePath(`${PAGES_URL.CREDIT_CARDS.DETAILS(creditCardPaymentSummary!.creditCardId)}`)
-  redirect(`${PAGES_URL.CREDIT_CARDS.DETAILS(creditCardPaymentSummary!.creditCardId)}`)
 }
