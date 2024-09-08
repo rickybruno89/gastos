@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react'
 import './invoice.css'
-import { getToday, getTodayInvoice, removeCurrencyMaskFromInput } from '@/lib/utils'
+import { getTodayInvoice, removeCurrencyMaskFromInput } from '@/lib/utils'
 import { Invoice } from '@prisma/client'
 import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { NumericFormat } from 'react-number-format'
