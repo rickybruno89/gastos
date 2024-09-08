@@ -28,10 +28,8 @@ export default async function Page() {
           },
         ]}
       />
-      <div className="col-7">
-        <h4 className="text-center">PDF Preview</h4>
-        <InvoicePDF data={data} />
-      </div>
+
+      <InvoicePDF data={data} />
     </main>
   )
 }
