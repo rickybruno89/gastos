@@ -71,6 +71,8 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
         const pdfName = `${contractorName}_DEPT_${invoiceNumber}_${date}`
         const sendResponse = await sendPdfEmail(dataUrl, pdfName, subject, data)
         setSendMailResponse(sendResponse)
+        setMepPrice(0)
+        setTotalInvoice(0)
         setIsLoading(false)
       })
       .catch(function (error) {
