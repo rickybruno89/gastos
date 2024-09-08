@@ -2,7 +2,7 @@
 import prisma from '@/lib/prisma'
 import jsPDF from 'jspdf'
 import { unstable_noStore as noStore } from 'next/cache'
-import { mailer } from '@/lib/mailer'
+import nodemailer from 'nodemailer'
 import { SendMailOptions } from 'nodemailer'
 import { Invoice } from '@prisma/client'
 
@@ -39,6 +39,15 @@ export const sendPdfEmail = async (imageData: string, pdfName: string, subject: 
         },
       ],
     }
+
+    const mailer = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: invoiceData.personalEmail,
+        pass: process.env.GMAIL_INVOICE_MAILER,
+      },
+      from: invoiceData.personalEmail,
+    })
 
     await mailer.sendMail(mailOptions)
     return {
