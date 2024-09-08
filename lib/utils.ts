@@ -51,6 +51,17 @@ export const getToday = () => {
 
 export const getTodayYear = () => getToday().split('-')[0]
 
+export const getTodayInvoice = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  let month = now.getMonth() + 1
+  let day = now.getDate()
+  const formattedDay = day < 10 ? `0${day}` : `${day}`
+  const formattedMonth = month < 10 ? `0${month}` : `${month}`
+
+  return `${formattedMonth}/${formattedDay}/${year}`
+}
+
 export const getTodayDueDate = () => {
   const now = new Date()
   const year = now.getFullYear()

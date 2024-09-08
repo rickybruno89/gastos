@@ -31,7 +31,7 @@ const NAVIGATION = [
   },
   {
     name: 'Invoice',
-    href: PAGES_URL.SETTINGS.BASE_PATH,
+    href: PAGES_URL.INVOICE.BASE_PATH,
     icon: Cog8ToothIcon,
   },
 ]

@@ -4,11 +4,14 @@ import { PAGES_URL } from '@/lib/routes'
 import { Metadata } from 'next'
 import { getServerSession } from 'next-auth'
 import { notFound, redirect } from 'next/navigation'
-import { Suspense } from 'react'
+// import InvoicePDF from './_components/InvoicePDF'
+import MonthSelector from '../dashboard/_components/month-selector'
+import { getToday } from '@/lib/utils'
 
 export const metadata: Metadata = {
   title: 'Invoice',
 }
+
 
 export default async function Page() {
   const session = await getServerSession(nextAuthOptions)
@@ -24,6 +27,10 @@ export default async function Page() {
           },
         ]}
       />
+      <div className="col-7">
+        <h4 className="text-center">PDF Preview</h4>
+        {/* <InvoicePDF data={initialValues} /> */}
+      </div>
     </main>
   )
 }

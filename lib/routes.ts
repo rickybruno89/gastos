@@ -29,4 +29,7 @@ export const PAGES_URL = {
       DETAIL: (summaryId: string) => `/expenses/summaries/${summaryId}`,
     },
   },
+  INVOICE: {
+    BASE_PATH: `/invoice`,
+  },
 }

@@ -178,3 +178,23 @@ model ExpensePaymentSummary {
 
   @@unique([expenseId, date])
 }
+
+model Invoice {
+  id                String @id @default(cuid())
+  contractorName    String
+  personalEmail     String
+  personalStreet    String
+  personalState     String
+  personalZip       String
+  destinationName   String
+  destinationStreet String
+  destinationState  String
+  destinationZip    String
+  destinationEmail  String
+  destinationTaxId  String
+  bankName          String
+  bankAddress       String
+  bankRoutingNumber String
+  bankAccountNumber String
+  bankAccountType   String
+}
