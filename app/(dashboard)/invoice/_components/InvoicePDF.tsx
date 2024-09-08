@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import './invoice.css'
 import { getTodayInvoice, removeCurrencyMaskFromInput } from '@/lib/utils'
 import { Invoice } from '@prisma/client'
@@ -8,6 +8,10 @@ import { NumericFormat } from 'react-number-format'
 import jsPDF from 'jspdf'
 import * as htmlToImage from 'html-to-image'
 import { sendPdfEmail } from '@/services/invoice'
+import Lottie from 'react-lottie'
+import * as checkAnimation from '../../../../public/animations/check.json'
+import * as loadingAnimation from '../../../../public/animations/loading.json'
+import * as errorAnimation from '../../../../public/animations/error.json'
 
 const USLocale = Intl.NumberFormat('es-AR', {
   minimumFractionDigits: 2,
@@ -23,12 +27,23 @@ export const toMonthName = (monthNumber: number) => {
   })
 }
 
+type EmailResponse = { success: boolean; error: string } | null
 const InvoicePDF = ({ data }: { data: Invoice }) => {
   const [mepPrice, setMepPrice] = useState(0)
   const [isDialogOpen, setIsDialogOpen] = useState(true)
   const today = getTodayInvoice()
   const [month, day, year] = today.split('/')
   const [totalInvoice, setTotalInvoice] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+  const [sendMailResponse, setSendMailResponse] = useState<EmailResponse>(null)
+
+  useEffect(() => {
+    if (sendMailResponse?.success) {
+      setTimeout(() => {
+        setSendMailResponse(null)
+      }, 3000)
+    }
+  }, [sendMailResponse])
 
   const currencyMask = (number: string | number) => (number !== '' ? '$' + USLocale.format(number as number) : '')
 
@@ -44,19 +59,23 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
     })
   }
 
-  const sendMail = () => {
+  const sendMail = async () => {
+    setIsLoading(true)
     const input = document.getElementById('divToPrint')
     htmlToImage
       .toPng(input!)
-      .then(function (dataUrl) {
+      .then(async (dataUrl) => {
         const contractorName = toTitleCase(data.contractorName).split(' ').join('')
         const invoiceNumber = `${year}-${month}`
         const subject = `${data.contractorName.toUpperCase()} ${toMonthName(parseInt(month))} Invoice`
         const date = `${month}${day}${year}`
         const pdfName = `${contractorName}_DEPT_${invoiceNumber}_${date}`
-        sendPdfEmail(dataUrl, pdfName, subject, data)
+        const sendResponse = await sendPdfEmail(dataUrl, pdfName, subject, data)
+        setSendMailResponse(sendResponse)
+        setIsLoading(false)
       })
       .catch(function (error) {
+        setIsLoading(false)
         console.error('oops, something went wrong!', error)
       })
   }
@@ -76,6 +95,71 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
         console.error('oops, something went wrong!', error)
       })
   }
+
+  if (sendMailResponse?.success && !isLoading)
+    return (
+      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+          <Lottie
+            options={{
+              loop: false,
+              autoplay: true,
+              animationData: checkAnimation,
+            }}
+            isStopped={false}
+            isPaused={false}
+            speed={0.7}
+            isClickToPauseDisabled={true}
+          />
+          <h1 className="font-bold text-2xl text-orange-400 text-center">Email enviado correctamente</h1>
+        </div>
+      </div>
+    )
+
+  if (sendMailResponse && !sendMailResponse.success && !isLoading)
+    return (
+      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+          <Lottie
+            options={{
+              loop: false,
+              autoplay: true,
+              animationData: errorAnimation,
+            }}
+            isStopped={false}
+            isPaused={false}
+            speed={0.7}
+            isClickToPauseDisabled={true}
+          />
+          <h1 className="font-bold text-2xl text-red-500 text-center">{sendMailResponse?.error}</h1>
+          <button
+            className="mt-10 w-fit uppercase text-xs text-white bg-red-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
+            onClick={() => setSendMailResponse(null)}
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    )
+
+  if (isLoading)
+    return (
+      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+        <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+          <Lottie
+            options={{
+              loop: true,
+              autoplay: true,
+              animationData: loadingAnimation,
+            }}
+            isStopped={false}
+            isPaused={false}
+            isClickToPauseDisabled={true}
+          />
+          <span className="font-bold text-2xl text-purple-500 animate-pulse">Enviando Email...</span>
+        </div>
+      </div>
+    )
 
   return (
     <div className="flex flex-col gap-4">
