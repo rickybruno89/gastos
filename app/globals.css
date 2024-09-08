@@ -44,4 +44,143 @@
     @apply focus-visible:outline-none focus:outline-none
   }
 
+  .sheet {
+    background-color: #ffffff;
+    box-sizing: border-box;
+    width: 210mm;
+    height: 297mm;
+    padding: 2mm 20mm;
+    font-family: "Helvetica Neue";
+  }
+  
+  .first-line {
+    width: 140mm;
+    height: 1mm;
+    background-color: #076a92;
+  }
+  
+  .name {
+    font-size: 13pt;
+    font-weight: bold;
+    margin-top: 2mm;
+    color: #076a92;
+    height: 5mm;
+  }
+  
+  .header {
+    display: flex;
+    margin-top: 17mm;
+    height: 45mm;
+  }
+  
+  .normal-text {
+    font-size: 10pt;
+  }
+  
+  .bold-text {
+    font-size: 10pt;
+    font-weight: 500;
+  }
+  
+  .column-1 {
+    height: 45mm;
+    min-width: 40mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-right: 20px;
+  }
+  .column-2 {
+    height: 45mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+  
+  .invoice-span {
+    font-size: 18pt;
+  }
+  
+  .personal-email {
+    color: #076a92;
+  }
+  
+  .table-container {
+    display: flex;
+    flex-direction: column;
+    margin-top: 130px;
+    width: 510px;
+    margin: 0 auto;
+    margin-top: 130px;
+    height: 188mm;
+  }
+  
+  .table-description {
+    width: 100%;
+    border: 1px solid #adadad;
+    border-collapse: collapse;
+    font-size: 10pt;
+    text-align: right;
+    margin-bottom: 30px;
+  }
+  
+  .table-description thead th {
+    border: 1px solid #adadad;
+    background: #357ca2;
+    color: white;
+    font-weight: bold;
+    padding-bottom: 10px;
+    padding-left: 5px;
+    text-align: left;
+  }
+  
+  .table-description th:first-child {
+    width: 250px;
+  }
+  
+  .table-description th:nth-child(2) {
+    width: 65px;
+  }
+  
+  .table-description th:nth-child(3) {
+    width: 95px;
+  }
+  
+  .table-description th:nth-child(4) {
+    width: 95px;
+  }
+  
+  .table-description td {
+    height: 31px;
+    padding: 0 5px;
+    padding-bottom: 10px;
+    border-color: #adadad;
+    border-right: 1px dashed #adadad;
+    border-bottom: 1px dashed #adadad;
+  }
+  
+  .table-description td:first-child {
+    text-align: left;
+  }
+  
+  .table-description tbody tr:last-child,
+  tr:nth-last-child(2),
+  tr:nth-last-child(4) {
+    border-bottom: 1.5px solid #222222;
+  }
+  
+  .payment-details {
+    font-size: 10pt;
+  }
+  .payment-details p {
+    margin: 3px 0;
+  }
+  
+  .last-line {
+    width: 140mm;
+    height: 0.5mm;
+    background-color: #076a92;
+  }
+  
+
 }

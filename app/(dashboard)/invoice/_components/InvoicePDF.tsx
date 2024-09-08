@@ -1,6 +1,5 @@
 'use client'
 import React, { useEffect, useState } from 'react'
-import './invoice.css'
 import { getTodayInvoice, removeCurrencyMaskFromInput } from '@/lib/utils'
 import { Invoice } from '@prisma/client'
 import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
@@ -186,7 +185,7 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
         Enviar Email
       </button>
       <div className="overflow-x-scroll overflow-y-scroll border-orange-500 border-2">
-        <div id="divToPrint" className=" w-[210mm] h-[297mm] py-[2mm] px-[20mm] sheet">
+        <div id="divToPrint" className="sheet">
           <div className="first-line" />
           <div className="name">{data.contractorName.toUpperCase()}</div>
           <div className="header">
