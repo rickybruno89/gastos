@@ -16,7 +16,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
 
-const navigation = [
+const NAVIGATION = [
   { name: 'Resumen', href: PAGES_URL.DASHBOARD.BASE_PATH, icon: HomeIcon },
   { name: 'Gastos', href: PAGES_URL.EXPENSES.BASE_PATH, icon: BanknotesIcon },
   {
@@ -29,6 +29,11 @@ const navigation = [
     href: PAGES_URL.SETTINGS.BASE_PATH,
     icon: Cog8ToothIcon,
   },
+  {
+    name: 'Invoice',
+    href: PAGES_URL.SETTINGS.BASE_PATH,
+    icon: Cog8ToothIcon,
+  },
 ]
 
 function classNames(...classes: string[]) {
@@ -38,6 +43,8 @@ function classNames(...classes: string[]) {
 export default function Navbar({ session }: { session: Session | null }) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  const navigation = session?.user.email !== 'rbrunount@gmail.com' ? NAVIGATION.slice(0, -1) : NAVIGATION
 
   useEffect(() => {
     if (isMobileMenuOpen) {
