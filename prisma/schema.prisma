@@ -197,4 +197,6 @@ model Invoice {
   bankRoutingNumber String
   bankAccountNumber String
   bankAccountType   String
+  arsPayment        Float  @default(0)
+  usdPayment        Float  @default(0)
 }

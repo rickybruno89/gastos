@@ -1,135 +1,193 @@
-// import React from 'react'
-// import './invoice.css'
-// import { InvoiceValues } from '../page'
-// import { getTodayInvoice } from '@/lib/utils'
+'use client'
+import React, { useState } from 'react'
+import './invoice.css'
+import { getTodayInvoice, removeCurrencyMaskFromInput } from '@/lib/utils'
+import { Invoice } from '@prisma/client'
+import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import { NumericFormat } from 'react-number-format'
 
-// const USLocale = Intl.NumberFormat('es-AR', {
-//   minimumFractionDigits: 2,
-//   maximumFractionDigits: 2,
-// })
+const USLocale = Intl.NumberFormat('es-AR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
 
-// export const toMonthName = (monthNumber: number) => {
-//   const date = new Date()
-//   date.setMonth(monthNumber - 1)
+export const toMonthName = (monthNumber: number) => {
+  const date = new Date()
+  date.setMonth(monthNumber - 1)
 
-//   return date.toLocaleString('en-US', {
-//     month: 'long',
-//   })
-// }
+  return date.toLocaleString('en-US', {
+    month: 'long',
+  })
+}
 
-// const InvoicePDF = ({ data }: { data: InvoiceValues }) => {
-//   const today = getTodayInvoice()
-//   const [month, day, year] = today.split('/')
+const InvoicePDF = ({ data }: { data: Invoice }) => {
+  const [mepPrice, setMepPrice] = useState(0)
+  const [isDialogOpen, setIsDialogOpen] = useState(true)
+  const today = getTodayInvoice()
+  const [month, , year] = today.split('/')
+  const [totalInvoice, setTotalInvoice] = useState(0)
 
-//   const currencyMask = (number: string | number) => (number !== '' ? '$' + USLocale.format(number as number) : '')
+  const currencyMask = (number: string | number) => (number !== '' ? '$' + USLocale.format(number as number) : '')
 
-//   const getTotal = () => 555
+  const getTotal = () => 555
 
-//   return (
-//     <div id="divToPrint" className="sheet">
-//       <div className="first-line" />
-//       <div className="name">{data.contractorName.toUpperCase()}</div>
-//       <div className="header">
-//         <div className="column-1">
-//           <div className="invoice-span">INVOICE</div>
-//           <div className="personal-email normal-text">{data.personalEmail}</div>
-//           <div>
-//             <div className="normal-text">{data.personalStreet}</div>
-//             <div className="normal-text">{data.personalState}</div>
-//             <div className="normal-text">{data.personalZip}</div>
-//           </div>
-//         </div>
-//         <div className="column-2">
-//           <div>
-//             <div className="normal-text">{data.destinationName}</div>
-//             <div className="normal-text">{data.destinationStreet}</div>
-//             <div className="normal-text">{data.destinationState + ' ' + data.destinationZip}</div>
-//             <div className="normal-text">Tax ID: {data.destinationTaxId}</div>
-//             <div className="normal-text">Date: {today}</div>
-//           </div>
-//           <div className="normal-text">Invoice Number: {year + '_' + month}</div>
-//         </div>
-//       </div>
-//       <div className="table-container">
-//         <table className="table-description">
-//           <thead>
-//             <tr>
-//               <th>Description</th>
-//               <th>Quantity</th>
-//               <th>Unit Price</th>
-//               <th>Cost</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             <tr>
-//               <td>{`Fee for services (${toMonthName(parseInt(month))} ${year})`}</td>
-//               <td>1</td>
-//               <td>{currencyMask(4000)}</td>
-//               <td>{currencyMask(4000)}</td>
-//             </tr>
-//             <tr>
-//               <td></td>
-//               <td></td>
-//               <td></td>
-//               <td></td>
-//             </tr>
-//             <tr>
-//               <td></td>
-//               <td></td>
-//               <td></td>
-//               <td></td>
-//             </tr>
-//             <tr>
-//               <td></td>
-//               <td></td>
-//               <td></td>
-//               <td></td>
-//             </tr>
-//             <tr>
-//               <td></td>
-//               <td></td>
-//               <td>Subtotal</td>
-//               <td>{currencyMask(4000)}</td>
-//             </tr>
-//             <tr>
-//               <td></td>
-//               <td>Tax</td>
-//               <td></td>
-//               <td>{currencyMask(0)}</td>
-//             </tr>
-//             <tr>
-//               <td></td>
-//               <td></td>
-//               <td>Total</td>
-//               <td>{currencyMask(getTotal())}</td>
-//             </tr>
-//           </tbody>
-//         </table>
-//         <div className="payment-details">
-//           <p>Payment Details are as follows:</p>
-//           <p>
-//             <b>Bank Name:</b> {data.bankName}
-//           </p>
-//           <p>
-//             <b>Bank Address:</b> {data.bankAddress}
-//           </p>
-//           <p>
-//             <b>Routing Number:</b> {data.bankRoutingNumber}
-//           </p>
-//           <p>
-//             <b>Account Number:</b> {data.bankAccountNumber}
-//           </p>
-//           <p>
-//             <b>Account Type:</b> {data.bankAccountType}
-//           </p>
-//           <p>
-//             <b>Beneficiary Name:</b> {data.contractorName}
-//           </p>
-//         </div>
-//       </div>
-//       <div className="last-line" />
-//     </div>
-//   )
-// }
+  const handleCloseDialog = () => {
+    setTotalInvoice(0)
+    setIsDialogOpen(false)
+  }
 
-// export default InvoicePDF
+  return !mepPrice && isDialogOpen ? (
+    <Dialog
+      open={isDialogOpen}
+      onClose={() => setIsDialogOpen(false)}
+      transition
+      className="fixed inset-0 flex w-screen items-center justify-center bg-black/50  backdrop-blur-sm p-4 transition duration-300 ease-out data-[closed]:opacity-0"
+    >
+      <div className="fixed inset-0 z-10 w-screen ">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <DialogPanel
+            transition
+            className="text-white w-full max-w-md rounded-xl bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 duration-300 ease-out data-[closed]:transform-[scale(95%)] data-[closed]:opacity-0"
+          >
+            <DialogTitle className="font-bold mb-4">Aplicar descuento sueldo bruno</DialogTitle>
+            <Description>Ingrese el valor del dolar MEP</Description>
+            <div className="my-4 text-black">
+              <NumericFormat
+                inputMode="decimal"
+                className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
+                name="mepPrice"
+                id="mepPrice"
+                value={mepPrice}
+                prefix={'$ '}
+                thousandSeparator="."
+                decimalScale={2}
+                decimalSeparator=","
+                onChange={(e) => setMepPrice(removeCurrencyMaskFromInput(e.target.value))}
+              />
+            </div>
+            <div className="flex gap-4 mt-4">
+              <button
+                className="inline-flex items-center gap-2 rounded-md py-1.5 px-3 text-sm/6 font-semibold  shadow-inner shadow-white/10 "
+                onClick={() => setIsDialogOpen(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="inline-flex items-center gap-2 rounded-md bg-orange-500 text-white py-1.5 px-3 text-sm/6 font-semibold  shadow-inner shadow-white/10 "
+                onClick={handleCloseDialog}
+              >
+                Aplicar
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </div>
+    </Dialog>
+  ) : (
+    <div id="divToPrint" className="sheet">
+      <div className="first-line" />
+      <div className="name">{data.contractorName.toUpperCase()}</div>
+      <div className="header">
+        <div className="column-1">
+          <div className="invoice-span">INVOICE</div>
+          <div className="personal-email normal-text">{data.personalEmail}</div>
+          <div>
+            <div className="normal-text">{data.personalStreet}</div>
+            <div className="normal-text">{data.personalState}</div>
+            <div className="normal-text">{data.personalZip}</div>
+          </div>
+        </div>
+        <div className="column-2">
+          <div>
+            <div className="normal-text">{data.destinationName}</div>
+            <div className="normal-text">{data.destinationStreet}</div>
+            <div className="normal-text">{data.destinationState + ' ' + data.destinationZip}</div>
+            <div className="normal-text">Tax ID: {data.destinationTaxId}</div>
+            <div className="normal-text">Date: {today}</div>
+          </div>
+          <div className="normal-text">Invoice Number: {year + '_' + month}</div>
+        </div>
+      </div>
+      <div className="table-container">
+        <table className="table-description">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{`Fee for services (${toMonthName(parseInt(month))} ${year})`}</td>
+              <td>1</td>
+              <td>{currencyMask(4000)}</td>
+              <td>{currencyMask(4000)}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td>Subtotal</td>
+              <td>{currencyMask(4000)}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td>Tax</td>
+              <td></td>
+              <td>{currencyMask(0)}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td>Total</td>
+              <td>{currencyMask(getTotal())}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div className="payment-details">
+          <p>Payment Details are as follows:</p>
+          <p>
+            <b>Bank Name:</b> {data.bankName}
+          </p>
+          <p>
+            <b>Bank Address:</b> {data.bankAddress}
+          </p>
+          <p>
+            <b>Routing Number:</b> {data.bankRoutingNumber}
+          </p>
+          <p>
+            <b>Account Number:</b> {data.bankAccountNumber}
+          </p>
+          <p>
+            <b>Account Type:</b> {data.bankAccountType}
+          </p>
+          <p>
+            <b>Beneficiary Name:</b> {data.contractorName}
+          </p>
+        </div>
+      </div>
+      <div className="last-line" />
+    </div>
+  )
+}
+
+export default InvoicePDF
