@@ -51,7 +51,7 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
       .then(function (dataUrl) {
         const contractorName = toTitleCase(data.contractorName).split(' ').join('')
         const invoiceNumber = `${year}-${month}`
-        const subject = `${contractorName.toUpperCase()} ${toMonthName(parseInt(month))} Invoice`
+        const subject = `${data.contractorName.toUpperCase()} ${toMonthName(parseInt(month))} Invoice`
         const date = `${month}${day}${year}`
         const pdfName = `${contractorName}_DEPT_${invoiceNumber}_${date}`
         sendPdfEmail(dataUrl, pdfName, subject, data)
@@ -220,28 +220,31 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
             >
               <DialogTitle className="font-bold mb-4">Aplicar descuento sueldo bruno</DialogTitle>
               <Description>Ingrese el valor del dolar MEP</Description>
-              <div className="my-4 text-black">
-                <NumericFormat
-                  inputMode="decimal"
-                  className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
-                  name="mepPrice"
-                  id="mepPrice"
-                  value={mepPrice}
-                  prefix={'$ '}
-                  thousandSeparator="."
-                  decimalScale={2}
-                  decimalSeparator=","
-                  onChange={(e) => setMepPrice(removeCurrencyMaskFromInput(e.target.value))}
-                />
-              </div>
-              <div className="flex gap-4 mt-4">
-                <button
-                  className="inline-flex items-center gap-2 rounded-md bg-orange-500 text-white py-1.5 px-3 text-sm/6 font-semibold  shadow-inner shadow-white/10 "
-                  onClick={handleCloseDialog}
-                >
-                  Aplicar
-                </button>
-              </div>
+              <form action={handleCloseDialog}>
+                <div className="my-4 text-black">
+                  <NumericFormat
+                    autoFocus
+                    inputMode="decimal"
+                    className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
+                    name="mepPrice"
+                    id="mepPrice"
+                    value={mepPrice}
+                    prefix={'$ '}
+                    thousandSeparator="."
+                    decimalScale={2}
+                    decimalSeparator=","
+                    onChange={(e) => setMepPrice(removeCurrencyMaskFromInput(e.target.value))}
+                  />
+                </div>
+                <div className="flex gap-4 mt-4">
+                  <button
+                    className="inline-flex items-center gap-2 rounded-md bg-orange-500 text-white py-1.5 px-3 text-sm/6 font-semibold  shadow-inner shadow-white/10 "
+                    type="submit"
+                  >
+                    Aplicar
+                  </button>
+                </div>
+              </form>
             </DialogPanel>
           </div>
         </div>
