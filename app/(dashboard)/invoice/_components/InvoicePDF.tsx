@@ -95,73 +95,69 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
       })
   }
 
-  if (sendMailResponse?.success && !isLoading)
-    return (
-      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
-        <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-          <Lottie
-            options={{
-              loop: false,
-              autoplay: true,
-              animationData: checkAnimation,
-            }}
-            isStopped={false}
-            isPaused={false}
-            speed={0.7}
-            isClickToPauseDisabled={true}
-          />
-          <h1 className="font-bold text-2xl text-orange-400 text-center">Email enviado correctamente</h1>
-        </div>
-      </div>
-    )
-
-  if (sendMailResponse && !sendMailResponse.success && !isLoading)
-    return (
-      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
-        <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-          <Lottie
-            options={{
-              loop: false,
-              autoplay: true,
-              animationData: errorAnimation,
-            }}
-            isStopped={false}
-            isPaused={false}
-            speed={0.7}
-            isClickToPauseDisabled={true}
-          />
-          <h1 className="font-bold text-2xl text-red-500 text-center">{sendMailResponse?.error}</h1>
-          <button
-            className="mt-10 w-fit uppercase text-xs text-white bg-red-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
-            onClick={() => setSendMailResponse(null)}
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
-    )
-
-  if (isLoading)
-    return (
-      <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
-        <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-          <Lottie
-            options={{
-              loop: true,
-              autoplay: true,
-              animationData: loadingAnimation,
-            }}
-            isStopped={false}
-            isPaused={false}
-            isClickToPauseDisabled={true}
-          />
-          <span className="font-bold text-2xl text-purple-500 animate-pulse">Enviando Email...</span>
-        </div>
-      </div>
-    )
-
   return (
     <div className="flex flex-col gap-4">
+      {isLoading ? (
+        <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+          <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+            <Lottie
+              options={{
+                loop: true,
+                autoplay: true,
+                animationData: loadingAnimation,
+              }}
+              isStopped={false}
+              isPaused={false}
+              isClickToPauseDisabled={true}
+            />
+            <span className="font-bold text-2xl text-purple-500 animate-pulse">Enviando Email...</span>
+          </div>
+        </div>
+      ) : null}
+
+      {sendMailResponse?.success && !isLoading ? (
+        <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+          <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+            <Lottie
+              options={{
+                loop: false,
+                autoplay: true,
+                animationData: checkAnimation,
+              }}
+              isStopped={false}
+              isPaused={false}
+              speed={0.7}
+              isClickToPauseDisabled={true}
+            />
+            <h1 className="font-bold text-2xl text-orange-400 text-center">Email enviado correctamente</h1>
+          </div>
+        </div>
+      ) : null}
+
+      {sendMailResponse && !sendMailResponse.success && !isLoading ? (
+        <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
+          <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
+            <Lottie
+              options={{
+                loop: false,
+                autoplay: true,
+                animationData: errorAnimation,
+              }}
+              isStopped={false}
+              isPaused={false}
+              speed={0.7}
+              isClickToPauseDisabled={true}
+            />
+            <h1 className="font-bold text-2xl text-red-500 text-center">{sendMailResponse?.error}</h1>
+            <button
+              className="mt-10 w-fit uppercase text-xs text-white bg-red-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
+              onClick={() => setSendMailResponse(null)}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="flex gap-4">
         <button
           className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
