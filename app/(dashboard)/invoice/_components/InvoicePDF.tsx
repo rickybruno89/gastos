@@ -95,7 +95,8 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
         Previsualizar PDF
       </button>
       <button
-        className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
+        disabled={!totalInvoice || totalInvoice <= 0 || mepPrice <= 0}
+        className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300 disabled:text-gray-500 disabled:bg-gray-200 disabled:cursor-not-allowed"
         onClick={sendMail}
       >
         Enviar Email
@@ -164,7 +165,7 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
                   <td></td>
                   <td></td>
                   <td>Subtotal</td>
-                  <td>{currencyMask(4000)}</td>
+                  <td>{currencyMask(totalInvoice)}</td>
                 </tr>
                 <tr>
                   <td></td>
