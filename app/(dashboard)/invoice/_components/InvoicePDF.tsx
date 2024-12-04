@@ -28,7 +28,6 @@ export const toMonthName = (monthNumber: number) => {
 
 type EmailResponse = { success: boolean; error: string } | null
 const InvoicePDF = ({ data }: { data: Invoice }) => {
-  const [mepPrice, setMepPrice] = useState(0)
   const [isDialogOpen, setIsDialogOpen] = useState(true)
   const today = getTodayInvoice()
   const [month, day, year] = today.split('/')
@@ -46,9 +45,14 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
 
   const currencyMask = (number: string | number) => (number !== '' ? '$' + USLocale.format(number as number) : '')
 
-  const handleCloseDialog = () => {
-    const discount = data.arsPayment / (mepPrice || 1)
-    setTotalInvoice(data.usdPayment - discount)
+  const handleCloseDialog = (form: FormData) => {
+    const usdSalary = removeCurrencyMaskFromInput(form.get('usdSalary')?.toString() || '0')
+    const arsSalary = removeCurrencyMaskFromInput(form.get('arsSalary')?.toString() || '0')
+    const mepPrice = removeCurrencyMaskFromInput(form.get('mepPrice')?.toString() || '0')
+
+    const discount = arsSalary / mepPrice
+
+    setTotalInvoice(usdSalary - discount)
     setIsDialogOpen(false)
   }
 
@@ -71,7 +75,6 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
         const pdfName = `${contractorName}_DEPT_${invoiceNumber}_${date}`
         const sendResponse = await sendPdfEmail(dataUrl, pdfName, subject, data)
         setSendMailResponse(sendResponse)
-        setMepPrice(0)
         setTotalInvoice(0)
         setIsLoading(false)
       })
@@ -165,10 +168,11 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
           className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
           onClick={() => setIsDialogOpen(true)}
         >
-          Ingresar cotización MEP
+          Ingresar valores
         </button>
-        <p>{currencyMask(mepPrice)}</p>
+        <p>Total Invoice USD {currencyMask(totalInvoice)}</p>
       </div>
+
       <button
         className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300"
         onClick={previewPDF}
@@ -176,7 +180,7 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
         Previsualizar PDF
       </button>
       <button
-        disabled={!totalInvoice || totalInvoice <= 0 || mepPrice <= 0}
+        disabled={!totalInvoice || totalInvoice <= 0}
         className="w-fit uppercase text-xs text-white bg-orange-500 p-2 rounded-md hover:bg-gray-600 transition-all ease-in-out duration-300 disabled:text-gray-500 disabled:bg-gray-200 disabled:cursor-not-allowed"
         onClick={sendMail}
       >
@@ -299,22 +303,49 @@ const InvoicePDF = ({ data }: { data: Invoice }) => {
               transition
               className="text-white w-full max-w-md rounded-xl bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 duration-300 ease-out data-[closed]:transform-[scale(95%)] data-[closed]:opacity-0"
             >
-              <DialogTitle className="font-bold mb-4">Aplicar descuento sueldo bruno</DialogTitle>
-              <Description>Ingrese el valor del dolar MEP</Description>
+              <DialogTitle className="font-bold mb-4">Aplicar sueldo USD</DialogTitle>
+              <Description>Ingrese el valor del sueldo en USD</Description>
               <form action={handleCloseDialog}>
-                <div className="my-4 text-black">
+                <div className="my-4 text-black space-x-4">
+                  <span className="text-white">Monto USD</span>
+                  <NumericFormat
+                    autoFocus
+                    inputMode="decimal"
+                    className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
+                    name="usdSalary"
+                    id="usdSalary"
+                    prefix={'$ '}
+                    thousandSeparator="."
+                    decimalScale={2}
+                    decimalSeparator=","
+                  />
+                </div>
+                <div className="my-4 text-black space-x-4">
+                  <span className="text-white">Monto ARS</span>
+                  <NumericFormat
+                    autoFocus
+                    inputMode="decimal"
+                    className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
+                    name="arsSalary"
+                    id="arsSalary"
+                    prefix={'$ '}
+                    thousandSeparator="."
+                    decimalScale={2}
+                    decimalSeparator=","
+                  />
+                </div>
+                <div className="my-4 text-black space-x-4">
+                  <span className="text-white">Cotizacion MEP</span>
                   <NumericFormat
                     autoFocus
                     inputMode="decimal"
                     className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
                     name="mepPrice"
                     id="mepPrice"
-                    value={mepPrice}
                     prefix={'$ '}
                     thousandSeparator="."
                     decimalScale={2}
                     decimalSeparator=","
-                    onChange={(e) => setMepPrice(removeCurrencyMaskFromInput(e.target.value))}
                   />
                 </div>
                 <div className="flex gap-4 mt-4">
