@@ -233,7 +233,7 @@ const buildHTMLMail = (item: GroupedByUser) => {
     `
 }
 
-export async function POST() {
+export async function GET() {
   const headersList = headers()
   const token = headersList.get('Authorization')
   if (token !== `Bearer ${process.env.CRON_SECRET}`) {
