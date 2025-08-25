@@ -243,6 +243,7 @@ export async function GET() {
   }
   try {
     const expirations = await getExpensesToExpire()
+    console.log('🚀 ~ GET ~ expirations.length:', expirations.length)
     if (expirations.length) {
       const promises = expirations.map((item) => {
         const html = buildHTMLMail(item)
