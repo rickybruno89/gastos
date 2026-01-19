@@ -1,5 +1,5 @@
 'use server'
-import { CreditCardPaymentSummary, Expense, ExpensePaymentSummary, Prisma } from '@prisma/client'
+import { CreditCardPaymentSummary, Currency, Expense, ExpensePaymentSummary, Prisma } from '@prisma/client'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth'
@@ -12,13 +12,18 @@ import { decryptString, getNextMonthDueDate } from '@/lib/utils'
 export const addExpenseToSummary = async (date: string, expense: Expense) => {
   try {
     const userId = await getAuthUserId()
+
+    // Verificar si es pago anual
+    const isPaidAnnually = expense.isAnnualPayment && expense.annualPaymentDate !== null
+
     await prisma.expensePaymentSummary.create({
       data: {
         expenseId: expense.id,
         date,
         dueDate: expense.dueDate,
         amount: expense.amount,
-        paid: false,
+        currency: expense.currency,
+        paid: isPaidAnnually,
         paymentChannel: expense.paymentChannel,
         userId,
       },
@@ -43,23 +48,81 @@ export const generateExpenseSummaryForMonth = async (date: string) => {
       },
     })
 
-    const mappedExpenses = expenses.map((item) => ({
-      ...item,
-      dueDate: getNextMonthDueDate(item.dueDate, date),
-    }))
+    const currentYear = parseInt(date.substring(0, 4)) // 2026
+    const currentMonthNum = parseInt(date.substring(5, 7)) // 01
 
-    const transactions = mappedExpenses.map((item) =>
-      prisma.expense.update({
-        data: {
-          dueDate: item.dueDate,
-        },
-        where: {
-          id: item.id,
-        },
-      })
-    )
+    const mappedExpenses = expenses.map((item) => {
+      let isPaidAnnually = false
+      let amount = item.amount
+      let shouldResetAnnualPayment = false
 
-    await Promise.all(transactions)
+      if (item.isAnnualPayment && item.annualPaymentDate) {
+        const annualPaymentYear = parseInt(item.annualPaymentDate.substring(0, 4))
+        const annualPaymentMonth = parseInt(item.annualPaymentDate.substring(5, 7))
+
+        // Si estamos en enero y el pago anual fue el año pasado, resetear
+        if (currentMonthNum === 1 && annualPaymentYear < currentYear) {
+          shouldResetAnnualPayment = true
+          isPaidAnnually = false
+          amount = item.amount
+        }
+        // Si el pago anual es del año actual
+        else if (annualPaymentYear === currentYear) {
+          // Si estamos en el mes del pago o después (pero en el mismo año)
+          if (currentMonthNum >= annualPaymentMonth) {
+            isPaidAnnually = true
+            // Si es el mes del pago, monto real. Si es después, monto 0
+            amount = currentMonthNum === annualPaymentMonth ? item.amount : 0
+          }
+        }
+        // Si el pago anual es del año pasado y no estamos en enero
+        else if (annualPaymentYear < currentYear) {
+          shouldResetAnnualPayment = true
+          isPaidAnnually = false
+          amount = item.amount
+        }
+      }
+
+      return {
+        ...item,
+        dueDate: getNextMonthDueDate(item.dueDate, date),
+        paid: isPaidAnnually,
+        amount,
+        shouldResetAnnualPayment,
+      }
+    })
+
+    // Actualizar expenses que necesitan resetear el pago anual
+    const resetTransactions = mappedExpenses
+      .filter((item) => item.shouldResetAnnualPayment)
+      .map((item) =>
+        prisma.expense.update({
+          data: {
+            dueDate: item.dueDate,
+            isAnnualPayment: false,
+            annualPaymentDate: null,
+          },
+          where: {
+            id: item.id,
+          },
+        })
+      )
+
+    // Actualizar expenses que NO necesitan resetear
+    const updateTransactions = mappedExpenses
+      .filter((item) => !item.shouldResetAnnualPayment)
+      .map((item) =>
+        prisma.expense.update({
+          data: {
+            dueDate: item.dueDate,
+          },
+          where: {
+            id: item.id,
+          },
+        })
+      )
+
+    await Promise.all([...resetTransactions, ...updateTransactions])
 
     await prisma.expensePaymentSummary.createMany({
       data: mappedExpenses.map((expense) => ({
@@ -67,7 +130,8 @@ export const generateExpenseSummaryForMonth = async (date: string) => {
         date,
         dueDate: expense.dueDate,
         amount: expense.amount,
-        paid: false,
+        currency: expense.currency,
+        paid: expense.paid,
         paymentChannel: expense.paymentChannel,
         userId,
       })),
@@ -160,8 +224,14 @@ const CreditCardPaymentSummarySchema = z.object({
     .array(),
   date: z.string().min(1, { message: 'Ingrese la fecha del resumen' }),
   dueDate: z.string().min(1, { message: 'Ingrese una fecha de vencimiento' }),
-  taxesAmount: z.string().min(1, { message: 'El impuesto y sellado tiene que tener algun valor' }),
-  totalAmount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
+  taxesAmount: z.string().optional(),
+  totalAmount: z.string().optional(),
+  taxesAmountARS: z.string().optional(),
+  taxesAmountUSD: z.string().optional(),
+  totalAmountARS: z.string().optional(),
+  totalAmountUSD: z.string().optional(),
+  creditBalanceARS: z.string().optional(),
+  creditBalanceUSD: z.string().optional(),
 })
 
 const CreateCreditCardPaymentSummarySchema = CreditCardPaymentSummarySchema.omit({
@@ -182,6 +252,12 @@ export const createSummaryForCreditCard = async (
       dueDate: formData.get('dueDate'),
       taxesAmount: formData.get('taxesAmount'),
       totalAmount: formData.get('totalAmount'),
+      taxesAmountARS: formData.get('taxesAmountARS'),
+      taxesAmountUSD: formData.get('taxesAmountUSD'),
+      totalAmountARS: formData.get('totalAmountARS'),
+      totalAmountUSD: formData.get('totalAmountUSD'),
+      creditBalanceARS: formData.get('creditBalanceARS'),
+      creditBalanceUSD: formData.get('creditBalanceUSD'),
     })
 
     if (!validatedFields.success) {
@@ -194,7 +270,19 @@ export const createSummaryForCreditCard = async (
 
     const userId = await getAuthUserId()
 
-    const { creditCardExpenseItems, date, taxesAmount, totalAmount, dueDate } = validatedFields.data
+    const {
+      creditCardExpenseItems,
+      date,
+      taxesAmount,
+      totalAmount,
+      dueDate,
+      taxesAmountARS,
+      taxesAmountUSD,
+      totalAmountARS,
+      totalAmountUSD,
+      creditBalanceARS,
+      creditBalanceUSD,
+    } = validatedFields.data
 
     const existingSummaryForCreditCard = await prisma.creditCardPaymentSummary.findFirst({
       where: {
@@ -213,10 +301,25 @@ export const createSummaryForCreditCard = async (
       }
     }
 
-    await prisma.creditCardPaymentSummary.create({
+    // Calcular summarySequence
+    const lastSummary = await prisma.creditCardPaymentSummary.findFirst({
+      where: { creditCardId },
+      orderBy: { summarySequence: 'desc' },
+    })
+    const summarySequence = (lastSummary?.summarySequence || 0) + 1
+
+    // Crear el resumen
+    const createdSummary = await prisma.creditCardPaymentSummary.create({
       data: {
-        amount: parseFloat(totalAmount),
-        taxes: parseFloat(taxesAmount),
+        amount: totalAmount ? parseFloat(totalAmount) : 0,
+        taxes: taxesAmount ? parseFloat(taxesAmount) : 0,
+        taxesARS: taxesAmountARS ? parseFloat(taxesAmountARS) : 0,
+        taxesUSD: taxesAmountUSD ? parseFloat(taxesAmountUSD) : 0,
+        totalAmountARS: totalAmountARS ? parseFloat(totalAmountARS) : null,
+        totalAmountUSD: totalAmountUSD ? parseFloat(totalAmountUSD) : null,
+        creditBalanceARS: creditBalanceARS ? parseFloat(creditBalanceARS) : 0,
+        creditBalanceUSD: creditBalanceUSD ? parseFloat(creditBalanceUSD) : 0,
+        summarySequence,
         date,
         dueDate,
         paid: false,
@@ -235,18 +338,32 @@ export const createSummaryForCreditCard = async (
       },
     })
 
-    const promises = creditCardExpenseItems.map((item) =>
-      prisma.creditCardExpenseItem.update({
-        data: {
-          installmentsAmount: item.installmentsAmount,
+    // Obtener los items completos con sus installmentPayments
+    const items = await prisma.creditCardExpenseItem.findMany({
+      where: {
+        id: { in: creditCardExpenseItems.map((i) => i.id) },
+      },
+      include: {
+        installmentPayments: {
+          where: { isPaid: false },
+          orderBy: { installmentNumber: 'asc' },
         },
-        where: {
-          id: item.id,
-        },
-      })
-    )
+      },
+    })
 
-    await Promise.all(promises)
+    // Asociar el primer installment no pagado de cada item al resumen
+    for (const item of items) {
+      const nextUnpaidInstallment = item.installmentPayments[0]
+      if (nextUnpaidInstallment) {
+        await prisma.installmentPayment.update({
+          where: { id: nextUnpaidInstallment.id },
+          data: {
+            creditCardPaymentSummaryId: createdSummary.id,
+          },
+        })
+      }
+    }
+
     revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
     revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
     return {
@@ -254,6 +371,7 @@ export const createSummaryForCreditCard = async (
       success: true,
     }
   } catch (error) {
+    console.error('Error creating summary:', error)
     return {
       message: 'Error en base de datos',
       success: false,
@@ -455,6 +573,12 @@ export const setNoNeedExpensePaymentSummary = async (expenseItem: ExpensePayment
 }
 
 export const setCreditCardPaymentSummaryPaid = async (creditCardExpense: CreditCardPaymentSummary) => {
+  // Validación de idempotencia
+  if (creditCardExpense.paid) {
+    revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
+    redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
+  }
+
   const creditCardPaymentSummaryExpenseItems = await prisma.creditCardSummaryExpenseItem.findMany({
     where: {
       creditCardPaymentSummaryId: creditCardExpense.id,
@@ -463,6 +587,7 @@ export const setCreditCardPaymentSummaryPaid = async (creditCardExpense: CreditC
 
   try {
     await prisma.$transaction([
+      // Marcar resumen como pagado
       prisma.creditCardPaymentSummary.update({
         data: {
           paid: true,
@@ -472,6 +597,17 @@ export const setCreditCardPaymentSummaryPaid = async (creditCardExpense: CreditC
           id: creditCardExpense.id,
         },
       }),
+      // Marcar InstallmentPayments como pagados
+      prisma.installmentPayment.updateMany({
+        where: {
+          creditCardPaymentSummaryId: creditCardExpense.id,
+        },
+        data: {
+          isPaid: true,
+          paymentDate: creditCardExpense.date,
+        },
+      }),
+      // Incrementar installmentsPaid (mantener por compatibilidad)
       prisma.creditCardExpenseItem.updateMany({
         data: {
           installmentsPaid: {
@@ -485,6 +621,7 @@ export const setCreditCardPaymentSummaryPaid = async (creditCardExpense: CreditC
           },
         },
       }),
+      // Marcar items como finished si todas las cuotas están pagadas
       prisma.creditCardExpenseItem.updateMany({
         data: {
           finished: true,
@@ -516,13 +653,51 @@ export const deleteCreditCardPaymentSummary = async (id: string) => {
     },
     include: {
       itemHistoryPayment: true,
+      installmentPayments: true,
     },
   })
 
+  if (!creditCardPaymentSummary) {
+    return {
+      message: 'Resumen no encontrado',
+      success: false,
+    }
+  }
+
+  // Validar que solo se pueda eliminar el último resumen
+  const lastSummary = await prisma.creditCardPaymentSummary.findFirst({
+    where: {
+      creditCardId: creditCardPaymentSummary.creditCardId,
+    },
+    orderBy: {
+      summarySequence: 'desc',
+    },
+  })
+
+  if (lastSummary && creditCardPaymentSummary.id !== lastSummary.id) {
+    return {
+      message: 'Solo se puede eliminar el último resumen generado',
+      success: false,
+    }
+  }
+
   const prismaTransactions = []
 
-  if (creditCardPaymentSummary?.paid)
+  // Si el resumen estaba pagado, desmarcar los installments
+  if (creditCardPaymentSummary.paid) {
     prismaTransactions.push(
+      // Desmarcar InstallmentPayments como no pagados
+      prisma.installmentPayment.updateMany({
+        where: {
+          creditCardPaymentSummaryId: id,
+        },
+        data: {
+          isPaid: false,
+          paymentDate: null,
+          creditCardPaymentSummaryId: null,
+        },
+      }),
+      // Decrementar installmentsPaid (mantener por compatibilidad)
       prisma.creditCardExpenseItem.updateMany({
         data: {
           installmentsPaid: {
@@ -539,6 +714,19 @@ export const deleteCreditCardPaymentSummary = async (id: string) => {
         },
       })
     )
+  } else {
+    // Si no estaba pagado, solo desasociar los installments
+    prismaTransactions.push(
+      prisma.installmentPayment.updateMany({
+        where: {
+          creditCardPaymentSummaryId: id,
+        },
+        data: {
+          creditCardPaymentSummaryId: null,
+        },
+      })
+    )
+  }
 
   prismaTransactions.push(
     prisma.creditCardSummaryExpenseItem.deleteMany({
@@ -555,13 +743,14 @@ export const deleteCreditCardPaymentSummary = async (id: string) => {
 
   try {
     await prisma.$transaction(prismaTransactions)
-    revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardPaymentSummary!.date}`)
-    revalidatePath(`${PAGES_URL.CREDIT_CARDS.DETAILS(creditCardPaymentSummary!.creditCardId)}`)
+    revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardPaymentSummary.date}`)
+    revalidatePath(`${PAGES_URL.CREDIT_CARDS.DETAILS(creditCardPaymentSummary.creditCardId)}`)
     return {
       message: 'Resumen eliminado',
       success: true,
     }
   } catch (error) {
+    console.error('Error deleting summary:', error)
     return {
       message: 'Error en base de datos',
       success: false,

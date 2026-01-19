@@ -130,7 +130,27 @@ export default function CreditCardSummaries({ creditCard }: { creditCard: DataWi
             >
               <span className="font-semibold uppercase">{formatLocaleDate(summary.date)}</span>
               <span className="text-gray-100">Venc. {formatLocaleDueDate(summary.dueDate)}</span>
-              <span className="text-xl font-bold mt-1 text-center">{formatCurrency(summary.amount)}</span>
+
+              {/* Mostrar totales por moneda si existen */}
+              {summary.totalAmountARS || summary.totalAmountUSD ? (
+                <div className="flex flex-col gap-1 mt-1">
+                  {summary.totalAmountARS && summary.totalAmountARS > 0 ? (
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs bg-green-600 px-1.5 py-0.5 rounded">ARS</span>
+                      <span className="text-lg font-bold">{formatCurrency(summary.totalAmountARS)}</span>
+                    </div>
+                  ) : null}
+                  {summary.totalAmountUSD && summary.totalAmountUSD > 0 ? (
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs bg-blue-600 px-1.5 py-0.5 rounded">USD</span>
+                      <span className="text-lg font-bold">{formatCurrency(summary.totalAmountUSD)}</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <span className="text-xl font-bold mt-1 text-center">{formatCurrency(summary.amount)}</span>
+              )}
+
               <div className="flex justify-between items-center">
                 <div>
                   {summary.paid ? (
@@ -166,9 +186,16 @@ export default function CreditCardSummaries({ creditCard }: { creditCard: DataWi
                   <div className="w-full rounded-[10px]  flex flex-col">
                     <div className="w-full rounded-[10px]  flex flex-col">
                       <div className="flex-1 flex justify-between items-end font-medium">
-                        <span className="leading-tight uppercase text-lg">
-                          {item.description}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="leading-tight uppercase text-lg">
+                            {item.description}
+                          </span>
+                          {item.currency === 'USD' && (
+                            <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full uppercase font-semibold">
+                              USD
+                            </span>
+                          )}
+                        </div>
                         <span className="leading-tight text-xl">
                           {item.recurrent ? formatCurrency(item.installmentsAmount) : formatCurrency(item.amount)}
                         </span>

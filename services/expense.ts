@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { PAGES_URL } from '@/lib/routes'
 import { decryptString, encryptString, removeCurrencyMaskFromInput } from '@/lib/utils'
-import { Expense, PaymentChannel, Prisma } from '@prisma/client'
+import { Currency, Expense, PaymentChannel, Prisma } from '@prisma/client'
 
 type CreateExpenseState = {
   errors?: {
@@ -15,8 +15,11 @@ type CreateExpenseState = {
     notes?: string[]
     dueDate?: string[]
     amount?: string[]
+    currency?: string[]
     sharedWith?: string[]
     paymentChannel?: string[]
+    isAnnualPayment?: string[]
+    annualPaymentDate?: string[]
   }
   message?: string | null
   success?: boolean
@@ -28,8 +31,11 @@ const ExpenseSchema = z.object({
   dueDate: z.string(),
   notes: z.string().toUpperCase(),
   amount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
+  currency: z.enum(['ARS', 'USD']),
   sharedWith: z.string().array(),
   paymentChannel: z.string(),
+  isAnnualPayment: z.boolean().optional(),
+  annualPaymentDate: z.string().optional(),
 })
 
 const CreateExpenseSchema = ExpenseSchema.omit({
@@ -43,8 +49,11 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
       notes: formData.get('notes'),
       dueDate: formData.get('dueDate'),
       amount: formData.get('amount'),
+      currency: formData.get('currency') || 'ARS',
       sharedWith: formData.getAll('sharedWith'),
       paymentChannel: formData.get('paymentChannel'),
+      isAnnualPayment: formData.get('isAnnualPayment') === 'true',
+      annualPaymentDate: formData.get('annualPaymentDate'),
     })
 
     if (!validatedFields.success) {
@@ -55,7 +64,17 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
       }
     }
 
-    const { description, notes, dueDate, amount, sharedWith, paymentChannel } = validatedFields.data
+    const {
+      description,
+      notes,
+      dueDate,
+      amount,
+      currency,
+      sharedWith,
+      paymentChannel,
+      isAnnualPayment,
+      annualPaymentDate,
+    } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -65,10 +84,13 @@ export const createExpense = async (_prevState: CreateExpenseState, formData: Fo
         notes,
         dueDate: dueDate || null,
         amount: removeCurrencyMaskFromInput(amount),
+        currency: currency as Currency,
         sharedWith: {
           connect: sharedWith.map((personId) => ({ id: personId })),
         },
         paymentChannel: paymentChannel as PaymentChannel,
+        isAnnualPayment: isAnnualPayment || false,
+        annualPaymentDate: annualPaymentDate || null,
         userId,
       },
     })
@@ -97,19 +119,33 @@ export const updateExpense = async (
       dueDate: formData.get('dueDate'),
       notes: formData.get('notes'),
       amount: formData.get('amount'),
+      currency: formData.get('currency') || 'ARS',
       sharedWith: formData.getAll('sharedWith'),
       paymentChannel: formData.get('paymentChannel'),
+      isAnnualPayment: formData.get('isAnnualPayment') === 'true',
+      annualPaymentDate: formData.get('annualPaymentDate') || undefined,
     })
 
     if (!validatedFields.success) {
+      console.log("🚀 ~ updateExpense ~ validation errors:", validatedFields.error.flatten().fieldErrors)
       return {
         errors: validatedFields.error.flatten().fieldErrors,
-        message: 'Error',
-        sucess: false,
+        message: 'Error de validación',
+        success: false,
       }
     }
 
-    const { description, notes, dueDate, amount, sharedWith, paymentChannel } = validatedFields.data
+    const {
+      description,
+      notes,
+      dueDate,
+      amount,
+      currency,
+      sharedWith,
+      paymentChannel,
+      isAnnualPayment,
+      annualPaymentDate,
+    } = validatedFields.data
 
     await prisma.expense.update({
       data: {
@@ -117,38 +153,36 @@ export const updateExpense = async (
         dueDate: dueDate || null,
         notes,
         amount: removeCurrencyMaskFromInput(amount),
+        currency: currency as Currency,
         sharedWith: {
           set: [],
           connect: sharedWith.map((personId) => ({ id: personId })),
         },
         paymentChannel: paymentChannel as PaymentChannel,
+        isAnnualPayment: isAnnualPayment || false,
+        annualPaymentDate: annualPaymentDate ? (annualPaymentDate as string) : null,
       },
       where: {
         id,
       },
     })
 
-    const expensePaymentSummaryToUpdate = await prisma.expensePaymentSummary.findFirst({
+    // Actualizar todos los ExpensePaymentSummary no pagados
+    const isPaidAnnually = isAnnualPayment && annualPaymentDate !== null && annualPaymentDate !== undefined
+
+    await prisma.expensePaymentSummary.updateMany({
       where: {
         expenseId: id,
         paid: false,
       },
-      orderBy: {
-        date: 'desc',
+      data: {
+        dueDate: dueDate || null,
+        amount: removeCurrencyMaskFromInput(amount),
+        currency: currency as Currency,
+        paymentChannel: paymentChannel as PaymentChannel,
+        paid: isPaidAnnually,
       },
     })
-    if (expensePaymentSummaryToUpdate) {
-      await prisma.expensePaymentSummary.update({
-        data: {
-          dueDate: dueDate || null,
-          amount: removeCurrencyMaskFromInput(amount),
-          paymentChannel: paymentChannel as PaymentChannel,
-        },
-        where: {
-          id: expensePaymentSummaryToUpdate.id,
-        },
-      })
-    }
     revalidatePath(PAGES_URL.EXPENSES.BASE_PATH)
     revalidatePath(callbackUrl)
     return {
@@ -156,6 +190,7 @@ export const updateExpense = async (
       success: true,
     }
   } catch (error) {
+    console.log("🚀 ~ updateExpense ~ error:", error)
     return {
       message: 'Error en base de datos',
       success: false,
@@ -216,6 +251,45 @@ export async function fetchExpenses() {
   } catch (error) {
     console.error('Error:', error)
     throw new Error('Error al cargar Gastos')
+  }
+}
+
+export const updateExpenseAmount = async (expensePaymentSummaryId: string, newAmount: number) => {
+  'use server'
+  try {
+    const expensePaymentSummary = await prisma.expensePaymentSummary.findUnique({
+      where: {
+        id: expensePaymentSummaryId,
+      },
+    })
+
+    if (!expensePaymentSummary) {
+      return {
+        message: 'Resumen de gasto no encontrado',
+        success: false,
+      }
+    }
+
+    // Actualizar el monto en el resumen de pago
+    await prisma.expensePaymentSummary.update({
+      where: {
+        id: expensePaymentSummaryId,
+      },
+      data: {
+        amount: newAmount,
+      },
+    })
+
+    revalidatePath(PAGES_URL.DASHBOARD.BASE_PATH)
+    return {
+      message: 'Monto actualizado',
+      success: true,
+    }
+  } catch (error) {
+    return {
+      message: 'Error en base de datos',
+      success: false,
+    }
   }
 }
 

@@ -205,6 +205,30 @@ export default function UpsertCreditCardExpenseItemForm({
             ) : null}
           </div>
         </div>
+        <div>
+          <label htmlFor="currency" className="mb-2 block text-sm font-medium">
+            Moneda
+          </label>
+          <div>
+            <select
+              name="currency"
+              id="currency"
+              aria-describedby="currency"
+              className="w-full rounded-md"
+              defaultValue={creditCardExpenseItem?.currency || 'ARS'}
+            >
+              <option value="ARS">ARS (Pesos Argentinos)</option>
+              <option value="USD">USD (Dólares)</option>
+            </select>
+          </div>
+          {state.errors?.currency ? (
+            <div id="currency-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+              {state.errors.currency.map((error: string) => (
+                <p key={error}>{error}</p>
+              ))}
+            </div>
+          ) : null}
+        </div>
 
         <div>
           <label className="mb-2 block text-sm font-medium">¿Es un pago recurrente? (todos los meses)</label>

@@ -45,6 +45,14 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
   const [total, setTotal] = useState(0)
   const [subtotal, setSubtotal] = useState(0)
   const [taxes, setTaxes] = useState(0)
+  const [subtotalARS, setSubtotalARS] = useState(0)
+  const [subtotalUSD, setSubtotalUSD] = useState(0)
+  const [taxesARS, setTaxesARS] = useState(0)
+  const [taxesUSD, setTaxesUSD] = useState(0)
+  const [totalARS, setTotalARS] = useState(0)
+  const [totalUSD, setTotalUSD] = useState(0)
+  const [creditBalanceARS, setCreditBalanceARS] = useState(0)
+  const [creditBalanceUSD, setCreditBalanceUSD] = useState(0)
   const [datePicker, setDatePicker] = useState(getToday())
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [itemIdToApplyDiscount, setItemIdToApplyDiscount] = useState<string | null>()
@@ -97,6 +105,28 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
   }
 
   useEffect(() => {
+    // Calcular totales por moneda
+    const totalsARS = selectedItems.reduce(
+      (acc, item) => {
+        if (item.checked && item.currency === 'ARS') {
+          return acc + (item.installmentsAmount - item.discount)
+        }
+        return acc
+      },
+      0
+    )
+
+    const totalsUSD = selectedItems.reduce(
+      (acc, item) => {
+        if (item.checked && item.currency === 'USD') {
+          return acc + (item.installmentsAmount - item.discount)
+        }
+        return acc
+      },
+      0
+    )
+
+    // Calcular total general (legacy, para compatibilidad)
     const total = selectedItems.reduce((total, item) => {
       if (item.checked) {
         return (total += item.installmentsAmount - item.discount)
@@ -104,6 +134,14 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
       return total
     }, 0)
 
+    setSubtotalARS(totalsARS)
+    setSubtotalUSD(totalsUSD)
+    setTotalARS(totalsARS)
+    setTotalUSD(totalsUSD)
+    setTaxesARS(0)
+    setTaxesUSD(0)
+
+    // Legacy
     setSubtotal(total)
     setTaxes(0)
     setTotal(total)
@@ -150,8 +188,18 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
         return { id, installmentsAmount: installmentsAmount - item.discount, installmentsPaid, installmentsQuantity }
       })
 
+    // Legacy fields (para compatibilidad)
     formData.set('taxesAmount', taxes.toString())
     formData.set('totalAmount', total.toString())
+
+    // Nuevos campos multi-moneda
+    formData.set('taxesAmountARS', taxesARS.toString())
+    formData.set('taxesAmountUSD', taxesUSD.toString())
+    formData.set('totalAmountARS', totalARS.toString())
+    formData.set('totalAmountUSD', totalUSD.toString())
+    formData.set('creditBalanceARS', creditBalanceARS.toString())
+    formData.set('creditBalanceUSD', creditBalanceUSD.toString())
+
     formData.set('creditCardExpenseItems', JSON.stringify(selectedItemsToSend))
 
     dispatch(formData)
@@ -250,7 +298,12 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
                       className="flex flex-wrap gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 items-center"
                     >
                       <div>
-                        <p className="font-bold">{item.description}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold">{item.description}</p>
+                          <span className={`text-xs px-2 py-1 rounded ${item.currency === 'USD' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                            {item.currency}
+                          </span>
+                        </div>
                         {item.recurrent ? (
                           <p>Pago recurrente</p>
                         ) : (
@@ -300,29 +353,125 @@ export default function SummaryCreateForm({ creditCard }: { creditCard: CreditCa
                 ) : null}
               </div>
             </div>
-            <div className="flex flex-col gap-1 text-right">
-              <div className="flex gap-1 justify-end items-center">
-                <span className="font-bold">Subtotal: </span>
-                <span>{formatCurrency(subtotal)}</span>
+            <div className="flex flex-col gap-3 text-right border-t pt-4 mt-4">
+              {/* Sección ARS */}
+              <div className="border-b pb-3">
+                <p className="font-bold text-lg mb-2 text-green-600">ARS (Pesos)</p>
+                <div className="flex gap-1 justify-end items-center mb-1">
+                  <span className="font-medium">Subtotal ARS: </span>
+                  <span>{formatCurrency(subtotalARS)}</span>
+                </div>
+                <div className="flex gap-2 justify-end items-center mb-1">
+                  <span className="font-medium">Impuestos ARS: </span>
+                  <NumericFormat
+                    inputMode="decimal"
+                    className="rounded-md w-32 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
+                    value={taxesARS}
+                    prefix={'$ '}
+                    thousandSeparator="."
+                    decimalScale={2}
+                    decimalSeparator=","
+                    onChange={(e) => {
+                      const newTaxes = removeCurrencyMaskFromInput(e.target.value)
+                      setTaxesARS(newTaxes)
+                      setTotalARS(subtotalARS + newTaxes - creditBalanceARS)
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2 justify-end items-center mb-1">
+                  <span className="font-medium">Saldo a favor ARS: </span>
+                  <NumericFormat
+                    inputMode="decimal"
+                    className="rounded-md w-32 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
+                    value={creditBalanceARS}
+                    prefix={'$ '}
+                    thousandSeparator="."
+                    decimalScale={2}
+                    decimalSeparator=","
+                    onChange={(e) => {
+                      const newBalance = removeCurrencyMaskFromInput(e.target.value)
+                      setCreditBalanceARS(newBalance)
+                      setTotalARS(subtotalARS + taxesARS - newBalance)
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2 justify-end items-center">
+                  <p className="font-bold text-lg">Total ARS: </p>
+                  <NumericFormat
+                    inputMode="decimal"
+                    className="rounded-md w-36 px-2 py-1 font-bold focus-visible:ring-2 focus-visible:ring-orange-500"
+                    value={totalARS}
+                    prefix={'$ '}
+                    thousandSeparator="."
+                    decimalScale={2}
+                    decimalSeparator=","
+                    onChange={(e) => {
+                      const newTotal = removeCurrencyMaskFromInput(e.target.value)
+                      setTotalARS(newTotal)
+                      setTaxesARS(newTotal - subtotalARS + creditBalanceARS)
+                    }}
+                  />
+                </div>
               </div>
-              <div className="flex gap-1 justify-end items-center">
-                <span className="font-bold">Impuestos, sellos, etc: </span>
-                <span>{formatCurrency(taxes)}</span>
-              </div>
-              <div className="flex gap-2 justify-end items-center">
-                <p className="font-bold">Total: </p>
-                <NumericFormat
-                  inputMode="decimal"
-                  className="rounded-md w-36 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
-                  name="totalAmount"
-                  id="totalAmount"
-                  value={total}
-                  prefix={'$ '}
-                  thousandSeparator="."
-                  decimalScale={2}
-                  decimalSeparator=","
-                  onChange={handleTotalChange}
-                />
+
+              {/* Sección USD */}
+              <div className="border-b pb-3">
+                <p className="font-bold text-lg mb-2 text-blue-600">USD (Dólares)</p>
+                <div className="flex gap-1 justify-end items-center mb-1">
+                  <span className="font-medium">Subtotal USD: </span>
+                  <span>{formatCurrency(subtotalUSD)}</span>
+                </div>
+                <div className="flex gap-2 justify-end items-center mb-1">
+                  <span className="font-medium">Impuestos USD: </span>
+                  <NumericFormat
+                    inputMode="decimal"
+                    className="rounded-md w-32 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
+                    value={taxesUSD}
+                    prefix={'$ '}
+                    thousandSeparator="."
+                    decimalScale={2}
+                    decimalSeparator=","
+                    onChange={(e) => {
+                      const newTaxes = removeCurrencyMaskFromInput(e.target.value)
+                      setTaxesUSD(newTaxes)
+                      setTotalUSD(subtotalUSD + newTaxes - creditBalanceUSD)
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2 justify-end items-center mb-1">
+                  <span className="font-medium">Saldo a favor USD: </span>
+                  <NumericFormat
+                    inputMode="decimal"
+                    className="rounded-md w-32 px-2 py-1 focus-visible:ring-2 focus-visible:ring-orange-500"
+                    value={creditBalanceUSD}
+                    prefix={'$ '}
+                    thousandSeparator="."
+                    decimalScale={2}
+                    decimalSeparator=","
+                    onChange={(e) => {
+                      const newBalance = removeCurrencyMaskFromInput(e.target.value)
+                      setCreditBalanceUSD(newBalance)
+                      setTotalUSD(subtotalUSD + taxesUSD - newBalance)
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2 justify-end items-center">
+                  <p className="font-bold text-lg">Total USD: </p>
+                  <NumericFormat
+                    inputMode="decimal"
+                    className="rounded-md w-36 px-2 py-1 font-bold focus-visible:ring-2 focus-visible:ring-orange-500"
+                    value={totalUSD}
+                    prefix={'$ '}
+                    thousandSeparator="."
+                    decimalScale={2}
+                    decimalSeparator=","
+                    onChange={(e) => {
+                      const newTotal = removeCurrencyMaskFromInput(e.target.value)
+                      setTotalUSD(newTotal)
+                      setTaxesUSD(newTotal - subtotalUSD + creditBalanceUSD)
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>

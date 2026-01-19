@@ -1,5 +1,5 @@
 'use server'
-import { CreditCardPaymentSummary, Prisma } from '@prisma/client'
+import { CreditCardPaymentSummary, Currency, Prisma } from '@prisma/client'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth'
@@ -22,6 +22,7 @@ type CreateCreditCardExpenseItemState = {
     description?: string[]
     notes?: string[]
     amount?: string[]
+    currency?: string[]
     sharedWith?: string[]
     recurrent?: string[]
     installmentsQuantity?: string[]
@@ -39,6 +40,7 @@ const CreditCardExpenseItemSchema = z.object({
   description: z.string().toUpperCase().min(1, { message: 'Ingrese una descripción' }),
   notes: z.string().toUpperCase(),
   amount: z.string().min(1, { message: 'El total tiene que ser mayor que 0' }),
+  currency: z.enum(['ARS', 'USD']),
   sharedWith: z.string().array(),
   recurrent: z.boolean(),
   installmentsQuantity: z.coerce.number(),
@@ -185,8 +187,9 @@ export const createCreditCardExpenseItem = async (
   try {
     const validatedFields = CreateCreditCardExpenseItemSchema.safeParse({
       description: formData.get('description'),
-      notes: formData.get('notes'),
+      notes: formData.get('description'),
       amount: formData.get('amount'),
+      currency: formData.get('currency') || 'ARS',
       sharedWith: formData.getAll('sharedWith'),
       recurrent: formData.get('recurrent') === 'true',
       installmentsQuantity: formData.get('installmentsQuantity'),
@@ -206,6 +209,7 @@ export const createCreditCardExpenseItem = async (
       description,
       notes,
       amount,
+      currency,
       sharedWith,
       recurrent,
       installmentsQuantity,
@@ -230,25 +234,61 @@ export const createCreditCardExpenseItem = async (
       }
     }
 
-    await prisma.creditCardExpenseItem.create({
+    const installmentAmount = recurrent
+      ? removeCurrencyMaskFromInput(amount)
+      : removeCurrencyMaskFromInput(amount) / installmentsQuantity
+
+    // Crear el item de tarjeta
+    const createdItem = await prisma.creditCardExpenseItem.create({
       data: {
         description: encryptString(description),
         notes,
         amount: recurrent ? 0 : removeCurrencyMaskFromInput(amount),
+        currency: currency as Currency,
         sharedWith: {
           connect: sharedWith.map((personId) => ({ id: personId })),
         },
         recurrent,
         installmentsQuantity,
         installmentsPaid,
-        installmentsAmount: recurrent
-          ? removeCurrencyMaskFromInput(amount)
-          : removeCurrencyMaskFromInput(amount) / installmentsQuantity,
+        installmentsAmount: installmentAmount,
         paymentBeginning,
         creditCardId,
         userId,
       },
     })
+
+    // Crear InstallmentPayments para el nuevo item
+    if (recurrent) {
+      // Para recurrentes, crear solo el primer installment (número 0)
+      await prisma.installmentPayment.create({
+        data: {
+          creditCardExpenseItemId: createdItem.id,
+          installmentNumber: 0,
+          amount: installmentAmount,
+          currency: currency as Currency,
+          isPaid: false,
+          paymentDate: null,
+        },
+      })
+    } else {
+      // Para items con cuotas, crear todas las cuotas
+      const installmentPayments = []
+      for (let i = 1; i <= installmentsQuantity; i++) {
+        installmentPayments.push({
+          creditCardExpenseItemId: createdItem.id,
+          installmentNumber: i,
+          amount: installmentAmount,
+          currency: currency as Currency,
+          isPaid: false,
+          paymentDate: null,
+        })
+      }
+      await prisma.installmentPayment.createMany({
+        data: installmentPayments,
+      })
+    }
+
     revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(creditCardId))
     return {
       message: 'Gasto creado',
@@ -271,6 +311,9 @@ export const updateCreditCardExpenseItem = async (
     where: {
       id,
     },
+    include: {
+      installmentPayments: true,
+    },
   })
 
   if (!existingCreditCardExpenseItem) {
@@ -285,6 +328,7 @@ export const updateCreditCardExpenseItem = async (
       description: formData.get('description'),
       notes: formData.get('notes'),
       amount: formData.get('amount'),
+      currency: formData.get('currency') || existingCreditCardExpenseItem.currency,
       sharedWith: formData.getAll('sharedWith'),
       recurrent: formData.get('recurrent') === 'true',
       installmentsQuantity: formData.get('installmentsQuantity'),
@@ -304,6 +348,7 @@ export const updateCreditCardExpenseItem = async (
       description,
       notes,
       amount,
+      currency,
       sharedWith,
       recurrent,
       installmentsQuantity,
@@ -311,11 +356,17 @@ export const updateCreditCardExpenseItem = async (
       paymentBeginning,
     } = validatedFields.data
 
+    const installmentAmount = recurrent
+      ? removeCurrencyMaskFromInput(amount)
+      : removeCurrencyMaskFromInput(amount) / installmentsQuantity
+
+    // Actualizar el item
     await prisma.creditCardExpenseItem.update({
       data: {
         description: encryptString(description),
         notes,
         amount: recurrent ? 0 : removeCurrencyMaskFromInput(amount),
+        currency: currency as Currency,
         sharedWith: {
           set: [],
           connect: sharedWith.map((personId) => ({ id: personId })),
@@ -323,15 +374,26 @@ export const updateCreditCardExpenseItem = async (
         recurrent,
         installmentsQuantity,
         installmentsPaid,
-        installmentsAmount: recurrent
-          ? removeCurrencyMaskFromInput(amount)
-          : removeCurrencyMaskFromInput(amount) / installmentsQuantity,
+        installmentsAmount: installmentAmount,
         paymentBeginning,
       },
       where: {
         id,
       },
     })
+
+    // Actualizar montos de InstallmentPayments no pagados
+    await prisma.installmentPayment.updateMany({
+      where: {
+        creditCardExpenseItemId: id,
+        isPaid: false,
+      },
+      data: {
+        amount: installmentAmount,
+        currency: currency as Currency,
+      },
+    })
+
     revalidatePath(PAGES_URL.CREDIT_CARDS.DETAILS(existingCreditCardExpenseItem.creditCardId))
     return {
       message: 'Gasto actualizado',

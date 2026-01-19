@@ -188,6 +188,31 @@ export default function UpsertExpenseForm({
         </div>
 
         <div>
+          <label htmlFor="currency" className="mb-2 block text-sm font-medium">
+            Moneda
+          </label>
+          <div>
+            <select
+              name="currency"
+              id="currency"
+              aria-describedby="currency"
+              className="w-full rounded-md"
+              defaultValue={expenseItem?.currency || 'ARS'}
+            >
+              <option value="ARS">ARS (Pesos Argentinos)</option>
+              <option value="USD">USD (Dólares)</option>
+            </select>
+          </div>
+          {state.errors?.currency ? (
+            <div id="currency-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+              {state.errors.currency.map((error: string) => (
+                <p key={error}>{error}</p>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div>
           <label htmlFor="paymentChannel" className="mb-2 block text-sm font-medium">
             Seleccione método de pago
           </label>
@@ -262,6 +287,43 @@ export default function UpsertExpenseForm({
             ) : null}
           </div>
         </div>
+
+        {expenseItem ? (
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Checkbox
+                id="isAnnualPayment"
+                name="isAnnualPayment"
+                value="true"
+                defaultChecked={expenseItem?.isAnnualPayment || false}
+              />
+              <label htmlFor="isAnnualPayment" className="text-sm font-medium cursor-pointer">
+                Marcar como pago anual (el gasto se marcará como pagado automáticamente cada mes)
+              </label>
+            </div>
+            <div>
+              <label htmlFor="annualPaymentDate" className="mb-2 block text-sm font-medium">
+                Fecha de pago anual
+              </label>
+              <div>
+                <input
+                  id="annualPaymentDate"
+                  name="annualPaymentDate"
+                  type="month"
+                  className="peer block w-full rounded-md border border-gray-200 text-sm outline-2 placeholder:text-gray-500"
+                  defaultValue={expenseItem?.annualPaymentDate || ''}
+                />
+              </div>
+              {state.errors?.annualPaymentDate ? (
+                <div id="annualPaymentDate-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+                  {state.errors.annualPaymentDate.map((error: string) => (
+                    <p key={error}>{error}</p>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-6 flex justify-end gap-4">
           <Link

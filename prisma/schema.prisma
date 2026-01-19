@@ -77,12 +77,18 @@ enum PaymentChannel {
   DEBITO_AUTOMATICO
 }
 
+enum Currency {
+  ARS
+  USD
+}
+
 model CreditCard {
   id                     String                     @id @default(cuid())
   name                   String
   lastFourDigits         String?
   color                  String                     @default("#143273")
   textColor              String                     @default("#FFFFFF")
+  defaultCurrency        Currency                   @default(ARS)
   paymentSummaries       CreditCardPaymentSummary[]
   creditCardExpenseItems CreditCardExpenseItem[]
   user                   User                       @relation(fields: [userId], references: [id])
@@ -98,6 +104,7 @@ model CreditCardExpenseItem {
   description          String
   notes                String
   amount               Float                          @default(0) // only for items with installments (this is the total amount)
+  currency             Currency                       @default(ARS)
   sharedWith           Person[]
   recurrent            Boolean
   installmentsQuantity Int                            @default(0)
@@ -109,6 +116,7 @@ model CreditCardExpenseItem {
   creditCard           CreditCard                     @relation(fields: [creditCardId], references: [id])
   creditCardId         String
   paymentHistory       CreditCardSummaryExpenseItem[]
+  installmentPayments  InstallmentPayment[]
   user                 User                           @relation(fields: [userId], references: [id])
   userId               String
   deleted              Boolean                        @default(false)
@@ -130,37 +138,69 @@ model CreditCardSummaryExpenseItem {
   installmentsQuantity       Int                      @default(0)
 }
 
+model InstallmentPayment {
+  id                         String                    @id @default(cuid())
+  creditCardExpenseItem      CreditCardExpenseItem     @relation(fields: [creditCardExpenseItemId], references: [id])
+  creditCardExpenseItemId    String
+  creditCardPaymentSummary   CreditCardPaymentSummary? @relation(fields: [creditCardPaymentSummaryId], references: [id])
+  creditCardPaymentSummaryId String?
+  installmentNumber          Int
+  amount                     Float
+  currency                   Currency                  @default(ARS)
+  isPaid                     Boolean                   @default(false)
+  paymentDate                String?
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+
+  @@unique([creditCardExpenseItemId, installmentNumber])
+  @@index([isPaid, paymentDate])
+}
+
 model CreditCardPaymentSummary {
-  id                 String                         @id @default(cuid())
-  date               String
-  amount             Float
-  paid               Boolean                        @default(false)
-  dueDate            String
-  taxes              Float                          @default(0)
-  itemHistoryPayment CreditCardSummaryExpenseItem[]
-  creditCard         CreditCard                     @relation(fields: [creditCardId], references: [id])
-  creditCardId       String
-  user               User                           @relation(fields: [userId], references: [id])
-  userId             String
-  createdAt          DateTime                       @default(now())
-  updatedAt          DateTime                       @updatedAt
+  id                  String                         @id @default(cuid())
+  date                String
+  amount              Float
+  paid                Boolean                        @default(false)
+  dueDate             String
+  taxes               Float                          @default(0)
+  summarySequence     Int?
+  totalAmountARS      Float?
+  totalAmountUSD      Float?
+  taxesARS            Float                          @default(0)
+  taxesUSD            Float                          @default(0)
+  creditBalanceARS    Float                          @default(0)
+  creditBalanceUSD    Float                          @default(0)
+  itemHistoryPayment  CreditCardSummaryExpenseItem[]
+  installmentPayments InstallmentPayment[]
+  creditCard          CreditCard                     @relation(fields: [creditCardId], references: [id])
+  creditCardId        String
+  user                User                           @relation(fields: [userId], references: [id])
+  userId              String
+  createdAt           DateTime                       @default(now())
+  updatedAt           DateTime                       @updatedAt
+
+  @@unique([creditCardId, date])
+  @@unique([creditCardId, summarySequence])
 }
 
 model Expense {
-  id               String                  @id @default(cuid())
-  description      String
-  notes            String
-  amount           Float
-  dueDate          String?
-  sharedWith       Person[]
-  paymentChannel   PaymentChannel          @default(BANCARIZADO)
-  user             User                    @relation(fields: [userId], references: [id])
-  userId           String
-  paymentSummaries ExpensePaymentSummary[]
-  deleted          Boolean                 @default(false)
-  deletedAt        DateTime?
-  createdAt        DateTime                @default(now())
-  updatedAt        DateTime                @updatedAt
+  id                String                  @id @default(cuid())
+  description       String
+  notes             String
+  amount            Float
+  currency          Currency                @default(ARS)
+  dueDate           String?
+  sharedWith        Person[]
+  paymentChannel    PaymentChannel          @default(BANCARIZADO)
+  isAnnualPayment   Boolean                 @default(false)
+  annualPaymentDate String?
+  user              User                    @relation(fields: [userId], references: [id])
+  userId            String
+  paymentSummaries  ExpensePaymentSummary[]
+  deleted           Boolean                 @default(false)
+  deletedAt         DateTime?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
 }
 
 model ExpensePaymentSummary {
@@ -170,6 +210,7 @@ model ExpensePaymentSummary {
   date           String
   dueDate        String?
   amount         Float
+  currency       Currency       @default(ARS)
   paid           Boolean        @default(false)
   paymentChannel PaymentChannel @default(BANCARIZADO)
   user           User           @relation(fields: [userId], references: [id])
