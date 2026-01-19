@@ -29,7 +29,12 @@ export default async function Page() {
             href={PAGES_URL.CREDIT_CARDS.DETAILS(creditCard.id)}
             key={creditCard.id}
           >
-            <h1 className="font-bold">{creditCard.name}</h1>
+            <div className="flex justify-between items-start">
+              <h1 className="font-bold">{creditCard.name}</h1>
+              {creditCard.lastFourDigits && (
+                <span className="text-sm opacity-80">•••• {creditCard.lastFourDigits}</span>
+              )}
+            </div>
             <div className="flex flex-1 flex-col gap-2 justify-end">
               <p>Total de movimientos</p>
               <span className="font-bold">

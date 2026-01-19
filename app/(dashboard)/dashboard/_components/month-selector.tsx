@@ -8,7 +8,7 @@ import 'slick-carousel/slick/slick-theme.css'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { Edit } from 'lucide-react'
 import clsx from 'clsx'
-import Lottie from 'react-lottie'
+import LottiePlayer from '@/components/ui/lottie-player'
 import * as loadingAnimation from '../../../../public/animations/loading.json'
 
 const MONTH_LIST = [
@@ -189,7 +189,7 @@ export default function MonthSelector({ date }: { date: string }) {
        {isLoading ? (
         <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
           <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-            <Lottie
+            <LottiePlayer
               options={{
                 loop: true,
                 autoplay: true,

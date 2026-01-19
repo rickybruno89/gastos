@@ -333,7 +333,12 @@ export default function ExpensesSummary({
                     ) : (
                       <div className="w-full px-2 flex flex-col">
                         <div className="flex-1 flex justify-between items-end font-medium">
-                          <span className="leading-tight uppercase text-lg">{item.creditCard.name}</span>
+                          <div className="flex flex-col">
+                            <span className="leading-tight uppercase text-lg">{item.creditCard.name}</span>
+                            {item.creditCard.lastFourDigits && (
+                              <span className="text-xs text-gray-400">•••• {item.creditCard.lastFourDigits}</span>
+                            )}
+                          </div>
                           <span className="leading-tight text-xl">{formatCurrency(item.amount)}</span>
                         </div>
                         <div className="flex-1 flex justify-between items-end text-sm text-gray-400">

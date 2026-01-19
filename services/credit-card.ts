@@ -12,6 +12,7 @@ import { decryptString, encryptString, removeCurrencyMaskFromInput } from '@/lib
 type CreateCreditCardState = {
   errors?: {
     creditCardName?: string[]
+    lastFourDigits?: string[]
   }
   message?: string | null
 }
@@ -52,6 +53,13 @@ const CreateCreditCardExpenseItemSchema = CreditCardExpenseItemSchema.omit({
 const CreditCardSchema = z.object({
   id: z.string().cuid(),
   creditCardName: z.string().min(1, { message: 'El nombre es requerido' }).toUpperCase(),
+  lastFourDigits: z
+    .string()
+    .optional()
+    .transform((val) => (val === '' ? undefined : val))
+    .refine((val) => !val || (val.length === 4 && /^\d{4}$/.test(val)), {
+      message: 'Deben ser exactamente 4 dígitos',
+    }),
   color: z.string(),
   textColor: z.string(),
 })
@@ -62,6 +70,7 @@ export const updateCreditCard = async (id: string, _prevState: CreateCreditCardS
   try {
     const validatedFields = CreateCreditCardSchema.safeParse({
       creditCardName: formData.get('creditCardName'),
+      lastFourDigits: formData.get('lastFourDigits') || undefined,
       color: formData.get('color'),
       textColor: formData.get('textColor'),
     })
@@ -73,7 +82,7 @@ export const updateCreditCard = async (id: string, _prevState: CreateCreditCardS
       }
     }
 
-    const { creditCardName, color, textColor } = validatedFields.data
+    const { creditCardName, lastFourDigits, color, textColor } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -97,6 +106,7 @@ export const updateCreditCard = async (id: string, _prevState: CreateCreditCardS
     await prisma.creditCard.update({
       data: {
         name: creditCardName,
+        lastFourDigits: lastFourDigits || null,
         color,
         textColor,
         userId,
@@ -106,6 +116,7 @@ export const updateCreditCard = async (id: string, _prevState: CreateCreditCardS
       },
     })
   } catch (error) {
+    console.error('Error updating credit card:', error)
     return {
       message: 'Error en base de datos',
     }
@@ -118,6 +129,7 @@ export const createCreditCard = async (_prevState: CreateCreditCardState, formDa
   try {
     const validatedFields = CreateCreditCardSchema.safeParse({
       creditCardName: formData.get('creditCardName'),
+      lastFourDigits: formData.get('lastFourDigits') || undefined,
       color: formData.get('color'),
       textColor: formData.get('textColor'),
     })
@@ -129,7 +141,7 @@ export const createCreditCard = async (_prevState: CreateCreditCardState, formDa
       }
     }
 
-    const { creditCardName, color, textColor } = validatedFields.data
+    const { creditCardName, lastFourDigits, color, textColor } = validatedFields.data
 
     const userId = await getAuthUserId()
 
@@ -150,6 +162,7 @@ export const createCreditCard = async (_prevState: CreateCreditCardState, formDa
     await prisma.creditCard.create({
       data: {
         name: creditCardName,
+        lastFourDigits: lastFourDigits || null,
         color,
         textColor,
         userId,

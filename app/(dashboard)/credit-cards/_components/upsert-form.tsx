@@ -17,6 +17,7 @@ export default function CreditCardCreateUpsertForm({ creditCard }: { creditCard?
   const [color, setColor] = useState(creditCard?.color || DEFAULT_COLOR)
   const [textColor, setTextColor] = useState(creditCard?.textColor || DEFAULT_TEXT_COLOR)
   const [name, setName] = useState(creditCard?.name || 'Nombre')
+  const [lastFourDigits, setLastFourDigits] = useState(creditCard?.lastFourDigits || '')
 
   return (
     <form action={dispatch}>
@@ -41,6 +42,37 @@ export default function CreditCardCreateUpsertForm({ creditCard }: { creditCard?
             {state.errors?.creditCardName ? (
               <div id="creditCardName-error" aria-live="polite" className="mt-2 text-sm text-red-500">
                 {state.errors.creditCardName.map((error: string) => (
+                  <p key={error}>{error}</p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+        <div>
+          <label htmlFor="lastFourDigits" className="mb-2 block text-sm font-medium">
+            Últimos 4 dígitos (opcional)
+          </label>
+          <div className="relative rounded-md">
+            <div className="relative w-full">
+              <input
+                defaultValue={creditCard?.lastFourDigits || ''}
+                id="lastFourDigits"
+                name="lastFourDigits"
+                type="text"
+                maxLength={4}
+                placeholder="1234"
+                aria-describedby="lastFourDigits-error"
+                className="peer block w-full rounded-md border border-gray-200 text-sm outline-2 placeholder:text-gray-500"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '')
+                  e.target.value = value
+                  setLastFourDigits(value)
+                }}
+              />
+            </div>
+            {state.errors?.lastFourDigits ? (
+              <div id="lastFourDigits-error" aria-live="polite" className="mt-2 text-sm text-red-500">
+                {state.errors.lastFourDigits.map((error: string) => (
                   <p key={error}>{error}</p>
                 ))}
               </div>
@@ -83,6 +115,11 @@ export default function CreditCardCreateUpsertForm({ creditCard }: { creditCard?
           className="w-full md:w-[350px] aspect-video rounded-md shadow-xl p-4  flex flex-col justify-between"
         >
           <h1 className="font-bold">{name}</h1>
+          {lastFourDigits && (
+            <div className="text-right">
+              <span className="text-sm opacity-80">•••• {lastFourDigits}</span>
+            </div>
+          )}
         </div>
         <div className="mt-6 flex justify-end gap-4">
           <Link
@@ -91,7 +128,7 @@ export default function CreditCardCreateUpsertForm({ creditCard }: { creditCard?
           >
             Cancelar
           </Link>
-          <button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700">
+          <button type="submit" className="bg-orange-500 px-4 py-2 text-white hover:bg-gray-700 rounded-lg">
             {creditCard ? 'Modificar' : 'Crear'}
           </button>
         </div>

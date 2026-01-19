@@ -1,5 +1,4 @@
 'use client'
-import Breadcrumbs from '@/components/ui/breadcrumbs'
 import ButtonDelete from '@/components/ui/button-delete'
 import { PAGES_URL } from '@/lib/routes'
 import { formatCurrency, formatLocaleDate, formatLocaleDueDate } from '@/lib/utils'
@@ -13,7 +12,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
-import Lottie from 'react-lottie'
+import LottiePlayer from '@/components/ui/lottie-player'
 import * as checkAnimation from '../../../../public/animations/check.json'
 import * as loadingAnimation from '../../../../public/animations/loading.json'
 import { Prisma } from '@prisma/client'
@@ -61,7 +60,7 @@ export default function CreditCardSummaries({ creditCard }: { creditCard: DataWi
     return (
       <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
         <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-          <Lottie
+          <LottiePlayer
             options={{
               loop: false,
               autoplay: true,
@@ -82,7 +81,7 @@ export default function CreditCardSummaries({ creditCard }: { creditCard: DataWi
     return (
       <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
         <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-          <Lottie
+          <LottiePlayer
             options={{
               loop: true,
               autoplay: true,
@@ -101,8 +100,13 @@ export default function CreditCardSummaries({ creditCard }: { creditCard: DataWi
   return (
     <div className="flex flex-col gap-4">
       <section className="w-full px-4 max-w-xl mx-auto">
-        <div className="flex gap-4">
-          <p className="text-lg font-semibold">{creditCardData?.name}</p>{' '}
+        <div className="flex gap-4 items-center">
+          <div className="flex flex-col">
+            <p className="text-lg font-semibold">{creditCardData?.name}</p>
+            {creditCardData?.lastFourDigits && (
+              <span className="text-sm text-gray-500">•••• {creditCardData.lastFourDigits}</span>
+            )}
+          </div>
           <Link href={PAGES_URL.CREDIT_CARDS.EDIT(creditCardData.id)} className="flex gap-2 text-blue-500">
             Editar <Edit className="w-5 " />
           </Link>

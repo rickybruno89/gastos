@@ -10,9 +10,8 @@ import { useEffect, useState } from 'react'
 import { formatCurrency, getNextMonthDate, removeCurrencyMaskFromInput } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { NumericFormat } from 'react-number-format'
-import ButtonLoadingSpinner from '@/components/ui/button-loading-spinner'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Lottie from 'react-lottie'
+import LottiePlayer from '@/components/ui/lottie-player'
 import * as checkAnimation from '../../../../../../public/animations/check.json'
 import * as loadingAnimation from '../../../../../../public/animations/loading.json'
 
@@ -82,7 +81,7 @@ export default function UpsertCreditCardExpenseItemForm({
       {state.success && !isLoading ? (
         <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
           <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-            <Lottie
+            <LottiePlayer
               options={{
                 loop: false,
                 autoplay: true,
@@ -100,7 +99,7 @@ export default function UpsertCreditCardExpenseItemForm({
       {isLoading ? (
         <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
           <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-            <Lottie
+            <LottiePlayer
               options={{
                 loop: true,
                 autoplay: true,

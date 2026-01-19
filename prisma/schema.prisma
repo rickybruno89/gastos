@@ -80,6 +80,7 @@ enum PaymentChannel {
 model CreditCard {
   id                     String                     @id @default(cuid())
   name                   String
+  lastFourDigits         String?
   color                  String                     @default("#143273")
   textColor              String                     @default("#FFFFFF")
   paymentSummaries       CreditCardPaymentSummary[]

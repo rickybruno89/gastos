@@ -12,7 +12,7 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { debounce } from 'lodash'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { useRouter } from 'next/navigation'
-import Lottie from 'react-lottie'
+import LottiePlayer from '@/components/ui/lottie-player'
 import * as checkAnimation from '../../../../public/animations/check.json'
 import * as loadingAnimation from '../../../../public/animations/loading.json'
 
@@ -62,7 +62,7 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
     return (
       <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
           <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-          <Lottie
+          <LottiePlayer
             options={{
               loop: false,
               autoplay: true,
@@ -83,7 +83,7 @@ export default function ExpensesTable({ expenses }: { expenses: DataWithInclude[
     return (
       <div className="flex flex-col justify-center gap-10 items-center cursor-default h-screen fixed top-0 z-50 bg-white left-0 w-full">
           <div className="max-w-[200px] md:max-w-[300px] flex flex-col justify-center items-center w-full">
-          <Lottie
+          <LottiePlayer
             options={{
               loop: true,
               autoplay: true,
