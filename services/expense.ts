@@ -35,7 +35,7 @@ const ExpenseSchema = z.object({
   sharedWith: z.string().array(),
   paymentChannel: z.string(),
   isAnnualPayment: z.boolean().optional(),
-  annualPaymentDate: z.string().optional(),
+  annualPaymentDate: z.string().nullable().optional(),
 })
 
 const CreateExpenseSchema = ExpenseSchema.omit({
