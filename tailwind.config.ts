@@ -20,9 +20,6 @@ const config: Config = {
         money: '#3bb272',
       },
       fontFamily: {
-        inter: ['var(--font-inter)'],
-        roboto: ['var(--font-roboto)'],
-        lusitana: ['var(--font-lusitana)'],
         kanit: ['var(--font-kanit)'],
       },
       rotate: {
