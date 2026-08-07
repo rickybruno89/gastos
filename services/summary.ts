@@ -572,78 +572,75 @@ export const setNoNeedExpensePaymentSummary = async (expenseItem: ExpensePayment
   redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${expenseItem.date}`)
 }
 
-export const setCreditCardPaymentSummaryPaid = async (creditCardExpense: CreditCardPaymentSummary) => {
-  // Validación de idempotencia
-  if (creditCardExpense.paid) {
-    revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
-    redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
-  }
-
-  const creditCardPaymentSummaryExpenseItems = await prisma.creditCardSummaryExpenseItem.findMany({
-    where: {
-      creditCardPaymentSummaryId: creditCardExpense.id,
-    },
-  })
+export const setCreditCardPaymentSummaryPaid = async (id: string) => {
+  let summaryDate: string
 
   try {
-    await prisma.$transaction([
-      // Marcar resumen como pagado
-      prisma.creditCardPaymentSummary.update({
-        data: {
-          paid: true,
-          amount: creditCardExpense.amount,
-        },
-        where: {
-          id: creditCardExpense.id,
-        },
-      }),
-      // Marcar InstallmentPayments como pagados
-      prisma.installmentPayment.updateMany({
-        where: {
-          creditCardPaymentSummaryId: creditCardExpense.id,
-        },
-        data: {
-          isPaid: true,
-          paymentDate: creditCardExpense.date,
-        },
-      }),
-      // Incrementar installmentsPaid (mantener por compatibilidad)
-      prisma.creditCardExpenseItem.updateMany({
-        data: {
-          installmentsPaid: {
-            increment: 1,
-          },
-        },
-        where: {
-          recurrent: false,
-          id: {
-            in: creditCardPaymentSummaryExpenseItems.map((item) => item.creditCardExpenseItemId),
-          },
-        },
-      }),
-      // Marcar items como finished si todas las cuotas están pagadas
-      prisma.creditCardExpenseItem.updateMany({
-        data: {
-          finished: true,
-          finishedAt: new Date(),
-        },
-        where: {
-          id: {
-            in: creditCardPaymentSummaryExpenseItems.map((item) => item.creditCardExpenseItemId),
-          },
-          recurrent: false,
-          installmentsPaid: {
-            equals: prisma.creditCardExpenseItem.fields.installmentsQuantity,
-          },
-        },
-      }),
-    ])
+    const userId = await getAuthUserId()
+    const summary = await prisma.creditCardPaymentSummary.findFirst({
+      where: { id, userId },
+      select: { date: true },
+    })
+
+    if (!summary) throw new Error('Resumen no encontrado')
+    summaryDate = summary.date
+
+    await prisma.$transaction(async (tx) => {
+      // Solo una solicitud puede cambiar el resumen de pendiente a pagado.
+      const claim = await tx.creditCardPaymentSummary.updateMany({
+        where: { id, userId, paid: false },
+        data: { paid: true },
+      })
+
+      if (claim.count === 0) return false
+
+      const unpaidInstallments = await tx.installmentPayment.findMany({
+        where: { creditCardPaymentSummaryId: id, isPaid: false },
+        select: { id: true, creditCardExpenseItemId: true },
+      })
+
+      await tx.installmentPayment.updateMany({
+        where: { id: { in: unpaidInstallments.map((installment) => installment.id) }, isPaid: false },
+        data: { isPaid: true, paymentDate: summary.date },
+      })
+
+      const installmentsByExpenseItem = unpaidInstallments.reduce((counts, installment) => {
+        counts.set(installment.creditCardExpenseItemId, (counts.get(installment.creditCardExpenseItemId) || 0) + 1)
+        return counts
+      }, new Map<string, number>())
+
+      for (const [expenseItemId, count] of Array.from(installmentsByExpenseItem.entries())) {
+        const currentExpenseItem = await tx.creditCardExpenseItem.findUnique({
+          where: { id: expenseItemId },
+          select: { recurrent: true },
+        })
+
+        if (!currentExpenseItem || currentExpenseItem.recurrent) continue
+
+        const expenseItem = await tx.creditCardExpenseItem.update({
+          where: { id: expenseItemId },
+          data: { installmentsPaid: { increment: count } },
+          select: { installmentsPaid: true, installmentsQuantity: true },
+        })
+
+        if (expenseItem.installmentsPaid >= expenseItem.installmentsQuantity) {
+          await tx.creditCardExpenseItem.update({
+            where: { id: expenseItemId },
+            data: { finished: true, finishedAt: new Date() },
+          })
+        }
+      }
+
+      return true
+    })
+
   } catch (error) {
     console.error('Error:', error)
     throw new Error('Error al cargar Tarjetas de créditos')
   }
-  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
-  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${creditCardExpense.date}`)
+
+  revalidatePath(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${summaryDate!}`)
+  redirect(`${PAGES_URL.DASHBOARD.BASE_PATH}?date=${summaryDate!}`)
 }
 
 export const deleteCreditCardPaymentSummary = async (id: string) => {

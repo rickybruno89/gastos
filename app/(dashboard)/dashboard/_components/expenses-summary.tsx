@@ -17,7 +17,7 @@ import {
 } from '@/services/summary'
 import { updateExpenseAmount } from '@/services/expense'
 import { CreditCardPaymentSummary, ExpensePaymentSummary, Prisma } from '@prisma/client'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { PAGES_URL } from '@/lib/routes'
 import { undoCCExpensePaymentSummaryPaid } from '@/services/credit-card'
@@ -80,6 +80,7 @@ export default function ExpensesSummary({
   const [creditCardExpenseSummaries, setCreditCardExpenseSummaries] = useState(
     creditCardExpenseSummariesRaw.map((item) => ({ ...item, isLoading: false }))
   )
+  const processingCreditCardPaymentIds = useRef(new Set<string>())
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
   const [editingAmount, setEditingAmount] = useState<number>(0)
 
@@ -135,12 +136,19 @@ export default function ExpensesSummary({
   }
 
   const payCCExpense = async (item: CreditCardPaymentSummary) => {
+    if (processingCreditCardPaymentIds.current.has(item.id)) return
+
+    processingCreditCardPaymentIds.current.add(item.id)
     const newCreditCardExpenseSummaries = creditCardExpenseSummaries.map((creditCardExpense) => ({
       ...creditCardExpense,
       isLoading: creditCardExpense.id === item.id ? true : false,
     }))
     setCreditCardExpenseSummaries(newCreditCardExpenseSummaries)
-    await setCreditCardPaymentSummaryPaid(item)
+    try {
+      await setCreditCardPaymentSummaryPaid(item.id)
+    } finally {
+      processingCreditCardPaymentIds.current.delete(item.id)
+    }
   }
 
   const getExpenseStatus = (expense: ExpensesPaymentSummaryWithInclude | CreditCardExpensesWithInclude) => {
@@ -521,6 +529,7 @@ export default function ExpensesSummary({
                     ) : (
                       <>
                         <button
+                          disabled={item.isLoading}
                           className="w-20 flex justify-center items-center p-2 bg-money rounded-r-xl text-white"
                           onClick={() => payCCExpense(item)}
                         >
