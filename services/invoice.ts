@@ -31,9 +31,10 @@ export const sendPdfEmail = async (imageData: string, pdfName: string, subject: 
       to: invoiceData.destinationEmail,
       bcc: invoiceData.personalEmail,
       subject,
+      text: subject,
       attachments: [
         {
-          filename: pdfName,
+          filename: `${pdfName}.pdf`,
           content: pdfBuffer,
           contentType: 'application/pdf',
         },
