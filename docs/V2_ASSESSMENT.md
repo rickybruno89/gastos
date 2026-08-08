@@ -209,19 +209,19 @@ No hay preferencias por usuario, outbox, retry persistente ni trazabilidad del e
 
 ## B.1. Resumen por categoría
 
-| Categoría | Severidad | Hallazgo principal |
-|---|---:|---|
-| Architecture | High | Dominio, persistencia, auth, cache y navegación conviven en Server Actions. |
-| Performance | High | Consultas secuenciales, auth repetida, `noStore` generalizado y esperas artificiales. |
-| Domain model | Critical | Se mezclan plantilla y ocurrencia; faltan porcentajes, deuda manual independiente y conciliación real. |
-| Database | High | `Float` para dinero, fechas `String`, pocos índices y snapshots incompletos. |
-| Business logic | Critical | Pago anual, cuotas, undo y edición de consumos pueden quedar inconsistentes. |
-| UI | Medium | Pantallas monolíticas, montos ambiguos y acciones ocultas detrás de swipe. |
-| UX | High | Esperas artificiales, recargas completas, undo inconsistente y errores poco visibles. |
-| Developer experience | High | Sin tests, README genérico, documentación divergente y build peligroso. |
-| Security | Critical | IDOR entre usuarios, secrets en Git y Next.js vulnerable/desactualizado. |
-| Scalability | Medium | Consultas sin índices compuestos, N+1 de escritura y ausencia de idempotencia general. |
-| Mobile readiness | High | No hay API, contratos ni auth móvil; el dominio depende de Next.js. |
+| Categoría            | Severidad | Hallazgo principal                                                                                     |
+| -------------------- | --------: | ------------------------------------------------------------------------------------------------------ |
+| Architecture         |      High | Dominio, persistencia, auth, cache y navegación conviven en Server Actions.                            |
+| Performance          |      High | Consultas secuenciales, auth repetida, `noStore` generalizado y esperas artificiales.                  |
+| Domain model         |  Critical | Se mezclan plantilla y ocurrencia; faltan porcentajes, deuda manual independiente y conciliación real. |
+| Database             |      High | `Float` para dinero, fechas `String`, pocos índices y snapshots incompletos.                           |
+| Business logic       |  Critical | Pago anual, cuotas, undo y edición de consumos pueden quedar inconsistentes.                           |
+| UI                   |    Medium | Pantallas monolíticas, montos ambiguos y acciones ocultas detrás de swipe.                             |
+| UX                   |      High | Esperas artificiales, recargas completas, undo inconsistente y errores poco visibles.                  |
+| Developer experience |      High | Sin tests, README genérico, documentación divergente y build peligroso.                                |
+| Security             |  Critical | IDOR entre usuarios, secrets en Git y Next.js vulnerable/desactualizado.                               |
+| Scalability          |    Medium | Consultas sin índices compuestos, N+1 de escritura y ausencia de idempotencia general.                 |
+| Mobile readiness     |      High | No hay API, contratos ni auth móvil; el dominio depende de Next.js.                                    |
 
 ## B.2. Architecture — High
 
@@ -503,39 +503,39 @@ Invoice debe permanecer fuera del rediseño funcional. Solo corresponde aislar s
 
 # D. Product/domain gaps
 
-| Necesidad | Estado actual |
-|---|---|
-| Gastos pagaderos por período mensual | Existe, con generación manual y mutaciones del maestro |
-| Gastos bimestrales anclados a un mes inicial | No existe |
-| Excepciones anuales o de cobertura | Flag anual especial |
-| Gastos diarios/transacciones de caja | Fuera de alcance por definición |
-| Porcentajes personalizados | Solo división igual en UI |
-| Validación total 100% | No existe |
-| Propietario con 0% / tercero con 100% | No existe explícitamente |
-| Personas manuales | Parcial |
-| Usuarios conectados | No existe |
-| Gasto visible para participante | No existe |
-| Reparto informativo por mes/persona/moneda | Parcial y calculado con relaciones actuales |
-| Snapshot histórico del reparto | No existe |
-| Deuda manual independiente | No existe |
-| Pagos parciales de deuda manual | No existe |
-| Separación estricta reparto vs. Deudas | No existe como límite de dominio |
-| Statement con líneas reales | No existe |
-| Match esperado vs. real | No existe |
-| Cargo desconocido | No existe |
-| Cargo esperado ausente | No existe |
-| Movimiento trasladado de cierre | No está modelado |
-| Fecha de compra/posted/closing | Solo mes esperado y mes de resumen |
-| N créditos con descripción | Un agregado por moneda |
-| ARS/USD sin conversión | Parcial; hay sumas incorrectas |
-| Idempotencia general | Solo parcial al pagar tarjeta |
-| Concurrencia/versionado | No existe |
-| Audit trail | No existe |
-| Undo consistente | Parcial e incorrecto |
-| Pagos adelantados/coberturas | Workaround anual |
-| Personas archivadas sin romper historia | Incompleto |
-| Desconexión de usuarios | No existe |
-| Cancelación/reversión de cuotas | No existe de forma consistente |
+| Necesidad                                    | Estado actual                                          |
+| -------------------------------------------- | ------------------------------------------------------ |
+| Gastos pagaderos por período mensual         | Existe, con generación manual y mutaciones del maestro |
+| Gastos bimestrales anclados a un mes inicial | No existe                                              |
+| Excepciones anuales o de cobertura           | Flag anual especial                                    |
+| Gastos diarios/transacciones de caja         | Fuera de alcance por definición                        |
+| Porcentajes personalizados                   | Solo división igual en UI                              |
+| Validación total 100%                        | No existe                                              |
+| Propietario con 0% / tercero con 100%        | No existe explícitamente                               |
+| Personas manuales                            | Parcial                                                |
+| Usuarios conectados                          | No existe                                              |
+| Gasto visible para participante              | No existe                                              |
+| Reparto informativo por mes/persona/moneda   | Parcial y calculado con relaciones actuales            |
+| Snapshot histórico del reparto               | No existe                                              |
+| Deuda manual independiente                   | No existe                                              |
+| Pagos parciales de deuda manual              | No existe                                              |
+| Separación estricta reparto vs. Deudas       | No existe como límite de dominio                       |
+| Statement con líneas reales                  | No existe                                              |
+| Match esperado vs. real                      | No existe                                              |
+| Cargo desconocido                            | No existe                                              |
+| Cargo esperado ausente                       | No existe                                              |
+| Movimiento trasladado de cierre              | No está modelado                                       |
+| Fecha de compra/posted/closing               | Solo mes esperado y mes de resumen                     |
+| N créditos con descripción                   | Un agregado por moneda                                 |
+| ARS/USD sin conversión                       | Parcial; hay sumas incorrectas                         |
+| Idempotencia general                         | Solo parcial al pagar tarjeta                          |
+| Concurrencia/versionado                      | No existe                                              |
+| Audit trail                                  | No existe                                              |
+| Undo consistente                             | Parcial e incorrecto                                   |
+| Pagos adelantados/coberturas                 | Workaround anual                                       |
+| Personas archivadas sin romper historia      | Incompleto                                             |
+| Desconexión de usuarios                      | No existe                                              |
+| Cancelación/reversión de cuotas              | No existe de forma consistente                         |
 
 ---
 
@@ -563,82 +563,110 @@ En consecuencia, las preguntas originales sobre nacimiento, exigibilidad, acepta
 
 Trazabilidad respecto de la lista original:
 
-| Pregunta original | Resultado de la aclaración |
-|---|---|
-| 1 — nacimiento de deuda compartida | Respondida: no nace una entidad deuda; se proyecta el importe del período. |
-| 2 — porcentaje del creador | Respondida: el total es 100%, el creador puede tener 0% y otra persona 100%. |
-| 3 — quién edita | Parcial: el propietario carga el reparto; falta decidir si existirán usuarios conectados. |
-| 4 — visibilidad del invitado | Sigue abierta solo si se implementan usuarios conectados. |
-| 5 — aceptación del participante | Deja de aplicar al reparto informativo; una futura conexión de usuarios puede tener aceptación propia. |
-| 6 — pagos/cobros parciales | Respondida: solo aplican al módulo Deudas. |
-| 7 y 8 — intereses/cancelación de deuda | Siguen abiertas para Deudas y se reformulan abajo. |
-| 9 — significado del pago anual | Respondida: conserva la serie mensual y cubre un rango de meses, que siguen visibles como pagados. |
-| 19 — cuándo está pagada una tarjeta | Parcialmente respondida: el estado pertenece al statement, no al reparto; falta confirmar su granularidad exacta. |
-| 20 — cambio posterior de porcentajes | Sigue abierta y se reformula abajo. |
+| Pregunta original                      | Resultado de la aclaración                                                                                        |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 1 — nacimiento de deuda compartida     | Respondida: no nace una entidad deuda; se proyecta el importe del período.                                        |
+| 2 — porcentaje del creador             | Respondida: el total es 100%, el creador puede tener 0% y otra persona 100%.                                      |
+| 3 — quién edita                        | Parcial: el propietario carga el reparto; falta decidir si existirán usuarios conectados.                         |
+| 4 — visibilidad del invitado           | Sigue abierta solo si se implementan usuarios conectados.                                                         |
+| 5 — aceptación del participante        | Deja de aplicar al reparto informativo; una futura conexión de usuarios puede tener aceptación propia.            |
+| 6 — pagos/cobros parciales             | Respondida: solo aplican al módulo Deudas.                                                                        |
+| 7 y 8 — intereses/cancelación de deuda | Siguen abiertas para Deudas y se reformulan abajo.                                                                |
+| 9 — significado del pago anual         | Respondida: conserva la serie mensual y cubre un rango de meses, que siguen visibles como pagados.                |
+| 19 — cuándo está pagada una tarjeta    | Parcialmente respondida: el estado pertenece al statement, no al reparto; falta confirmar su granularidad exacta. |
+| 20 — cambio posterior de porcentajes   | Sigue abierta y se reformula abajo.                                                                               |
 
 ## E.2. Preguntas nuevas para cerrar el diseño
 
 Cada pregunta incluye una recomendación inicial. Ninguna invalida las decisiones confirmadas de E.1.
+Si no hay una respuesta para cada pregunta, usar la Recomendacion que aparece ahi
 
 1. **Para una serie bimestral, el usuario debe elegir explícitamente el primer mes del ciclo?**  
    Recomendación: sí; guardar un `anchorPeriod` evita ambigüedad entre ciclos enero/marzo y febrero/abril.
 
 2. **¿Cuándo debe materializarse la ocurrencia mensual: al abrir el mes, anticipadamente o mediante un proceso programado?**  
    Recomendación: al consultar el mes, mediante upsert idempotente; opcionalmente pre-generar para notificaciones.
+   Respuesta: elegiría materialización on-demand al consultar el mes, con upsert idempotente. Si después necesitás recordatorios antes de abrir ese mes, el cron puede pre-materializar únicamente lo necesario. No haría depender el funcionamiento normal de un cron.
 
 3. **Cuando cambia el importe de luz o internet, editar el mes debe cambiar también el valor sugerido para meses futuros?**  
    Recomendación: ofrecer dos acciones explícitas: “solo este mes” y “este mes y futuros”.
 
 4. **¿El vencimiento puede cambiar solo para una ocurrencia mensual?**  
    Recomendación: sí; la serie guarda la regla y la ocurrencia conserva la fecha efectiva.
+   Respuesta: Si, usar la recomendacion, pero si modifico una fecha mensual, los meses siguientes deberia acutalizar su fecha de vencimiento porque posiblemente tambien hayan cambiado por esta nueva fecha
 
 5. **¿Marcar pagado requiere fecha y medio de pago, o alcanza una acción rápida con la fecha actual?**  
    Recomendación: acción rápida con fecha actual y canal predeterminado, permitiendo editar ambos.
 
 6. **En Tarjetas, “Marcar pagado” debe operar siempre sobre el statement completo o también sobre consumos/cuotas individuales?**  
-   Recomendación: operar sobre el statement; las cuotas incluidas heredan ese resultado y no se pagan individualmente fuera del resumen.
+    Recomendación: operar sobre el statement; las cuotas incluidas heredan ese resultado y no se pagan individualmente fuera del resumen.
+   Respuesta: pagaría únicamente el statement completo. Una cuota individual no debería tener un lifecycle de pago separado: queda pagada porque pertenece al resumen que fue pagado.
 
 7. **En una compra en cuotas, el porcentaje se aplica al total y se replica en todas las cuotas?**  
    Recomendación: sí; cada cuota hereda un snapshot proporcional, evitando redondear nuevamente el total en cada pantalla.
 
 8. **¿Cuándo debe mostrarse “Juan: $X” para tarjeta: en el mes de compra o en cada mes en que una cuota entra al statement?**  
    Recomendación: en el período del statement/cuota que efectivamente debe pagar el propietario.
+   mostraría la parte de Juan cada mes en que la cuota aparece en el resumen, no todo en el mes de compra. Si compro algo de $120.000 en 12 cuotas y Juan tiene 50%, conceptualmente Juan representa $5.000 por cada statement, no $60.000 inmediatamente.
 
 9. **¿El porcentaje se aplica solo al consumo o también a impuestos, intereses, descuentos y ajustes del resumen?**  
    Recomendación: aplicar por defecto solo al consumo; distribuir cargos del statement únicamente mediante una regla explícita.
+   El reparto debería aplicarse al consumo concreto. Impuestos generales, percepciones, intereses financieros, descuentos globales, saldo a favor, etc., son conceptos del statement y no necesariamente pertenecen a una compra.
 
 10. **Si una línea real del statement difiere del importe esperado, el reparto se recalcula sobre el importe real?**  
-    Recomendación: sí, pero conservar ambos importes y registrar el ajuste para que sea auditable.
+    No deberia diferir, en caso por ejemplo que un gasto lo haya cargado como $10.000 pero vengan $10.000,50, yo antes marcar como pagado ese gasto, o el resumen de la tarjeta con ese gasto dentro, lo tengo que poder ajustar al nuevo valor, y recien ahi marcar como pagado.
 
 11. **En una compra 100% ajena, quién absorbe impuestos o costos financieros vinculados a esa compra?**  
-    Recomendación: el propietario por defecto, con opción explícita de asignarlos a la misma distribución.
+    Todo lo que sea impuestos al sello, o compras en dolares con (que tienen el 30% de percepcion de ganancias en argentina), no forman parte de los caluclos de la app, la app solo contabiliza los gastos con sus montos cargados, y para las tarjetas de credito igual, todo lo que tenga que cobrar extra al deudor lo calculo yo por aparte en papel y lapiz;
 
 12. **¿Un gasto regular —no solo una compra de tarjeta— puede asignarse 100% a otra persona?**  
     Recomendación: permitirlo; la obligación sigue perteneciendo al usuario que la administra.
 
 13. **¿Cambiar personas o porcentajes afecta solo meses futuros o también una ocurrencia todavía no pagada?**  
-    Recomendación: cambios en la serie afectan solo futuras ocurrencias; el mes actual se edita de forma explícita y nunca se reescribe historia pagada.
+    Recomendación: cambios en la serie afectan solo futuras ocurrencias; el mes actual se edita de forma explícita y nunca se reescribe historia pagada. Amplio: si ya marque el gasto como pagado para el mes corriente, no puedo editar nada, asi que si edito algo, se reflejara para los meses siguientes, y en caso de que quiera modificar para el corriente mes, pero ya lo marque como pagado, tengo que deshacer el pago, editar lo necesario, y luego aceptar los cambios, entonces ahi los cambios seran para el mes actual y futuros; (y luego marcar como pagado nuevamente para el mes actual)
 
 14. **¿Las personas compartidas son siempre contactos privados o también habrá usuarios conectados que puedan ver datos?**  
-    Recomendación: contactos privados en V2 inicial. Agregar conexiones solo si hay una necesidad concreta de colaboración.
+    Ambas opciones deben existir.
+
+Un gasto puede compartirse con una persona creada manualmente, identificada únicamente mediante un nickname. En ese caso, esa persona funciona como un contacto privado dentro de la cuenta del usuario y no necesita tener una cuenta de GastApp.
+
+Opcionalmente, el usuario puede asociar un email a esa persona para conectarla con otra cuenta de GastApp. El usuario podrá seguir asignándole un nickname propio para identificarla rápidamente.
+
+Cuando dos usuarios estén conectados, todos los gastos compartidos entre ellos deberán reflejarse en ambas cuentas.
+
+Por ejemplo, si Ricky crea un gasto de $100.000 compartido 50/50 con Juan, en la cuenta de Ricky ese gasto contribuirá al saldo compartido de Juan por $50.000. En la cuenta de Juan, el mismo reparto aparecerá dentro de su sección de gastos compartidos indicando que debe $50.000 a Ricky.
+
+Cada usuario debe poder ver una vista consolidada de sus saldos compartidos por persona: cuánto le deben otras personas y cuánto debe él a cada una, considerando todos los gastos compartidos entre usuarios conectados.
+
+Estos saldos compartidos siguen siendo distintos del módulo PersonalDebt. No deben crear automáticamente una deuda manual, ni compartir su lifecycle, pagos parciales o estados. Son una proyección derivada de los gastos compartidos registrados entre usuarios.
 
 15. **Si existen usuarios conectados en el futuro, el destinatario puede editar o solamente ver su porcentaje?**  
     Recomendación: solo lectura; el propietario del gasto conserva la edición.
 
 16. **¿Qué estados exactos necesita una deuda manual?**  
-    Recomendación: `OPEN`, `PARTIALLY_PAID`, `PAID` y `CANCELLED`, derivados del principal, pagos y cancelación; no editados libremente.
+Los estados serán OPEN, PARTIALLY_PAID, PAID y CANCELLED.
+
+El estado se calcula automáticamente según los pagos registrados. Por ejemplo, una deuda sin pagos está OPEN, con pagos parciales está PARTIALLY_PAID y cuando se paga completamente queda PAID. CANCELLED se utiliza cuando el usuario decide perdonar el saldo restante.
 
 17. **¿Una deuda manual admite intereses, actualizaciones o aumentos de capital después de creada?**  
     Recomendación: principal fijo y ajustes explícitos con motivo; excluir cálculo automático de intereses inicialmente.
 
 18. **¿Un pago parcial debe usar siempre la moneda de la deuda?**  
-    Recomendación: sí en V2 inicial. Un pago en otra moneda requiere registrar monto origen, monto aplicado y tipo de cambio.
+    Recomendación: sí en V2 inicial. pero puedo tener un campo descripcion o Notas, para yo ahi poner notas para recordar cosas como por ejemplo, la deduda que era en ARS, me la pago en USD a un cambio de tanto; simplemente para yo recoradr despues que paso con ese pago, pero la app no deberia gestionar esa diferencia de moneda;
 
 19. **¿Puede cancelarse o perdonarse el saldo de una deuda?**  
     Recomendación: sí, con motivo, fecha y auditoría, sin fingir un pago.
 
 20. **¿La conciliación de tarjeta inicial será manual, por CSV o por PDF?**  
-    Recomendación: entrada manual y CSV configurable; PDF automático después.
+La conciliación manual se mantiene como flujo principal. El usuario seguirá revisando el resumen de la tarjeta e irá marcando en GastApp, uno por uno, los consumos que efectivamente aparecen, para poder detectar diferencias entre lo esperado y lo informado por el banco.
+
+Además, se agregará opcionalmente una acción “Subir PDF”. El usuario podrá cargar el resumen emitido por el banco y un módulo basado en IA analizará el documento, extraerá sus líneas y devolverá una representación estructurada de los cargos reales.
+
+GastApp utilizará ese resultado para comparar automáticamente las líneas del resumen contra los consumos esperados y sugerir matches, diferencias, cargos desconocidos y consumos esperados ausentes.
+
+El resultado del análisis automático no debe modificar ni conciliar datos de forma definitiva sin revisión del usuario. La UI mostrará la comparación propuesta para que el usuario pueda confirmarla o corregirla manualmente.
+
+CSV no es una prioridad inicial.
 
 21. **¿Un cargo real puede corresponder a varias compras esperadas o viceversa?**  
     Recomendación: match 1:1 inicialmente y acción manual de dividir/combinar como excepción.
@@ -650,7 +678,7 @@ Cada pregunta incluye una recomendación inicial. Ninguna invalida las decisione
     Recomendación: sí, marcándolo como legacy y sin inventar conciliaciones.
 
 24. **¿La descripción debe seguir cifrada a nivel aplicación?**  
-    Recomendación: decidirlo mediante threat model; el cifrado parcial actual dificulta búsqueda y rotación sin proteger el registro completo.
+Eliminar encryption por campo de las descriptions en V2 y confiar en encryption at rest del proveedor + controles de acceso + correcta autorización.
 
 25. **¿Qué ocurre con un vencimiento configurado para el día 29, 30 o 31 cuando el mes es más corto?**  
     Recomendación: usar el último día válido del mes sin desplazar la ocurrencia al mes siguiente.
@@ -659,7 +687,7 @@ Cada pregunta incluye una recomendación inicial. Ninguna invalida las decisione
     Recomendación: email primero y push cuando exista Expo; preferencias configurables por canal y tipo de vencimiento.
 
 27. **¿Google seguirá siendo el único proveedor de identidad?**  
-    Recomendación: Google inicialmente, dejando IDs compatibles con Apple si se publica una app iOS.
+    Recomendación: Google solamente
 
 28. **Si un gasto compartido mensual se paga anualmente, cuándo corresponde mostrar la parte de la otra persona: toda en el mes del pago anual o distribuida entre los meses cubiertos?**  
     Recomendación: registrarla en el mes del desembolso anual, porque es cuando el propietario efectivamente pagó; los meses cubiertos posteriores quedan visibles pero no generan nuevos importes compartidos.
@@ -751,21 +779,21 @@ La generación de ocurrencias puede ser on-demand e idempotente, sin depender de
 
 ## G.1. Comparación
 
-| | Opción 1 — Recomendada | Opción 2 | Opción 3 |
-|---|---|---|---|
-| Web | Next.js Active LTS | React Router 7 + Vite | Next.js o Expo Web |
-| API | REST `/api/v1` con Route Handlers | Hono API independiente | Supabase Data API/RPC |
-| Database | Supabase PostgreSQL | Supabase/Neon PostgreSQL | Supabase PostgreSQL |
-| ORM/data layer | Prisma estable actualizado | Drizzle | SQL/RPC directo |
-| Auth | Supabase Auth | Supabase Auth | Supabase Auth |
-| State | React local; Zustand solo si aparece necesidad | Igual | Igual |
-| Cache/data fetching | TanStack Query | TanStack Query | TanStack Query |
-| Hosting | Un proyecto Vercel | Dos servicios/proyectos | Vercel + Supabase |
-| Mobile | Expo + mismo API client | Expo + mismo API client | Expo + Supabase directo |
-| Complejidad | Baja-media | Media | Baja al inicio, alta en dominio |
-| Performance | Muy buena si se agrupan queries | Excelente y controlable | Buena, dependiente de RLS/RPC |
-| Costo inicial | $0 personal; producción baja | $0–bajo | $0–bajo |
-| Principal desventaja | Next.js sigue presente como host/adaptador | Más infraestructura y CORS | Lógica fragmentada en DB/clientes |
+|                      | Opción 1 — Recomendada                         | Opción 2                   | Opción 3                          |
+| -------------------- | ---------------------------------------------- | -------------------------- | --------------------------------- |
+| Web                  | Next.js Active LTS                             | React Router 7 + Vite      | Next.js o Expo Web                |
+| API                  | REST `/api/v1` con Route Handlers              | Hono API independiente     | Supabase Data API/RPC             |
+| Database             | Supabase PostgreSQL                            | Supabase/Neon PostgreSQL   | Supabase PostgreSQL               |
+| ORM/data layer       | Prisma estable actualizado                     | Drizzle                    | SQL/RPC directo                   |
+| Auth                 | Supabase Auth                                  | Supabase Auth              | Supabase Auth                     |
+| State                | React local; Zustand solo si aparece necesidad | Igual                      | Igual                             |
+| Cache/data fetching  | TanStack Query                                 | TanStack Query             | TanStack Query                    |
+| Hosting              | Un proyecto Vercel                             | Dos servicios/proyectos    | Vercel + Supabase                 |
+| Mobile               | Expo + mismo API client                        | Expo + mismo API client    | Expo + Supabase directo           |
+| Complejidad          | Baja-media                                     | Media                      | Baja al inicio, alta en dominio   |
+| Performance          | Muy buena si se agrupan queries                | Excelente y controlable    | Buena, dependiente de RLS/RPC     |
+| Costo inicial        | $0 personal; producción baja                   | $0–bajo                    | $0–bajo                           |
+| Principal desventaja | Next.js sigue presente como host/adaptador     | Más infraestructura y CORS | Lógica fragmentada en DB/clientes |
 
 Supabase ofrece Postgres, OAuth y un free tier suficiente para una app personal, aunque los proyectos gratuitos pueden pausarse y no incluyen backups automáticos:
 
