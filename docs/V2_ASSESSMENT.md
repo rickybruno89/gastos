@@ -2,8 +2,9 @@
 
 - **Fecha:** 8 de agosto de 2026
 - **Estado:** Assessment — sin implementación
-- **Alcance:** sistema financiero actual y propuesta conceptual para V2
+- **Alcance:** gastos periódicos reflejados en resúmenes mensuales, tarjetas de crédito, repartos informativos y módulo independiente de Deudas
 - **Fuera de alcance:** **Invoice**. No debe rediseñarse, migrarse ni incorporarse al dominio financiero de V2. Solo se mencionan dependencias técnicas compartidas cuando afectan al resto de la aplicación.
+- **No es parte del producto:** registro de gastos diarios, caja diaria, presupuesto por transacciones o contabilidad bancaria general.
 
 > Este documento describe el sistema actual, sus riesgos y una propuesta de evolución. No autoriza ni incluye cambios de código, dependencias, schema, datos o infraestructura.
 
@@ -11,11 +12,18 @@
 
 La aplicación actual resuelve una necesidad real y valiosa: organizar obligaciones mensuales y resúmenes de tarjeta. La vista mensual, la separación entre definición de gasto y ocurrencia mensual, y el registro de cuotas son buenas bases conceptuales.
 
+GastApp no pretende registrar cada consumo cotidiano. Su unidad funcional es el **mes**: gastos regulares que se pagan una vez por período —por ejemplo alquiler, luz, internet, patente o impuestos— y consumos de tarjeta que deben aparecer en un resumen y conciliarse. La fecha exacta de una compra puede conservarse para conciliación, pero no convierte al producto en un diario de gastos.
+
+Existen dos conceptos deliberadamente separados:
+
+1. Un gasto mensual o de tarjeta puede repartirse entre personas. Ese reparto indica cuánto corresponde a cada una en un período; no crea una deuda con estados ni registra cobros de esas personas.
+2. **Deudas** es un módulo independiente para préstamos manuales —por ejemplo USD 1.000 entregados en efectivo— y sí registra saldo, estado y pagos parciales arbitrarios.
+
 V2 no debería construirse ampliando indefinidamente el schema actual. Existen problemas estructurales:
 
 - Falta autorización por propietario en varias operaciones.
 - El historial de Git contiene archivos `.env` con credenciales.
-- El modelo no representa cuentas a cobrar, porcentajes, conexiones entre usuarios, deudas ni conciliación real.
+- El modelo no representa porcentajes, snapshots históricos del reparto, un libro independiente de deudas manuales ni conciliación real de tarjeta.
 - Dinero está almacenado como `Float` y las fechas como `String`.
 - ARS y USD se suman en algunos “totales mixtos”.
 - Las recurrencias y pagos anuales dependen de mutaciones del gasto maestro.
@@ -73,6 +81,8 @@ No existe una API consumible por Expo ni una capa de aplicación independiente d
 - `/api/cron`: recordatorios diarios de vencimientos.
 - `/invoice`: herramienta independiente, fuera del alcance de V2.
 
+No existe ni se propone una pantalla de movimientos diarios. “Crear gasto” significa crear una definición mensual o registrar un consumo de tarjeta, no cargar cada compra cotidiana realizada en efectivo o débito.
+
 ## A.3. Modelo de datos actual
 
 El núcleo está definido en [`prisma/schema.prisma`](../prisma/schema.prisma):
@@ -101,6 +111,8 @@ El comportamiento actual está principalmente en [`services/expense.ts`](../serv
 - “Omitir pago” equivale a guardar importe cero y `paid=true`.
 
 La separación entre gasto maestro y ocurrencia mensual es una base útil, pero las responsabilidades de ambas entidades están mezcladas.
+
+El eje mensual no es una limitación accidental de V1: es parte del alcance del producto. Lo que debe confirmarse para V2 es si existen excepciones reales —por ejemplo pagos anuales—, no si GastApp debe transformarse en un tracker de gastos diarios.
 
 ## A.5. Pago anual
 
@@ -135,14 +147,13 @@ No existen:
 
 - porcentajes configurables;
 - validación de 100%;
-- pagos o cobros entre participantes;
-- estado de deuda;
-- acreedor y deudor explícitos;
 - snapshots históricos de participantes;
 - usuarios conectados;
-- aceptación o disputa del gasto.
+- una asignación explícita del 0% al propietario o del 100% a otra persona.
 
 El “balance” compartido es una proyección visual calculada al renderizar, no una entidad financiera persistida.
+
+Que no existan pagos, aceptación, disputa o estados de deuda para este reparto no es necesariamente una carencia: según la definición de producto confirmada para V2, el reparto debe seguir siendo **informativo**. Si Juan tiene el 100% de una compra hecha con la tarjeta del propietario, la compra continúa en Tarjetas porque el propietario debe conciliarla y pagarla al banco; el dashboard solo informa cuánto corresponde a Juan en ese mes. No debe crearse automáticamente un registro en Deudas.
 
 ## A.7. Tarjetas de crédito
 
@@ -202,7 +213,7 @@ No hay preferencias por usuario, outbox, retry persistente ni trazabilidad del e
 |---|---:|---|
 | Architecture | High | Dominio, persistencia, auth, cache y navegación conviven en Server Actions. |
 | Performance | High | Consultas secuenciales, auth repetida, `noStore` generalizado y esperas artificiales. |
-| Domain model | Critical | No hay payable/receivable, claims, deudas, porcentajes ni conciliación real. |
+| Domain model | Critical | Se mezclan plantilla y ocurrencia; faltan porcentajes, deuda manual independiente y conciliación real. |
 | Database | High | `Float` para dinero, fechas `String`, pocos índices y snapshots incompletos. |
 | Business logic | Critical | Pago anual, cuotas, undo y edición de consumos pueden quedar inconsistentes. |
 | UI | Medium | Pantallas monolíticas, montos ambiguos y acciones ocultas detrás de swipe. |
@@ -220,7 +231,7 @@ No hay preferencias por usuario, outbox, retry persistente ni trazabilidad del e
 - No existen contratos API estables.
 - Tipos Prisma atraviesan la UI y las Server Actions.
 - Los errores de infraestructura se convierten mayormente en mensajes genéricos.
-- No hay límites claros entre obligaciones, tarjetas, statements, compartidos y deudas.
+- No hay límites claros entre gastos mensuales, tarjetas y repartos; el módulo independiente de Deudas todavía no existe.
 
 ## B.3. Security — Critical
 
@@ -322,14 +333,13 @@ La fecha se reconstruye cambiando año y mes. Un vencimiento día 31 puede desbo
 ## B.5. Domain model — Critical
 
 - `Expense` mezcla plantilla recurrente, monto por defecto y obligación.
-- No existe `PAYABLE`/`RECEIVABLE`.
-- No hay contraparte, acreedor ni deudor explícitos.
-- `paid: boolean` no representa pagos parciales, adelantos, reversos o múltiples pagos.
+- `paid: boolean` no conserva fecha, canal, reverso ni auditoría del pago.
 - “Omitido” se representa como pagado con monto cero.
 - Pago anual no modela cobertura.
 - Compartidos son etiquetas many-to-many, no allocations.
-- Deudas manuales no existen.
-- Deudas derivadas no existen como entidad o proyección consistente.
+- Las allocations no soportan porcentajes, propietario con 0% ni snapshots mensuales.
+- El módulo independiente de Deudas manuales y sus pagos parciales no existe.
+- El importe que corresponde a cada persona no se proyecta de forma histórica y consistente por mes y moneda.
 - Statement y consumos esperados están mezclados.
 - No hay statement line real ni estado de conciliación.
 
@@ -467,7 +477,7 @@ Vercel recomienda ejecutar Functions cerca de la base. El repo no configura regi
 - `InstallmentPayment` → cuota esperada con una sola fuente de verdad.
 - `CreditCardPaymentSummary` → statement real.
 - Personas manuales → contactos vinculables opcionalmente a usuarios.
-- Compartidos → allocations con porcentajes y claims.
+- Compartidos → allocations con porcentajes y snapshots; sin convertirlos en deudas persistidas.
 - Cron → outbox de notificaciones.
 - Prisma → actualizar y ubicar detrás de la capa de aplicación.
 - UI mensual → nueva jerarquía y progressive disclosure.
@@ -495,18 +505,21 @@ Invoice debe permanecer fuera del rediseño funcional. Solo corresponde aislar s
 
 | Necesidad | Estado actual |
 |---|---|
-| Mensual, bimestral, trimestral, anual | Solo mensual + flag anual especial |
-| PAYABLE / RECEIVABLE | Solo gastos/pagos |
+| Gastos pagaderos por período mensual | Existe, con generación manual y mutaciones del maestro |
+| Gastos bimestrales anclados a un mes inicial | No existe |
+| Excepciones anuales o de cobertura | Flag anual especial |
+| Gastos diarios/transacciones de caja | Fuera de alcance por definición |
 | Porcentajes personalizados | Solo división igual en UI |
 | Validación total 100% | No existe |
+| Propietario con 0% / tercero con 100% | No existe explícitamente |
 | Personas manuales | Parcial |
 | Usuarios conectados | No existe |
 | Gasto visible para participante | No existe |
-| Creador, pagador y responsable | Solo propietario implícito |
-| Balance y cobro de compartidos | No existe |
-| Deuda manual | No existe |
-| Deuda derivada sin duplicar | No existe |
-| Pagos parciales | No existe |
+| Reparto informativo por mes/persona/moneda | Parcial y calculado con relaciones actuales |
+| Snapshot histórico del reparto | No existe |
+| Deuda manual independiente | No existe |
+| Pagos parciales de deuda manual | No existe |
+| Separación estricta reparto vs. Deudas | No existe como límite de dominio |
 | Statement con líneas reales | No existe |
 | Match esperado vs. real | No existe |
 | Cargo desconocido | No existe |
@@ -526,69 +539,130 @@ Invoice debe permanecer fuera del rediseño funcional. Solo corresponde aislar s
 
 ---
 
-# E. Preguntas necesarias antes del diseño definitivo
+# E. Decisiones confirmadas y preguntas pendientes
 
-Cada pregunta incluye una recomendación inicial y por qué afecta el diseño.
+## E.1. Decisiones confirmadas por la definición del producto
 
-1. **¿Cuándo nace una deuda derivada de un gasto compartido?**  
-   Recomendación: mostrarla como `PLANNED` al crear la ocurrencia y volverla `OPEN` cuando el propietario paga o el statement se confirma. Define cuándo entra al balance exigible.
+La aclaración funcional posterior al assessment responde o reemplaza varias preguntas originales:
 
-2. **¿El porcentaje debe incluir siempre al creador?**  
-   Recomendación: todas las allocations, incluido el propietario, deben sumar 10.000 basis points = 100%. Evita porcentajes implícitos.
+1. **No nace una “deuda derivada” de un gasto compartido.** El importe de Juan es una proyección del reparto de una ocurrencia mensual o de un cargo de tarjeta. No tiene `OPEN`, `PAID`, `SETTLED` ni pagos propios.
+2. **El reparto se define al crear el gasto.** Junto con descripción e importe se elige si es compartido, con quién y en qué porcentaje.
+3. **El reparto económico siempre puede expresarse como 100%.** El propietario participa con el porcentaje residual y puede quedar en 0%; otra persona puede tener el 100%.
+4. **La responsabilidad ante el proveedor o banco no cambia por el reparto.** Una compra 100% de Juan sigue dentro de la tarjeta del propietario, aparece en su statement y debe conciliarse allí.
+5. **Pagar un gasto no paga la parte de Juan.** El estado de pago pertenece a la ocurrencia mensual o al statement, no a cada allocation.
+6. **Los pagos parciales pertenecen solamente a Deudas.** Un préstamo manual tiene saldo y cobros parciales; un reparto mensual no.
+7. **Deudas no recibe registros automáticos desde Gastos o Tarjetas.** Los dos contextos no comparten lifecycle ni tabla de estados.
+8. **No se registran gastos diarios.** La aplicación organiza pagos mensuales y resúmenes de tarjeta.
+9. **Los gastos mensuales y los statements se marcan pagados como unidades del producto.** Ese estado no se propaga como cobro de las personas incluidas en el reparto.
+10. **Deudas registra dinero que otras personas le deben al usuario.** Es una cuenta a cobrar manual; no un ledger bidireccional ni una obligación mensual.
+11. **La creación se unifica solo en UI/UX.** Un botón “Crear gasto” permite elegir mensual o tarjeta, mientras la persistencia conserva modelos especializados.
+12. **Un gasto regular puede vencer cada dos meses.** La serie bimestral solo genera importe y reparto en los períodos que corresponden; en el mes intermedio no suma al total y ninguna persona debe una parte de ese gasto.
+13. **Un gasto mensual puede saldarse mediante un pago anual.** La serie continúa siendo mensual, pero cada mes cubierto debe aparecer como “Pagado anual” o `COVERED`, sin generar un nuevo importe pendiente.
 
-3. **¿Quién puede editar un gasto compartido entre usuarios?**  
-   Recomendación: solo el creador edita estructura y monto; participantes pueden aceptar, disputar y registrar su pago. Evita conflictos de propiedad.
+En consecuencia, las preguntas originales sobre nacimiento, exigibilidad, aceptación, disputa y liquidación de una deuda compartida dejan de aplicar. Las preguntas sobre pagos parciales quedan respondidas de manera distinta para cada módulo.
 
-4. **¿Qué ve el usuario invitado?**  
-   Recomendación: únicamente el gasto compartido, su porcentaje y su deuda; nunca el mes financiero completo del creador. Define privacidad y autorización.
+Trazabilidad respecto de la lista original:
 
-5. **¿Un participante debe aceptar antes de que el gasto afecte su balance?**  
-   Recomendación: mostrar inmediatamente como “pendiente de aceptación”, sin sumarlo al balance confirmado hasta aceptar.
+| Pregunta original | Resultado de la aclaración |
+|---|---|
+| 1 — nacimiento de deuda compartida | Respondida: no nace una entidad deuda; se proyecta el importe del período. |
+| 2 — porcentaje del creador | Respondida: el total es 100%, el creador puede tener 0% y otra persona 100%. |
+| 3 — quién edita | Parcial: el propietario carga el reparto; falta decidir si existirán usuarios conectados. |
+| 4 — visibilidad del invitado | Sigue abierta solo si se implementan usuarios conectados. |
+| 5 — aceptación del participante | Deja de aplicar al reparto informativo; una futura conexión de usuarios puede tener aceptación propia. |
+| 6 — pagos/cobros parciales | Respondida: solo aplican al módulo Deudas. |
+| 7 y 8 — intereses/cancelación de deuda | Siguen abiertas para Deudas y se reformulan abajo. |
+| 9 — significado del pago anual | Respondida: conserva la serie mensual y cubre un rango de meses, que siguen visibles como pagados. |
+| 19 — cuándo está pagada una tarjeta | Parcialmente respondida: el estado pertenece al statement, no al reparto; falta confirmar su granularidad exacta. |
+| 20 — cambio posterior de porcentajes | Sigue abierta y se reformula abajo. |
 
-6. **¿Los pagos y cobros pueden ser parciales?**  
-   Recomendación: sí, mediante múltiples movimientos con fecha, importe, moneda, canal y nota.
+## E.2. Preguntas nuevas para cerrar el diseño
 
-7. **¿Las deudas manuales necesitan intereses o actualización?**  
-   Recomendación: no incluir intereses en V2 inicial; solo principal, vencimiento y pagos parciales.
+Cada pregunta incluye una recomendación inicial. Ninguna invalida las decisiones confirmadas de E.1.
 
-8. **¿Puede cancelarse una deuda sin pagarla?**  
-   Recomendación: estados `WAIVED` y `CANCELLED`, siempre con motivo y audit log.
+1. **Para una serie bimestral, el usuario debe elegir explícitamente el primer mes del ciclo?**  
+   Recomendación: sí; guardar un `anchorPeriod` evita ambigüedad entre ciclos enero/marzo y febrero/abril.
 
-9. **¿Pago anual significa cambiar definitivamente la recurrencia o cubrir temporalmente meses mensuales?**  
-   Recomendación: soportar ambos: plan anual y pago con período de cobertura.
+2. **¿Cuándo debe materializarse la ocurrencia mensual: al abrir el mes, anticipadamente o mediante un proceso programado?**  
+   Recomendación: al consultar el mes, mediante upsert idempotente; opcionalmente pre-generar para notificaciones.
 
-10. **¿Qué ocurre con un vencimiento día 31 en un mes corto?**  
-    Recomendación: usar el último día válido del mes.
+3. **Cuando cambia el importe de luz o internet, editar el mes debe cambiar también el valor sugerido para meses futuros?**  
+   Recomendación: ofrecer dos acciones explícitas: “solo este mes” y “este mes y futuros”.
 
-11. **¿La conciliación inicial será manual, CSV o PDF?**  
-    Recomendación: entrada manual y CSV configurable en V2; PDF automático después, porque los formatos bancarios son inestables.
+4. **¿El vencimiento puede cambiar solo para una ocurrencia mensual?**  
+   Recomendación: sí; la serie guarda la regla y la ocurrencia conserva la fecha efectiva.
 
-12. **¿Un cargo real puede dividirse entre dos compras esperadas o viceversa?**  
-    Recomendación: match 1:1 inicialmente y una acción manual de “dividir/combinar” como excepción.
+5. **¿Marcar pagado requiere fecha y medio de pago, o alcanza una acción rápida con la fecha actual?**  
+   Recomendación: acción rápida con fecha actual y canal predeterminado, permitiendo editar ambos.
 
-13. **¿Cómo se pagan consumos USD?**  
-    Recomendación: conservar USD y ARS separados; cualquier conversión debe ser un movimiento explícito con tipo de cambio informado.
+6. **En Tarjetas, “Marcar pagado” debe operar siempre sobre el statement completo o también sobre consumos/cuotas individuales?**  
+   Recomendación: operar sobre el statement; las cuotas incluidas heredan ese resultado y no se pagan individualmente fuera del resumen.
 
-14. **¿Se pueden compensar deudas ARS contra USD?**  
-    Recomendación: no automáticamente.
+7. **En una compra en cuotas, el porcentaje se aplica al total y se replica en todas las cuotas?**  
+   Recomendación: sí; cada cuota hereda un snapshot proporcional, evitando redondear nuevamente el total en cada pantalla.
 
-15. **¿Qué canales de notificación se requieren?**  
-    Recomendación: modelar preferencias por canal, implementar email primero y dejar push preparado para Expo.
+8. **¿Cuándo debe mostrarse “Juan: $X” para tarjeta: en el mes de compra o en cada mes en que una cuota entra al statement?**  
+   Recomendación: en el período del statement/cuota que efectivamente debe pagar el propietario.
 
-16. **¿Google seguirá siendo el único proveedor de identidad?**  
-    Recomendación: Google inicialmente, usando una solución que permita agregar Apple para iOS sin cambiar IDs de usuario.
+9. **¿El porcentaje se aplica solo al consumo o también a impuestos, intereses, descuentos y ajustes del resumen?**  
+   Recomendación: aplicar por defecto solo al consumo; distribuir cargos del statement únicamente mediante una regla explícita.
 
-17. **¿Debe conservarse todo el histórico actual?**  
-    Recomendación: migrarlo completo y marcar statements antiguos como `LEGACY_ACCEPTED`, porque no contienen líneas reales reconciliables.
+10. **Si una línea real del statement difiere del importe esperado, el reparto se recalcula sobre el importe real?**  
+    Recomendación: sí, pero conservar ambos importes y registrar el ajuste para que sea auditable.
 
-18. **¿La descripción debe seguir cifrada a nivel aplicación?**  
-    Recomendación: cifrado administrado del proveedor y controles estrictos, salvo que un threat model exija cifrado por campo. El esquema actual cifra solo una parte de los datos y dificulta búsqueda y rotación.
+11. **En una compra 100% ajena, quién absorbe impuestos o costos financieros vinculados a esa compra?**  
+    Recomendación: el propietario por defecto, con opción explícita de asignarlos a la misma distribución.
 
-19. **¿Cuándo se considera “pagada” una tarjeta: pago total, parcial o pago mínimo?**  
-    Recomendación: registrar pagos reales contra el statement y derivar `UNPAID`, `PARTIALLY_PAID` o `PAID` según los montos por moneda.
+12. **¿Un gasto regular —no solo una compra de tarjeta— puede asignarse 100% a otra persona?**  
+    Recomendación: permitirlo; la obligación sigue perteneciendo al usuario que la administra.
 
-20. **¿Los participantes pueden modificar porcentajes después de existir pagos?**  
-    Recomendación: cambios futuros crean una nueva versión de allocations; las ocurrencias históricas permanecen inmutables.
+13. **¿Cambiar personas o porcentajes afecta solo meses futuros o también una ocurrencia todavía no pagada?**  
+    Recomendación: cambios en la serie afectan solo futuras ocurrencias; el mes actual se edita de forma explícita y nunca se reescribe historia pagada.
+
+14. **¿Las personas compartidas son siempre contactos privados o también habrá usuarios conectados que puedan ver datos?**  
+    Recomendación: contactos privados en V2 inicial. Agregar conexiones solo si hay una necesidad concreta de colaboración.
+
+15. **Si existen usuarios conectados en el futuro, el destinatario puede editar o solamente ver su porcentaje?**  
+    Recomendación: solo lectura; el propietario del gasto conserva la edición.
+
+16. **¿Qué estados exactos necesita una deuda manual?**  
+    Recomendación: `OPEN`, `PARTIALLY_PAID`, `PAID` y `CANCELLED`, derivados del principal, pagos y cancelación; no editados libremente.
+
+17. **¿Una deuda manual admite intereses, actualizaciones o aumentos de capital después de creada?**  
+    Recomendación: principal fijo y ajustes explícitos con motivo; excluir cálculo automático de intereses inicialmente.
+
+18. **¿Un pago parcial debe usar siempre la moneda de la deuda?**  
+    Recomendación: sí en V2 inicial. Un pago en otra moneda requiere registrar monto origen, monto aplicado y tipo de cambio.
+
+19. **¿Puede cancelarse o perdonarse el saldo de una deuda?**  
+    Recomendación: sí, con motivo, fecha y auditoría, sin fingir un pago.
+
+20. **¿La conciliación de tarjeta inicial será manual, por CSV o por PDF?**  
+    Recomendación: entrada manual y CSV configurable; PDF automático después.
+
+21. **¿Un cargo real puede corresponder a varias compras esperadas o viceversa?**  
+    Recomendación: match 1:1 inicialmente y acción manual de dividir/combinar como excepción.
+
+22. **¿Cómo se manejan consumos y pagos de tarjeta en USD?**  
+    Recomendación: conservar ARS y USD separados y no convertir automáticamente.
+
+23. **¿Debe conservarse todo el histórico actual aunque no puedan reconstruirse líneas reales de statements?**  
+    Recomendación: sí, marcándolo como legacy y sin inventar conciliaciones.
+
+24. **¿La descripción debe seguir cifrada a nivel aplicación?**  
+    Recomendación: decidirlo mediante threat model; el cifrado parcial actual dificulta búsqueda y rotación sin proteger el registro completo.
+
+25. **¿Qué ocurre con un vencimiento configurado para el día 29, 30 o 31 cuando el mes es más corto?**  
+    Recomendación: usar el último día válido del mes sin desplazar la ocurrencia al mes siguiente.
+
+26. **¿Qué canales de notificación se necesitan realmente?**  
+    Recomendación: email primero y push cuando exista Expo; preferencias configurables por canal y tipo de vencimiento.
+
+27. **¿Google seguirá siendo el único proveedor de identidad?**  
+    Recomendación: Google inicialmente, dejando IDs compatibles con Apple si se publica una app iOS.
+
+28. **Si un gasto compartido mensual se paga anualmente, cuándo corresponde mostrar la parte de la otra persona: toda en el mes del pago anual o distribuida entre los meses cubiertos?**  
+    Recomendación: registrarla en el mes del desembolso anual, porque es cuando el propietario efectivamente pagó; los meses cubiertos posteriores quedan visibles pero no generan nuevos importes compartidos.
 
 ---
 
@@ -599,17 +673,19 @@ Cada pregunta incluye una recomendación inicial y por qué afecta el diseño.
 Orden recomendado:
 
 1. Alertas: vencidos, vence hoy, cargos desconocidos y statements sin conciliar.
-2. Resumen por moneda: a pagar, a cobrar y saldo, sin mezclar monedas.
-3. A pagar.
-4. A cobrar.
-5. Tarjetas y estado de conciliación.
-6. Compartidos y deudas agrupados por persona y moneda.
+2. Resumen por moneda de gastos mensuales y statements pendientes, sin mezclar monedas.
+3. Gastos mensuales a pagar.
+4. Tarjetas y estado de conciliación.
+5. “Corresponde a otras personas”, agrupado por persona, período y moneda; es informativo y no tiene estado de cobro.
+6. Gastos cubiertos por pago anual, visibles como pagados y excluidos del pendiente.
 7. Completados, colapsados por defecto.
+
+El módulo **Deudas** debe tener navegación y resumen propios. Su saldo no se mezcla con el dashboard mensual ni con el importe compartido de Gastos/Tarjetas.
 
 ## F.2. Acciones inline
 
-- Marcar pagado o cobrado.
-- Registrar pago parcial.
+- Marcar pagado un gasto mensual o statement.
+- Registrar pago parcial únicamente dentro de Deudas.
 - Ajustar importe de una ocurrencia.
 - Cambiar vencimiento del mes.
 - Omitir o cancelar con motivo.
@@ -622,8 +698,9 @@ Orden recomendado:
 - Conciliar un statement.
 - Resolver diferencias.
 - Editar una compra con cuotas ya materializadas.
-- Conectar usuarios.
+- Conectar usuarios, solo si se confirma como requisito futuro.
 - Reestructurar una deuda.
+- Crear un gasto desde un flujo único que primero elige “mensual” o “tarjeta”.
 
 ## F.4. Automatizaciones
 
@@ -631,16 +708,16 @@ Orden recomendado:
 - Sugerir matches entre líneas reales y cargos esperados.
 - Detectar duplicados por tarjeta, importe, moneda, comercio y fecha.
 - Arrastrar cargos esperados ausentes al siguiente statement sin cambiar su fecha real.
-- Generar claims de cada cuota compartida.
+- Materializar el snapshot de reparto de cada cuota cuando entra al período correspondiente, sin generar una deuda.
 - Enviar recordatorios configurables.
 - Mostrar “cubierto por pago anual” sin crear deudas cero ficticias.
 
 ## F.5. Features a agregar
 
-- Quick add/inbox.
-- Pagos parciales.
+- Creación unificada de gasto mensual o consumo de tarjeta.
+- Pagos parciales dentro de Deudas.
 - Timeline y auditoría.
-- Conexiones e invitaciones.
+- Conexiones e invitaciones, solo si se confirma colaboración entre cuentas.
 - Conciliación y cargos desconocidos.
 - Archivo de contactos.
 - Exportación CSV.
@@ -654,10 +731,11 @@ Orden recomendado:
 - Separar “esperado”, “confirmado”, “conciliado” y “pagado”.
 - Mostrar una sola cifra principal por moneda y contexto.
 - Evitar que “gasto” represente a la vez plantilla, ocurrencia, pago y deuda.
+- Evitar que “importe correspondiente a Juan” se presente como una deuda cobrable o conciliada.
 
 ## F.7. Realtime y background jobs
 
-Realtime no aporta suficiente valor inicialmente. TanStack Query con invalidación y refetch es suficiente. Puede incorporarse cuando dos usuarios editen, acepten o paguen compartidos simultáneamente.
+Realtime no aporta suficiente valor inicialmente. TanStack Query con invalidación y refetch es suficiente. Puede evaluarse si en el futuro los contactos pasan a ser usuarios conectados con visibilidad compartida.
 
 Los background jobs iniciales deberían limitarse a:
 
@@ -810,7 +888,7 @@ Supabase soporta oficialmente Auth en React Native y JWT verificables por una AP
 
 # H. Proposed V2
 
-Esta propuesta es provisional hasta resolver las preguntas de producto de la sección E.
+Esta propuesta incorpora las decisiones confirmadas en E.1. Los detalles señalados en E.2 siguen abiertos, pero no se volverán a mezclar repartos informativos con el módulo Deudas.
 
 ## H.1. Arquitectura
 
@@ -859,11 +937,11 @@ No se crearán repositories ceremoniales por cada tabla. Los casos de uso financ
 ```text
 identity
 contacts-and-connections
-obligations
+monthly-expenses
 recurrence
 payments
 sharing-and-allocations
-claims-and-debts
+personal-debts
 credit-cards
 statements-and-reconciliation
 notifications
@@ -871,40 +949,65 @@ monthly-dashboard
 audit
 ```
 
-## H.4. Obligaciones recurrentes
+### Decisión de persistencia y UI
+
+V2 no debe usar una única tabla `Expense` con columnas opcionales para tarjeta, cuotas, statement, deuda y conciliación. Esos conceptos tienen ciclos de vida y restricciones diferentes; una tabla universal produciría muchos campos nulos y reglas condicionales difíciles de garantizar.
+
+La unificación correcta ocurre en dos lugares:
+
+- **UI:** un botón “Crear gasto” abre un flujo común y luego permite elegir “gasto mensual” o “tarjeta”.
+- **Lectura:** el dashboard mensual combina ocurrencias y cargos de tarjeta mediante una query/proyección tipada.
+
+La escritura y persistencia permanecen especializadas. Deudas también conserva tablas, endpoints y navegación propios.
+
+```text
+Crear gasto
+├── Gasto mensual → MonthlyExpenseSeries / MonthlyExpenseOccurrence
+└── Tarjeta       → CardPurchase / CardInstallment / CardStatement
+
+Dashboard mensual ← MonthlyExpenseOccurrence + cargos/statement del período
+Deudas            ← PersonalDebt + PersonalDebtPayment (sin enlaces automáticos)
+```
+
+## H.4. Gastos mensuales
 
 Entidades:
 
 ```text
-ObligationSeries
+MonthlyExpenseSeries
 RecurrenceRule
-ObligationOccurrence
+MonthlyExpenseOccurrence
 OccurrenceAllocation
-ObligationPayment
+ExpensePayment
 CoveragePeriod
 ```
 
 Reglas:
 
-- `direction`: `PAYABLE` o `RECEIVABLE`.
-- Recurrencia inicial mediante `intervalMonths`: 1, 2, 3, 12.
+- No es un ledger de gastos diarios: una serie representa algo pagadero por período mensual.
+- La recurrencia base admite `intervalMonths = 1` para mensual y `intervalMonths = 2` para bimestral.
+- Toda serie bimestral guarda `anchorPeriod`, que define qué meses pertenecen al ciclo.
 - Fecha inicial, fecha final opcional y regla de vencimiento.
 - Ocurrencias con snapshot de monto, moneda, participantes y porcentajes.
-- Estados: `PLANNED`, `DUE`, `PARTIALLY_PAID`, `PAID`, `COVERED`, `SKIPPED`, `CANCELLED`.
-- Pagos como registros, no booleanos.
-- Cobertura anual como rango explícito.
+- Estados iniciales: `PLANNED`, `DUE`, `PAID`, `COVERED`, `SKIPPED`, `CANCELLED`.
+- Marcar pagado crea un registro con fecha y canal, aunque la UI lo presente como una acción binaria. El pago parcial no se incorpora aquí salvo decisión posterior.
+- Una serie bimestral materializa ocurrencias únicamente en meses programados. En los meses intermedios no hay ocurrencia, importe pendiente ni `OccurrenceAllocation`; por lo tanto, el gasto aporta cero al total y ninguna persona debe una parte.
+- El pago anual no cambia la frecuencia de la serie mensual. Crea un `CoveragePeriod` con `fromPeriod`, `throughPeriod` y referencia al pago que produjo la cobertura.
+- Cada mes alcanzado por el pago anual conserva una ocurrencia visible con estado `COVERED`, etiqueta “Pagado anual” y `payableAmountMinor = 0`. El importe nominal puede conservarse por separado para contexto, pero no se suma al total pendiente.
+- Una ocurrencia cubierta no genera nuevamente un importe compartido. Si el pago anual es compartido, su reparto se registra una sola vez según la decisión pendiente E.2.28.
 - Generación on-demand mediante upsert único `[seriesId, accountingPeriod]`.
 
 ## H.5. Compartidos y allocations
 
 Cada allocation debe guardar:
 
-- usuario conectado o contacto manual;
+- usuario propietario, usuario conectado futuro o contacto manual;
 - `shareBps`, donde 10.000 = 100%;
 - importe calculado en unidades menores;
 - nombre snapshot;
-- estado de aceptación;
 - versión de la distribución.
+
+Las allocations del propietario y de las demás personas suman 10.000 basis points. El propietario puede tener `shareBps = 0` y Juan `shareBps = 10_000`. Para evitar foreign keys polimórficas ambiguas, pueden persistirse allocations especializadas por agregado —ocurrencia mensual y cargo de tarjeta— reutilizando las mismas reglas de dominio.
 
 La división automática igual debe repartir porcentajes y centavos residuales de forma determinista. Para tres participantes podría producir:
 
@@ -922,6 +1025,8 @@ La suma se valida en tres niveles:
 
 Cambiar porcentajes crea una nueva versión para ocurrencias futuras. No modifica históricos.
 
+Una allocation no tiene estado de deuda, aceptación, cobro ni pago. Es un snapshot que responde: “de este importe del período, ¿cuánto corresponde a cada persona?”. Los totales se proyectan por período, persona y moneda.
+
 ## H.6. Contactos y usuarios conectados
 
 Entidades sugeridas:
@@ -936,25 +1041,27 @@ UserConnection
 - `UserConnection` maneja `PENDING`, `ACCEPTED`, `REJECTED`, `BLOCKED`.
 - Las allocations pueden referenciar un usuario o un contacto, nunca ambos.
 - Las ocurrencias guardan un snapshot de nombre para preservar historia.
-- Desconectar usuarios no elimina claims o allocations históricos.
+- Desconectar usuarios no elimina allocations históricos.
 
-## H.7. Claims y deudas
+Las conexiones son opcionales y no forman parte del núcleo necesario: el producto puede operar únicamente con contactos privados. Si se agregan usuarios conectados, la aceptación corresponde a la conexión entre usuarios, no a cada reparto.
+
+## H.7. Deudas manuales independientes
 
 ```text
-Claim
-ClaimSettlement
+PersonalDebt
+PersonalDebtPayment
 ```
 
-Un `Claim` representa que una contraparte debe dinero a otra.
+Una `PersonalDebt` representa una cuenta manual independiente, como prestar USD 1.000 en efectivo a una hermana y registrar devoluciones de importes variables.
 
-- `sourceType`: `MANUAL_DEBT`, `SHARED_OBLIGATION`, `CARD_INSTALLMENT`.
-- `sourceId` único para impedir duplicación.
-- Dirección desde la perspectiva del usuario.
-- Importe, moneda, vencimiento y estado.
-- Estados: `PLANNED`, `OPEN`, `PARTIALLY_SETTLED`, `SETTLED`, `WAIVED`, `CANCELLED`, `DISPUTED`.
-- Pagos parciales mediante `ClaimSettlement`.
+- Principal, moneda, contraparte, fecha, nota y vencimiento opcional.
+- Pagos parciales arbitrarios mediante `PersonalDebtPayment`.
+- Estados sugeridos: `OPEN`, `PARTIALLY_PAID`, `PAID`, `CANCELLED`.
+- El usuario es acreedor y la contraparte es quien le debe; no se modelan inicialmente deudas del usuario hacia terceros.
+- El saldo se deriva del principal y los pagos; no se guarda como una segunda fuente de verdad sin control.
+- `PersonalDebtAdjustment` se agrega únicamente si se confirman aumentos de capital, intereses manuales o condonaciones; todo ajuste será explícito y auditable.
 
-De esta manera una deuda manual y una derivada comparten comportamiento sin persistir balances duplicados.
+No existe `sourceType` hacia gastos, allocations, cuotas o statements. Crear o pagar un gasto compartido nunca crea, actualiza ni liquida una `PersonalDebt`. Si el usuario excepcionalmente quiere llevar también ese compromiso en Deudas, debe crearlo de manera manual y consciente; V2 no debe duplicarlo automáticamente.
 
 ## H.8. Tarjetas y conciliación
 
@@ -972,6 +1079,8 @@ StatementMatch
 StatementAdjustment
 CardPayment
 ```
+
+`CardPurchase` o su plan recurrente conserva la distribución elegida al crear el gasto. Cada cuota/cargo materializado conserva un snapshot del porcentaje aplicable a ese período. Una compra asignada 100% a Juan sigue perteneciendo a la tarjeta y al statement del propietario: el reparto no cambia la obligación frente al banco ni crea una `PersonalDebt`.
 
 Fechas separadas:
 
@@ -1046,8 +1155,8 @@ API inicial:
 ```text
 GET    /api/v1/months/:period
 
-POST   /api/v1/obligation-series
-PATCH  /api/v1/obligation-series/:id
+POST   /api/v1/monthly-expense-series
+PATCH  /api/v1/monthly-expense-series/:id
 POST   /api/v1/occurrences/:id/payments
 POST   /api/v1/occurrences/:id/skip
 
@@ -1055,8 +1164,9 @@ POST   /api/v1/connections
 POST   /api/v1/connections/:id/accept
 GET    /api/v1/contacts
 
-POST   /api/v1/claims
-POST   /api/v1/claims/:id/settlements
+POST   /api/v1/personal-debts
+PATCH  /api/v1/personal-debts/:id
+POST   /api/v1/personal-debts/:id/payments
 
 POST   /api/v1/cards
 POST   /api/v1/cards/:id/purchases
@@ -1094,7 +1204,7 @@ Nunca se recibirán objetos Prisma completos desde el cliente.
 
 No se incluye en V2 inicial.
 
-Se evaluará cuando existan usuarios conectados y sea necesario reflejar aceptación, disputa o pago en segundos. Hasta entonces:
+Se evaluará cuando existan usuarios conectados y sea necesario reflejar cambios visibles entre cuentas en segundos. Hasta entonces:
 
 - invalidación de TanStack Query;
 - refetch por foco/reconexión;
@@ -1121,7 +1231,7 @@ No se requiere una plataforma de jobs adicional mientras Vercel Cron y una tabla
 4. Migrar usuarios, contactos y tarjetas.
 5. Convertir gastos en series mensuales.
 6. Convertir summaries en occurrences.
-7. Convertir relaciones compartidas en allocations iguales, preservando el comportamiento vigente.
+7. Convertir relaciones compartidas en allocations iguales con snapshots mensuales, preservando el comportamiento vigente y sin crear deudas.
 8. Convertir consumos en purchases/installments.
 9. Importar resúmenes antiguos como `LEGACY_ACCEPTED`.
 10. Representar saldos agregados históricos como un ajuste legacy por moneda.
@@ -1138,7 +1248,7 @@ Los datos viejos no permiten reconstruir:
 - matches históricos;
 - porcentajes diferentes de partes iguales;
 - fechas reales de compra/posted;
-- pagos parciales inexistentes;
+- pagos parciales históricos de Deudas, porque ese módulo todavía no existe;
 - descripciones individuales de saldos a favor agregados.
 
 Estas limitaciones deben marcarse explícitamente. No debe inventarse historia.
@@ -1171,21 +1281,20 @@ Estas limitaciones deben marcarse explícitamente. No debe inventarse historia.
 - Nuevo schema.
 - CI con unit, integration y migration tests.
 
-### Fase 3 — Obligaciones mensuales
+### Fase 3 — Gastos mensuales
 
-- Series y recurrencias.
-- Payable/receivable.
+- Series mensuales y bimestrales con mes de anclaje.
 - Ocurrencias automáticas.
-- Pagos parciales.
-- Coberturas.
+- Marcación de pago con fecha, canal y reversión auditable.
+- Pago anual y coberturas mensuales visibles.
 - Nuevo dashboard mensual.
 
-### Fase 4 — Compartidos y deudas
+### Fase 4 — Compartidos informativos y Deudas independientes
 
-- Contacts y connections.
+- Contacts; connections solo si se confirman como requisito.
 - Allocations versionadas.
-- Claims y settlements.
-- Invitaciones, aceptación y disputa.
+- Proyecciones por persona, período y moneda sin estados de deuda.
+- `PersonalDebt` y pagos parciales, sin integración automática con Gastos o Tarjetas; ajustes solo si se confirman como requisito.
 
 ### Fase 5 — Tarjetas
 
@@ -1242,4 +1351,4 @@ Zod compartido
 Expo futuro sobre el mismo API client
 ```
 
-Construir V2 mediante migración strangler, comenzando por seguridad y caracterización de V1. La decisión de dominio más importante todavía pendiente es cuándo nace y cuándo se vuelve exigible una deuda compartida; junto con aceptación y permisos entre usuarios, esa respuesta define el modelo final de allocations, claims y dashboard.
+Construir V2 mediante migración strangler, comenzando por seguridad y caracterización de V1. El dominio queda dividido en gastos mensuales, tarjetas conciliables, repartos informativos y Deudas manuales independientes. La UI puede unificar la creación y la lectura mensual, pero la base de datos debe conservar agregados especializados. Las decisiones pendientes más importantes son cuándo proyectar cada cuota compartida, cómo distribuir ajustes del statement y cuál es el alcance exacto del módulo Deudas.
