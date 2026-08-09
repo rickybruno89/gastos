@@ -33,6 +33,8 @@ V2 no debería construirse ampliando indefinidamente el schema actual. Existen p
 
 La recomendación es una migración **strangler**: mantener V1 operativa, corregir primero seguridad, construir nuevas tablas y una API V2 en paralelo y migrar comportamiento por módulos. No conviene reescribir todo de una vez, pero tampoco seguir extendiendo el modelo actual.
 
+La plataforma V2 será web-first: React Router 8 en Framework Mode como SPA sobre React 19 y Vite, consumiendo una API REST explícita implementada con Hono dentro de una Supabase Edge Function. Supabase concentrará inicialmente PostgreSQL, Auth, Storage, Edge Functions y migraciones SQL. Next.js, Server Actions, Route Handlers, Prisma y Vercel describen V1, pero no forman parte de la arquitectura objetivo de V2.
+
 ---
 
 # A. Current System
@@ -112,7 +114,7 @@ El comportamiento actual está principalmente en [`services/expense.ts`](../serv
 
 La separación entre gasto maestro y ocurrencia mensual es una base útil, pero las responsabilidades de ambas entidades están mezcladas.
 
-El eje mensual no es una limitación accidental de V1: es parte del alcance del producto. Lo que debe confirmarse para V2 es si existen excepciones reales —por ejemplo pagos anuales—, no si GastApp debe transformarse en un tracker de gastos diarios.
+El eje mensual no es una limitación accidental de V1: es parte del alcance del producto. V2 incorpora series mensuales y bimestrales con mes de anclaje, además de cobertura de obligaciones mensuales mediante pago anual; no transforma GastApp en un tracker de gastos diarios.
 
 ## A.5. Pago anual
 
@@ -463,7 +465,7 @@ Vercel recomienda ejecutar Functions cerca de la base. El repo no configura regi
 - La separación entre definición recurrente y ocurrencia mensual.
 - Tarjeta, compra, cuota y statement como conceptos distintos.
 - Totales separados por moneda.
-- Google OAuth inicialmente.
+- Google como único proveedor de identidad, migrado a Supabase Auth en V2.
 - Validación compartida con Zod.
 - Soft delete o archivo para entidades con historial.
 - Recordatorios de vencimiento.
@@ -479,7 +481,7 @@ Vercel recomienda ejecutar Functions cerca de la base. El repo no configura regi
 - Personas manuales → contactos vinculables opcionalmente a usuarios.
 - Compartidos → allocations con porcentajes y snapshots; sin convertirlos en deudas persistidas.
 - Cron → outbox de notificaciones.
-- Prisma → actualizar y ubicar detrás de la capa de aplicación.
+- Prisma en V1 → reemplazar en V2 por módulos explícitos de persistencia sobre Supabase/PostgreSQL, migraciones SQL y RPC cuando aporte atomicidad. La API y el dominio no deben depender de una librería concreta para permitir introducir otra más adelante.
 - UI mensual → nueva jerarquía y progressive disclosure.
 - Edición inline → mutation optimista, error visible y undo.
 
@@ -515,6 +517,7 @@ Invoice debe permanecer fuera del rediseño funcional. Solo corresponde aislar s
 | Personas manuales                            | Parcial                                                |
 | Usuarios conectados                          | No existe                                              |
 | Gasto visible para participante              | No existe                                              |
+| Saldos compartidos bidireccionales entre usuarios conectados | No existe                                  |
 | Reparto informativo por mes/persona/moneda   | Parcial y calculado con relaciones actuales            |
 | Snapshot histórico del reparto               | No existe                                              |
 | Deuda manual independiente                   | No existe                                              |
@@ -522,11 +525,11 @@ Invoice debe permanecer fuera del rediseño funcional. Solo corresponde aislar s
 | Separación estricta reparto vs. Deudas       | No existe como límite de dominio                       |
 | Statement con líneas reales                  | No existe                                              |
 | Match esperado vs. real                      | No existe                                              |
+| Análisis opcional de statement PDF con revisión humana | No existe                                       |
 | Cargo desconocido                            | No existe                                              |
 | Cargo esperado ausente                       | No existe                                              |
 | Movimiento trasladado de cierre              | No está modelado                                       |
 | Fecha de compra/posted/closing               | Solo mes esperado y mes de resumen                     |
-| N créditos con descripción                   | Un agregado por moneda                                 |
 | ARS/USD sin conversión                       | Parcial; hay sumas incorrectas                         |
 | Idempotencia general                         | Solo parcial al pagar tarjeta                          |
 | Concurrencia/versionado                      | No existe                                              |
@@ -539,7 +542,7 @@ Invoice debe permanecer fuera del rediseño funcional. Solo corresponde aislar s
 
 ---
 
-# E. Decisiones confirmadas y preguntas pendientes
+# E. Decisiones de producto confirmadas
 
 ## E.1. Decisiones confirmadas por la definición del producto
 
@@ -558,139 +561,38 @@ La aclaración funcional posterior al assessment responde o reemplaza varias pre
 11. **La creación se unifica solo en UI/UX.** Un botón “Crear gasto” permite elegir mensual o tarjeta, mientras la persistencia conserva modelos especializados.
 12. **Un gasto regular puede vencer cada dos meses.** La serie bimestral solo genera importe y reparto en los períodos que corresponden; en el mes intermedio no suma al total y ninguna persona debe una parte de ese gasto.
 13. **Un gasto mensual puede saldarse mediante un pago anual.** La serie continúa siendo mensual, pero cada mes cubierto debe aparecer como “Pagado anual” o `COVERED`, sin generar un nuevo importe pendiente.
+14. **La materialización normal es on-demand.** Al consultar un mes se generan sus ocurrencias mediante upsert idempotente; un proceso programado puede anticipar solo lo necesario para notificaciones.
+15. **Los cambios de importe distinguen alcance.** La UI ofrece “solo este mes” y “este mes y futuros”.
+16. **Un nuevo vencimiento mensual actualiza el mes corriente y la regla futura.** Una ocurrencia pagada queda bloqueada; para corregirla primero se deshace el pago, luego se edita y finalmente puede volver a marcarse pagada.
+17. **Marcar pagado es una acción rápida auditable.** Usa fecha actual y canal predeterminado, permitiendo editarlos.
+18. **La tarjeta se paga por statement completo.** Una cuota no tiene lifecycle de pago independiente; queda pagada al pertenecer a un statement pagado.
+19. **Una compra en cuotas reparte cada cuota.** El porcentaje se aplica al total y cada cuota hereda su snapshot; el saldo de otra persona aparece en cada mes donde la cuota entra al statement.
+20. **El reparto aplica al consumo concreto.** Impuestos, percepciones, intereses, descuentos globales, saldos a favor y otros ajustes del statement quedan fuera de los cálculos de GastApp.
+21. **Una diferencia real se corrige antes del pago.** Si el banco informa un importe distinto, el usuario ajusta el gasto esperado y recién después confirma la conciliación y marca el statement pagado.
+22. **Un gasto regular o de tarjeta puede asignarse 100% a otra persona.** La obligación frente al proveedor o banco continúa perteneciendo al usuario que la administra.
+23. **Los repartos pagados son inmutables.** Los cambios normales afectan mes corriente no pagado y meses futuros; para editar un mes pagado se debe deshacer su pago.
+24. **Existen contactos privados y usuarios conectados.** Un contacto manual requiere solo nickname; opcionalmente puede incluir email y vincularse a otra cuenta de GastApp sin perder el nickname local.
+25. **Los gastos entre usuarios conectados se reflejan en ambas cuentas.** El creador conserva la edición y la contraparte tiene vista de solo lectura sobre el gasto y su porcentaje.
+26. **Los saldos compartidos son bidireccionales y derivados.** Cada usuario ve por persona cuánto le deben y cuánto debe, por moneda, sin convertir esos saldos en `PersonalDebt` ni darles pagos parciales o lifecycle propio.
+27. **`PersonalDebt` tiene lifecycle propio.** Sus estados son `OPEN`, `PARTIALLY_PAID`, `PAID` y `CANCELLED`, derivados del principal, pagos y cancelación.
+28. **La deuda manual usa principal fijo.** Los intereses automáticos quedan fuera; cualquier aumento o condonación futura se registra como ajuste explícito, fechado, motivado y auditable.
+29. **Los pagos de `PersonalDebt` se contabilizan en la moneda de la deuda.** Una nota libre puede recordar que el pago real se entregó en otra moneda y a qué cambio, pero GastApp no gestiona esa conversión.
+30. **La conciliación manual sigue siendo principal.** Subir un PDF y analizarlo con IA es opcional, produce sugerencias validadas y nunca confirma cambios sin revisión humana.
+31. **ARS y USD permanecen separados.** No existe conversión FX implícita ni compensación automática entre monedas.
+32. **El histórico se conserva sin inventar datos.** Los statements legacy pueden marcarse como aceptados aunque no sea posible reconstruir líneas o matches.
+33. **V2 elimina el cifrado por campo de descripciones.** Se confía en cifrado at rest del proveedor, autorización correcta, RLS y controles de acceso.
+34. **Los vencimientos 29, 30 o 31 usan el último día válido del mes corto.** Nunca se desplazan accidentalmente al mes siguiente.
+35. **Las notificaciones comienzan por email.** Push se agrega con Expo y las preferencias se configuran por canal y tipo de vencimiento.
+36. **Google es el único proveedor de identidad previsto.** Supabase Auth debe preservar IDs internos estables aunque la identidad externa sea Google.
+37. **El pago anual compartido se proyecta una sola vez.** La parte de la otra persona aparece en el mes del desembolso anual; los meses cubiertos posteriores siguen visibles, pero no generan nuevos importes compartidos.
 
 En consecuencia, las preguntas originales sobre nacimiento, exigibilidad, aceptación, disputa y liquidación de una deuda compartida dejan de aplicar. Las preguntas sobre pagos parciales quedan respondidas de manera distinta para cada módulo.
 
-Trazabilidad respecto de la lista original:
+## E.2. Preguntas de producto abiertas
 
-| Pregunta original                      | Resultado de la aclaración                                                                                        |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 1 — nacimiento de deuda compartida     | Respondida: no nace una entidad deuda; se proyecta el importe del período.                                        |
-| 2 — porcentaje del creador             | Respondida: el total es 100%, el creador puede tener 0% y otra persona 100%.                                      |
-| 3 — quién edita                        | Parcial: el propietario carga el reparto; falta decidir si existirán usuarios conectados.                         |
-| 4 — visibilidad del invitado           | Sigue abierta solo si se implementan usuarios conectados.                                                         |
-| 5 — aceptación del participante        | Deja de aplicar al reparto informativo; una futura conexión de usuarios puede tener aceptación propia.            |
-| 6 — pagos/cobros parciales             | Respondida: solo aplican al módulo Deudas.                                                                        |
-| 7 y 8 — intereses/cancelación de deuda | Siguen abiertas para Deudas y se reformulan abajo.                                                                |
-| 9 — significado del pago anual         | Respondida: conserva la serie mensual y cubre un rango de meses, que siguen visibles como pagados.                |
-| 19 — cuándo está pagada una tarjeta    | Parcialmente respondida: el estado pertenece al statement, no al reparto; falta confirmar su granularidad exacta. |
-| 20 — cambio posterior de porcentajes   | Sigue abierta y se reformula abajo.                                                                               |
+No quedan preguntas de producto abiertas para definir la arquitectura base de V2. Las recomendaciones sin respuesta explícita fueron aceptadas como decisiones por instrucción del producto y se incorporaron en E.1.
 
-## E.2. Preguntas nuevas para cerrar el diseño
-
-Cada pregunta incluye una recomendación inicial. Ninguna invalida las decisiones confirmadas de E.1.
-Si no hay una respuesta para cada pregunta, usar la Recomendacion que aparece ahi
-
-1. **Para una serie bimestral, el usuario debe elegir explícitamente el primer mes del ciclo?**  
-   Recomendación: sí; guardar un `anchorPeriod` evita ambigüedad entre ciclos enero/marzo y febrero/abril.
-
-2. **¿Cuándo debe materializarse la ocurrencia mensual: al abrir el mes, anticipadamente o mediante un proceso programado?**  
-   Recomendación: al consultar el mes, mediante upsert idempotente; opcionalmente pre-generar para notificaciones.
-   Respuesta: elegiría materialización on-demand al consultar el mes, con upsert idempotente. Si después necesitás recordatorios antes de abrir ese mes, el cron puede pre-materializar únicamente lo necesario. No haría depender el funcionamiento normal de un cron.
-
-3. **Cuando cambia el importe de luz o internet, editar el mes debe cambiar también el valor sugerido para meses futuros?**  
-   Recomendación: ofrecer dos acciones explícitas: “solo este mes” y “este mes y futuros”.
-
-4. **¿El vencimiento puede cambiar solo para una ocurrencia mensual?**  
-   Recomendación: sí; la serie guarda la regla y la ocurrencia conserva la fecha efectiva.
-   Respuesta: Si, usar la recomendacion, pero si modifico una fecha mensual, los meses siguientes deberia acutalizar su fecha de vencimiento porque posiblemente tambien hayan cambiado por esta nueva fecha
-
-5. **¿Marcar pagado requiere fecha y medio de pago, o alcanza una acción rápida con la fecha actual?**  
-   Recomendación: acción rápida con fecha actual y canal predeterminado, permitiendo editar ambos.
-
-6. **En Tarjetas, “Marcar pagado” debe operar siempre sobre el statement completo o también sobre consumos/cuotas individuales?**  
-    Recomendación: operar sobre el statement; las cuotas incluidas heredan ese resultado y no se pagan individualmente fuera del resumen.
-   Respuesta: pagaría únicamente el statement completo. Una cuota individual no debería tener un lifecycle de pago separado: queda pagada porque pertenece al resumen que fue pagado.
-
-7. **En una compra en cuotas, el porcentaje se aplica al total y se replica en todas las cuotas?**  
-   Recomendación: sí; cada cuota hereda un snapshot proporcional, evitando redondear nuevamente el total en cada pantalla.
-
-8. **¿Cuándo debe mostrarse “Juan: $X” para tarjeta: en el mes de compra o en cada mes en que una cuota entra al statement?**  
-   Recomendación: en el período del statement/cuota que efectivamente debe pagar el propietario.
-   mostraría la parte de Juan cada mes en que la cuota aparece en el resumen, no todo en el mes de compra. Si compro algo de $120.000 en 12 cuotas y Juan tiene 50%, conceptualmente Juan representa $5.000 por cada statement, no $60.000 inmediatamente.
-
-9. **¿El porcentaje se aplica solo al consumo o también a impuestos, intereses, descuentos y ajustes del resumen?**  
-   Recomendación: aplicar por defecto solo al consumo; distribuir cargos del statement únicamente mediante una regla explícita.
-   El reparto debería aplicarse al consumo concreto. Impuestos generales, percepciones, intereses financieros, descuentos globales, saldo a favor, etc., son conceptos del statement y no necesariamente pertenecen a una compra.
-
-10. **Si una línea real del statement difiere del importe esperado, el reparto se recalcula sobre el importe real?**  
-    No deberia diferir, en caso por ejemplo que un gasto lo haya cargado como $10.000 pero vengan $10.000,50, yo antes marcar como pagado ese gasto, o el resumen de la tarjeta con ese gasto dentro, lo tengo que poder ajustar al nuevo valor, y recien ahi marcar como pagado.
-
-11. **En una compra 100% ajena, quién absorbe impuestos o costos financieros vinculados a esa compra?**  
-    Todo lo que sea impuestos al sello, o compras en dolares con (que tienen el 30% de percepcion de ganancias en argentina), no forman parte de los caluclos de la app, la app solo contabiliza los gastos con sus montos cargados, y para las tarjetas de credito igual, todo lo que tenga que cobrar extra al deudor lo calculo yo por aparte en papel y lapiz;
-
-12. **¿Un gasto regular —no solo una compra de tarjeta— puede asignarse 100% a otra persona?**  
-    Recomendación: permitirlo; la obligación sigue perteneciendo al usuario que la administra.
-
-13. **¿Cambiar personas o porcentajes afecta solo meses futuros o también una ocurrencia todavía no pagada?**  
-    Recomendación: cambios en la serie afectan solo futuras ocurrencias; el mes actual se edita de forma explícita y nunca se reescribe historia pagada. Amplio: si ya marque el gasto como pagado para el mes corriente, no puedo editar nada, asi que si edito algo, se reflejara para los meses siguientes, y en caso de que quiera modificar para el corriente mes, pero ya lo marque como pagado, tengo que deshacer el pago, editar lo necesario, y luego aceptar los cambios, entonces ahi los cambios seran para el mes actual y futuros; (y luego marcar como pagado nuevamente para el mes actual)
-
-14. **¿Las personas compartidas son siempre contactos privados o también habrá usuarios conectados que puedan ver datos?**  
-    Ambas opciones deben existir.
-
-Un gasto puede compartirse con una persona creada manualmente, identificada únicamente mediante un nickname. En ese caso, esa persona funciona como un contacto privado dentro de la cuenta del usuario y no necesita tener una cuenta de GastApp.
-
-Opcionalmente, el usuario puede asociar un email a esa persona para conectarla con otra cuenta de GastApp. El usuario podrá seguir asignándole un nickname propio para identificarla rápidamente.
-
-Cuando dos usuarios estén conectados, todos los gastos compartidos entre ellos deberán reflejarse en ambas cuentas.
-
-Por ejemplo, si Ricky crea un gasto de $100.000 compartido 50/50 con Juan, en la cuenta de Ricky ese gasto contribuirá al saldo compartido de Juan por $50.000. En la cuenta de Juan, el mismo reparto aparecerá dentro de su sección de gastos compartidos indicando que debe $50.000 a Ricky.
-
-Cada usuario debe poder ver una vista consolidada de sus saldos compartidos por persona: cuánto le deben otras personas y cuánto debe él a cada una, considerando todos los gastos compartidos entre usuarios conectados.
-
-Estos saldos compartidos siguen siendo distintos del módulo PersonalDebt. No deben crear automáticamente una deuda manual, ni compartir su lifecycle, pagos parciales o estados. Son una proyección derivada de los gastos compartidos registrados entre usuarios.
-
-15. **Si existen usuarios conectados en el futuro, el destinatario puede editar o solamente ver su porcentaje?**  
-    Recomendación: solo lectura; el propietario del gasto conserva la edición.
-
-16. **¿Qué estados exactos necesita una deuda manual?**  
-Los estados serán OPEN, PARTIALLY_PAID, PAID y CANCELLED.
-
-El estado se calcula automáticamente según los pagos registrados. Por ejemplo, una deuda sin pagos está OPEN, con pagos parciales está PARTIALLY_PAID y cuando se paga completamente queda PAID. CANCELLED se utiliza cuando el usuario decide perdonar el saldo restante.
-
-17. **¿Una deuda manual admite intereses, actualizaciones o aumentos de capital después de creada?**  
-    Recomendación: principal fijo y ajustes explícitos con motivo; excluir cálculo automático de intereses inicialmente.
-
-18. **¿Un pago parcial debe usar siempre la moneda de la deuda?**  
-    Recomendación: sí en V2 inicial. pero puedo tener un campo descripcion o Notas, para yo ahi poner notas para recordar cosas como por ejemplo, la deduda que era en ARS, me la pago en USD a un cambio de tanto; simplemente para yo recoradr despues que paso con ese pago, pero la app no deberia gestionar esa diferencia de moneda;
-
-19. **¿Puede cancelarse o perdonarse el saldo de una deuda?**  
-    Recomendación: sí, con motivo, fecha y auditoría, sin fingir un pago.
-
-20. **¿La conciliación de tarjeta inicial será manual, por CSV o por PDF?**  
-La conciliación manual se mantiene como flujo principal. El usuario seguirá revisando el resumen de la tarjeta e irá marcando en GastApp, uno por uno, los consumos que efectivamente aparecen, para poder detectar diferencias entre lo esperado y lo informado por el banco.
-
-Además, se agregará opcionalmente una acción “Subir PDF”. El usuario podrá cargar el resumen emitido por el banco y un módulo basado en IA analizará el documento, extraerá sus líneas y devolverá una representación estructurada de los cargos reales.
-
-GastApp utilizará ese resultado para comparar automáticamente las líneas del resumen contra los consumos esperados y sugerir matches, diferencias, cargos desconocidos y consumos esperados ausentes.
-
-El resultado del análisis automático no debe modificar ni conciliar datos de forma definitiva sin revisión del usuario. La UI mostrará la comparación propuesta para que el usuario pueda confirmarla o corregirla manualmente.
-
-CSV no es una prioridad inicial.
-
-21. **¿Un cargo real puede corresponder a varias compras esperadas o viceversa?**  
-    Recomendación: match 1:1 inicialmente y acción manual de dividir/combinar como excepción.
-
-22. **¿Cómo se manejan consumos y pagos de tarjeta en USD?**  
-    Recomendación: conservar ARS y USD separados y no convertir automáticamente.
-
-23. **¿Debe conservarse todo el histórico actual aunque no puedan reconstruirse líneas reales de statements?**  
-    Recomendación: sí, marcándolo como legacy y sin inventar conciliaciones.
-
-24. **¿La descripción debe seguir cifrada a nivel aplicación?**  
-Eliminar encryption por campo de las descriptions en V2 y confiar en encryption at rest del proveedor + controles de acceso + correcta autorización.
-
-25. **¿Qué ocurre con un vencimiento configurado para el día 29, 30 o 31 cuando el mes es más corto?**  
-    Recomendación: usar el último día válido del mes sin desplazar la ocurrencia al mes siguiente.
-
-26. **¿Qué canales de notificación se necesitan realmente?**  
-    Recomendación: email primero y push cuando exista Expo; preferencias configurables por canal y tipo de vencimiento.
-
-27. **¿Google seguirá siendo el único proveedor de identidad?**  
-    Recomendación: Google solamente
-
-28. **Si un gasto compartido mensual se paga anualmente, cuándo corresponde mostrar la parte de la otra persona: toda en el mes del pago anual o distribuida entre los meses cubiertos?**  
-    Recomendación: registrarla en el mes del desembolso anual, porque es cuando el propietario efectivamente pagó; los meses cubiertos posteriores quedan visibles pero no generan nuevos importes compartidos.
+Las incógnitas restantes son de implementación o validación operativa —por ejemplo límites reales del procesamiento de PDF en Edge Functions y elección del hosting estático del frontend— y deben resolverse con pruebas o mediciones, no como decisiones de dominio.
 
 ---
 
@@ -704,7 +606,7 @@ Orden recomendado:
 2. Resumen por moneda de gastos mensuales y statements pendientes, sin mezclar monedas.
 3. Gastos mensuales a pagar.
 4. Tarjetas y estado de conciliación.
-5. “Corresponde a otras personas”, agrupado por persona, período y moneda; es informativo y no tiene estado de cobro.
+5. Saldos compartidos por persona y moneda: cuánto le deben al usuario y cuánto debe él, reflejados en ambas cuentas cuando existe conexión.
 6. Gastos cubiertos por pago anual, visibles como pagados y excluidos del pendiente.
 7. Completados, colapsados por defecto.
 
@@ -726,14 +628,15 @@ El módulo **Deudas** debe tener navegación y resumen propios. Su saldo no se m
 - Conciliar un statement.
 - Resolver diferencias.
 - Editar una compra con cuotas ya materializadas.
-- Conectar usuarios, solo si se confirma como requisito futuro.
-- Reestructurar una deuda.
+- Conectar un contacto manual con otra cuenta GastApp mediante email.
+- Cancelar o registrar un ajuste explícito de una deuda con motivo.
 - Crear un gasto desde un flujo único que primero elige “mensual” o “tarjeta”.
 
 ## F.4. Automatizaciones
 
 - Materializar ocurrencias al consultar un mes mediante upsert idempotente.
 - Sugerir matches entre líneas reales y cargos esperados.
+- Analizar opcionalmente un statement PDF, validar su salida estructurada y presentar sugerencias para confirmación humana.
 - Detectar duplicados por tarjeta, importe, moneda, comercio y fecha.
 - Arrastrar cargos esperados ausentes al siguiente statement sin cambiar su fecha real.
 - Materializar el snapshot de reparto de cada cuota cuando entra al período correspondiente, sin generar una deuda.
@@ -745,10 +648,12 @@ El módulo **Deudas** debe tener navegación y resumen propios. Su saldo no se m
 - Creación unificada de gasto mensual o consumo de tarjeta.
 - Pagos parciales dentro de Deudas.
 - Timeline y auditoría.
-- Conexiones e invitaciones, solo si se confirma colaboración entre cuentas.
+- Conexiones e invitaciones entre cuentas con nickname local.
+- Vista consolidada de saldos compartidos en ambas direcciones.
+- Carga opcional de PDF y conciliación asistida por IA.
 - Conciliación y cargos desconocidos.
 - Archivo de contactos.
-- Exportación CSV.
+- Exportación de datos; la importación CSV de statements no es prioridad inicial.
 - Estado offline/read-only en Expo.
 - Retry seguro e idempotente de mutations.
 
@@ -759,11 +664,11 @@ El módulo **Deudas** debe tener navegación y resumen propios. Su saldo no se m
 - Separar “esperado”, “confirmado”, “conciliado” y “pagado”.
 - Mostrar una sola cifra principal por moneda y contexto.
 - Evitar que “gasto” represente a la vez plantilla, ocurrencia, pago y deuda.
-- Evitar que “importe correspondiente a Juan” se presente como una deuda cobrable o conciliada.
+- Presentar “importe correspondiente a Juan” como saldo compartido derivado, nunca como `PersonalDebt` ni como cuenta con pagos parciales.
 
 ## F.7. Realtime y background jobs
 
-Realtime no aporta suficiente valor inicialmente. TanStack Query con invalidación y refetch es suficiente. Puede evaluarse si en el futuro los contactos pasan a ser usuarios conectados con visibilidad compartida.
+Realtime no aporta suficiente valor inicialmente aunque existan usuarios conectados. TanStack Query con invalidación, refetch por foco y polling puntual es suficiente para el primer release; Realtime se evaluará si las mediciones muestran una necesidad de actualización inmediata entre cuentas.
 
 Los background jobs iniciales deberían limitarse a:
 
@@ -775,231 +680,241 @@ La generación de ocurrencias puede ser on-demand e idempotente, sin depender de
 
 ---
 
-# G. Stack options
+# G. Stack y plataforma seleccionados
 
-## G.1. Comparación
+La arquitectura dejó de ser una comparación abierta. La selección final para V2 es:
 
-|                      | Opción 1 — Recomendada                         | Opción 2                   | Opción 3                          |
-| -------------------- | ---------------------------------------------- | -------------------------- | --------------------------------- |
-| Web                  | Next.js Active LTS                             | React Router 7 + Vite      | Next.js o Expo Web                |
-| API                  | REST `/api/v1` con Route Handlers              | Hono API independiente     | Supabase Data API/RPC             |
-| Database             | Supabase PostgreSQL                            | Supabase/Neon PostgreSQL   | Supabase PostgreSQL               |
-| ORM/data layer       | Prisma estable actualizado                     | Drizzle                    | SQL/RPC directo                   |
-| Auth                 | Supabase Auth                                  | Supabase Auth              | Supabase Auth                     |
-| State                | React local; Zustand solo si aparece necesidad | Igual                      | Igual                             |
-| Cache/data fetching  | TanStack Query                                 | TanStack Query             | TanStack Query                    |
-| Hosting              | Un proyecto Vercel                             | Dos servicios/proyectos    | Vercel + Supabase                 |
-| Mobile               | Expo + mismo API client                        | Expo + mismo API client    | Expo + Supabase directo           |
-| Complejidad          | Baja-media                                     | Media                      | Baja al inicio, alta en dominio   |
-| Performance          | Muy buena si se agrupan queries                | Excelente y controlable    | Buena, dependiente de RLS/RPC     |
-| Costo inicial        | $0 personal; producción baja                   | $0–bajo                    | $0–bajo                           |
-| Principal desventaja | Next.js sigue presente como host/adaptador     | Más infraestructura y CORS | Lógica fragmentada en DB/clientes |
+| Capa | Decisión |
+|---|---|
+| Web | React Router 8 en Framework Mode, principalmente SPA |
+| UI runtime | React 19 |
+| Build | Vite + TypeScript |
+| Server state | TanStack Query |
+| Formularios | React Hook Form + Zod cuando corresponda |
+| API | REST explícita con Hono |
+| Runtime backend | Una Supabase Edge Function principal |
+| Database | Supabase PostgreSQL |
+| Auth | Supabase Auth con Google |
+| Files | Supabase Storage |
+| Defensa DB | Row Level Security habilitado |
+| Evolución DB | Migraciones Supabase/SQL versionadas |
+| Persistencia | Módulos explícitos de queries y RPC PostgreSQL para atomicidad |
+| Mobile futuro | Expo/React Native como segundo cliente de la misma API |
 
-Supabase ofrece Postgres, OAuth y un free tier suficiente para una app personal, aunque los proyectos gratuitos pueden pausarse y no incluyen backups automáticos:
+## G.1. Web V2
 
+GastApp autenticada no necesita SEO ni runtime SSR. React Router 8 Framework Mode se configura principalmente como SPA, manteniendo routing tipado, route modules y code splitting sin convertir loaders o actions del frontend en la fuente de verdad financiera.
+
+El hosting estático debe redirigir las rutas de aplicación a `index.html`, tal como requiere SPA Mode; esta es configuración de hosting frontend y no agrega un servidor de aplicación.
+
+- [React Router: Framework Mode](https://reactrouter.com/start/modes)
+- [React Router: SPA Mode](https://reactrouter.com/how-to/spa)
+- [React Router 8 changelog](https://reactrouter.com/changelog)
+- [React 19](https://react.dev/blog/2024/12/05/react-19)
+- [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview)
+- [React Hook Form](https://react-hook-form.com/)
+- [Zod](https://zod.dev/)
+
+Al implementar se elegirán releases estables compatibles. React Router 8 requiere respetar sus mínimos publicados de React, Vite y runtime de desarrollo; no se copiarán versiones de V1.
+
+## G.2. Backend Supabase con Hono
+
+Una única Edge Function llamada conceptualmente **api** aloja la Hono REST API y despacha múltiples rutas. No se crea una Function por endpoint y tampoco un servidor Node independiente.
+
+- [Supabase Edge Functions](https://supabase.com/docs/guides/functions)
+- [Hono sobre Supabase Functions](https://hono.dev/docs/getting-started/supabase-functions)
+- [Supabase: Hono quickstart](https://supabase.com/docs/guides/getting-started/quickstarts/hono)
+
+Hono es el adaptador HTTP, no el dominio. Las routes autentican, validan y llaman casos de uso; no son proxies CRUD hacia tablas de Supabase.
+
+## G.3. Supabase como plataforma inicial
+
+Supabase concentra PostgreSQL, Auth, Storage, Edge Functions y evolución SQL. RLS permanece habilitado como defensa en profundidad y el cliente nunca recibe secretos de backend.
+
+- [Supabase Auth](https://supabase.com/docs/guides/auth)
+- [Supabase JWT](https://supabase.com/docs/guides/auth/jwts)
+- [Supabase Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
+- [Supabase Storage desde Edge Functions](https://supabase.com/docs/guides/functions/storage-caching)
+- [Supabase migrations](https://supabase.com/docs/guides/local-development/overview)
 - [Supabase Pricing](https://supabase.com/pricing)
 
-Vercel Hobby es gratuito, pero está destinado a uso personal/no comercial:
+Prisma no es obligatorio en V2. La capa de persistencia queda aislada detrás de módulos explícitos y puede usar el cliente de Supabase, SQL o funciones PostgreSQL/RPC. Una librería adicional podrá incorporarse después sin cambiar contratos HTTP o reglas de dominio.
 
-- [Vercel Pricing](https://vercel.com/pricing)
+## G.4. Web primero y Expo después
 
-## G.2. Opción 1 — Next.js + Route Handlers + Prisma + Supabase
+La web V2 se estabiliza antes de iniciar mobile para reducir el riesgo de migración. Expo será un segundo cliente del mismo backend:
 
-### Componentes
+- comparte contratos HTTP;
+- comparte schemas Zod serializables;
+- comparte typed API client;
+- comparte tipos y utilidades de dominio no visuales;
+- implementa su UI con componentes React Native propios.
 
-- Next.js en la versión Active LTS parcheada disponible al implementar.
-- Web autenticada mayormente API-driven.
-- Route Handlers como adaptador HTTP REST.
-- PostgreSQL administrado por Supabase.
-- Prisma actual con runtime serverless moderno y pool.
-- Supabase Auth para identidad compartida web/Expo.
-- TanStack Query para server state.
-- Zod para contratos y validación.
-- Estado local con React; Zustand solo si aparece estado transversal real.
-- Vercel Cron + outbox para emails.
-- Sin realtime inicialmente.
+Los componentes DOM, estilos y route modules de React Router no se consideran reutilizables directamente en Expo.
 
-Route Handlers soportan los métodos HTTP necesarios para una API REST:
+## G.5. Alternativas descartadas para el inicio
 
-- [Next.js Route Handlers](https://nextjs.org/docs/app/getting-started/route-handlers)
+- **Next.js + Route Handlers:** no se recomienda para V2. SSR y SEO no aportan valor suficiente en la aplicación financiera autenticada y el backend ya tiene un runtime explícito en Supabase.
+- **Server Actions:** permanecen como detalle de V1; no son el contrato de V2 ni pueden ser consumidas por Expo.
+- **Supabase Data API directa desde clientes:** no es el contrato principal. Fragmentaría autorización y reglas financieras entre web, mobile, RLS y RPC.
+- **Prisma obligatorio:** se descarta como restricción arquitectónica. Puede reevaluarse como detalle de persistencia si demuestra valor y compatibilidad con el runtime.
+- **Servidor Node en Vercel, Railway, Render, VPS o AWS:** no se introduce inicialmente. Solo se reconsidera frente a una limitación medida de Edge Functions.
+- **Expo simultáneo con la migración web:** se posterga hasta estabilizar API, contratos y dominio.
 
-### Ventajas
+## G.6. Hosting y costo
 
-- Un único deploy web/API inicialmente.
-- Sin CORS entre web y API.
-- Integración simple con Vercel.
-- El dominio puede permanecer completamente fuera de Next.js.
-- La API se puede extraer después sin cambiar contratos o casos de uso.
-- Prisma estable ofrece migraciones, transacciones y buen DX para un equipo pequeño.
+Objetivo personal inicial:
 
-### Desventajas
+```text
+Frontend web
+→ build estático/client-side de React Router
+→ hosting estático con free tier a seleccionar
 
-- Hay que imponer disciplina para que la UI no vuelva a saltarse la API/aplicación.
-- Next.js conserva cierta complejidad de framework.
-- Un único deploy comparte blast radius entre web y API.
+Backend
+→ Supabase Edge Functions + Hono
 
-### Costo y performance
+Database / Auth / Files
+→ Supabase PostgreSQL + Auth + Storage
 
-- Costo inicial potencialmente cero para uso personal.
-- Producción básica: costo bajo, principalmente base administrada.
-- Muy buena performance si se alinea la región, se usa pool y se evita el exceso de round trips.
+PDF/IA
+→ proveedor externo opcional con costo por uso
+```
 
-### Recomendación
-
-Es la opción elegida. No se elige porque Next.js ya esté en el repo, sino por costo operacional y compatibilidad con Vercel. Ninguna regla del dominio dependerá de RSC, SSR o Server Actions.
-
-## G.3. Opción 2 — React Router/Vite + Hono + Drizzle
-
-### Componentes
-
-- React Router 7 Framework Mode o SPA con Vite.
-- Hono como API independiente en Vercel.
-- PostgreSQL en Supabase o Neon.
-- Drizzle como query layer.
-- Supabase Auth.
-- TanStack Query.
-- Expo con cliente API compartido.
-
-### Ventajas
-
-- Separación estricta frontend/backend.
-- Frontend ligero y control explícito.
-- API desplegable independientemente.
-- Menos conceptos de RSC y caching de framework.
-- Drizzle permite SQL más transparente.
-
-### Desventajas
-
-- Dos deploys o configuración monorepo más compleja.
-- CORS, auth, observabilidad y variables duplicadas.
-- Mayor carga operacional para una aplicación pequeña.
-- Drizzle v1 figura todavía como RC en su documentación actual.
-
-### Evaluación
-
-Es una buena opción técnica, pero su separación adicional no compensa todavía la complejidad operativa.
-
-## G.4. Opción 3 — Supabase directo
-
-### Componentes
-
-- Web y Expo consumen Supabase Data API/RPC.
-- RLS para autorización.
-- Postgres functions y triggers para lógica compleja.
-- Supabase Auth y Realtime.
-
-### Ventajas
-
-- Muy poco backend propio.
-- Auth móvil sencilla.
-- Bajo costo.
-- Realtime disponible.
-
-### Desventajas
-
-- Reglas repartidas entre RLS, triggers, RPC y clientes.
-- Contratos y transacciones de conciliación más difíciles de versionar.
-- Acoplamiento fuerte al proveedor.
-- Mayor riesgo de duplicar reglas entre web y mobile.
-- Debugging más difícil para workflows financieros largos.
-
-### Evaluación
-
-No se recomienda para el dominio principal. Supabase sí se recomienda como PostgreSQL administrado y proveedor de Auth, no como reemplazo completo de la capa de aplicación.
-
-Supabase soporta oficialmente Auth en React Native y JWT verificables por una API propia:
-
-- [Supabase Auth con React Native](https://supabase.com/docs/guides/auth/quickstarts/react-native)
-- [Supabase JWT/JWKS](https://supabase.com/docs/guides/auth/jwts)
+No existe una dependencia arquitectónica de Vercel. Tampoco se agrega otro proveedor de backend mientras Supabase cubra el volumen y los límites observados. El procesamiento de PDF debe diseñarse con límites de tamaño, timeout, retry y costo; si las mediciones demuestran que una Edge Function no alcanza, esa evidencia habilitará revisar solamente ese componente.
 
 ---
 
 # H. Proposed V2
 
-Esta propuesta incorpora las decisiones confirmadas en E.1. Los detalles señalados en E.2 siguen abiertos, pero no se volverán a mezclar repartos informativos con el módulo Deudas.
+La arquitectura V2 queda definida por las decisiones de E y G. V1 continúa operativa durante la migración; V2 nace como web SPA con backend explícito en Supabase y Expo se agrega después como segundo cliente.
 
 ## H.1. Arquitectura
 
 ```text
-Web / Expo
-    ↓
-Typed API client
-    ↓
-REST API / HTTP adapters
-    ↓
-Application use cases
-    ↓
-Domain rules + transactions
-    ↓
-Prisma data layer
-    ↓
-PostgreSQL
+React Router 8 Web (SPA)
+        │
+        │ HTTPS / typed API client / Supabase JWT
+        ▼
+Supabase Edge Function: api
+        │
+        └── Hono REST API
+                │
+                ├── routes y middleware
+                ├── application use cases
+                ├── domain rules
+                └── persistence
+                        │
+                        ▼
+                Supabase PostgreSQL
+                   + RLS + SQL/RPC
+
+Archivos privados
+GastApp API ───────────► Supabase Storage
+
+Futuro
+Expo / React Native
+        └──────────────► mismo typed API client
+                                  │
+                                  ▼
+                            misma Hono API
 ```
 
-SSR puede utilizarse para shell o prefetch, pero ninguna regla dependerá de SSR, Server Components o React.
+No hay SSR de aplicación, Route Handlers de Next.js, Server Actions ni acceso directo de los clientes a tablas como contrato del producto.
+
+Cada operación de negocio sigue este flujo:
+
+```text
+Route Hono delgada
+  ↓
+Verificación JWT + autorización + validación Zod
+  ↓
+Application use case
+  ↓
+Reglas de dominio
+  ↓
+Persistencia transaccional / SQL / RPC
+  ↓
+PostgreSQL + RLS
+```
+
+Recurrencias, anclaje bimestral, coberturas anuales, allocations, proyecciones compartidas, pago de statements, conciliación, deudas, idempotencia y auditoría pertenecen al backend.
 
 ## H.2. Estructura del repositorio
 
 ```text
 apps/
-  web/
-  mobile/          # se agrega cuando comience Expo
+  web/                  # React Router 8 + React 19 + Vite
+  mobile/               # se agrega después con Expo / React Native
 
 packages/
-  domain/          # Money, recurrence, allocations, estados
-  application/     # casos de uso y transacciones
-  contracts/       # DTOs y schemas Zod
-  db/              # schema Prisma, queries y migrations
-  api-client/      # cliente compartido web/Expo
-  testkit/          # builders, clocks y fixtures
+  contracts/            # DTOs y schemas Zod serializables
+  api-client/           # cliente HTTP compartido web/Expo
+  domain/               # tipos, Money y utilidades no visuales
+  shared/               # utilidades agnósticas de UI/runtime
+  testkit/               # fixtures, builders y clocks
+
+supabase/
+  migrations/           # SQL versionado
+  functions/
+    api/                 # una Edge Function Hono con múltiples rutas
 ```
 
-Expo soporta workspaces y monorepos modernos, aunque su propia documentación advierte que agregan complejidad. En este producto se justifican cuando exista realmente la app mobile:
+No se crea un monorepo ceremonial: cada package debe tener consumidores reales. Expo reutiliza contratos, cliente API y código no visual; sus pantallas se construyen con componentes React Native, sin intentar reutilizar componentes DOM de la web.
 
-- [Expo: Work with monorepos](https://docs.expo.dev/guides/monorepos/)
+## H.3. Organización de la Edge Function
 
-No se crearán repositories ceremoniales por cada tabla. Los casos de uso financieros complejos usarán una unidad de trabajo transaccional; las queries de dashboard podrán usar proyecciones optimizadas directas.
+Estructura conceptual, no implementada por este assessment:
 
-## H.3. Módulos
+```text
+supabase/
+├── migrations/
+│
+└── functions/
+    └── api/
+        ├── index.ts
+        ├── routes/
+        │   ├── months.ts
+        │   ├── expenses.ts
+        │   ├── cards.ts
+        │   ├── statements.ts
+        │   ├── shared-expenses.ts
+        │   ├── debts.ts
+        │   ├── contacts.ts
+        │   └── statement-pdf.ts
+        │
+        ├── middleware/
+        ├── application/
+        ├── domain/
+        ├── persistence/
+        └── schemas/
+```
+
+Una Function principal reduce deploys y mantiene routing, CORS, auth, errores y observabilidad centralizados. Los módulos internos preservan límites de dominio y evitan convertirla en un archivo monolítico.
+
+## H.4. Módulos
 
 ```text
 identity
 contacts-and-connections
 monthly-expenses
-recurrence
+recurrence-and-coverage
 payments
 sharing-and-allocations
+shared-balance-projections
 personal-debts
 credit-cards
 statements-and-reconciliation
+statement-pdf-analysis
 notifications
 monthly-dashboard
 audit
 ```
 
-### Decisión de persistencia y UI
+Deudas, saldos compartidos y responsabilidad frente a una tarjeta son contextos diferentes aunque todos muestren importes relacionados con personas.
 
-V2 no debe usar una única tabla `Expense` con columnas opcionales para tarjeta, cuotas, statement, deuda y conciliación. Esos conceptos tienen ciclos de vida y restricciones diferentes; una tabla universal produciría muchos campos nulos y reglas condicionales difíciles de garantizar.
+## H.5. Gastos mensuales y bimestrales
 
-La unificación correcta ocurre en dos lugares:
-
-- **UI:** un botón “Crear gasto” abre un flujo común y luego permite elegir “gasto mensual” o “tarjeta”.
-- **Lectura:** el dashboard mensual combina ocurrencias y cargos de tarjeta mediante una query/proyección tipada.
-
-La escritura y persistencia permanecen especializadas. Deudas también conserva tablas, endpoints y navegación propios.
-
-```text
-Crear gasto
-├── Gasto mensual → MonthlyExpenseSeries / MonthlyExpenseOccurrence
-└── Tarjeta       → CardPurchase / CardInstallment / CardStatement
-
-Dashboard mensual ← MonthlyExpenseOccurrence + cargos/statement del período
-Deudas            ← PersonalDebt + PersonalDebtPayment (sin enlaces automáticos)
-```
-
-## H.4. Gastos mensuales
-
-Entidades:
+Entidades conceptuales:
 
 ```text
 MonthlyExpenseSeries
@@ -1012,88 +927,98 @@ CoveragePeriod
 
 Reglas:
 
-- No es un ledger de gastos diarios: una serie representa algo pagadero por período mensual.
-- La recurrencia base admite `intervalMonths = 1` para mensual y `intervalMonths = 2` para bimestral.
-- Toda serie bimestral guarda `anchorPeriod`, que define qué meses pertenecen al ciclo.
-- Fecha inicial, fecha final opcional y regla de vencimiento.
-- Ocurrencias con snapshot de monto, moneda, participantes y porcentajes.
-- Estados iniciales: `PLANNED`, `DUE`, `PAID`, `COVERED`, `SKIPPED`, `CANCELLED`.
-- Marcar pagado crea un registro con fecha y canal, aunque la UI lo presente como una acción binaria. El pago parcial no se incorpora aquí salvo decisión posterior.
-- Una serie bimestral materializa ocurrencias únicamente en meses programados. En los meses intermedios no hay ocurrencia, importe pendiente ni `OccurrenceAllocation`; por lo tanto, el gasto aporta cero al total y ninguna persona debe una parte.
-- El pago anual no cambia la frecuencia de la serie mensual. Crea un `CoveragePeriod` con `fromPeriod`, `throughPeriod` y referencia al pago que produjo la cobertura.
-- Cada mes alcanzado por el pago anual conserva una ocurrencia visible con estado `COVERED`, etiqueta “Pagado anual” y `payableAmountMinor = 0`. El importe nominal puede conservarse por separado para contexto, pero no se suma al total pendiente.
-- Una ocurrencia cubierta no genera nuevamente un importe compartido. Si el pago anual es compartido, su reparto se registra una sola vez según la decisión pendiente E.2.28.
-- Generación on-demand mediante upsert único `[seriesId, accountingPeriod]`.
+- Una serie representa un gasto periódico, no un movimiento diario.
+- intervalMonths es 1 para mensual y 2 para bimestral.
+- Toda serie bimestral guarda anchorPeriod para distinguir sus ciclos.
+- La materialización ocurre on-demand al consultar un período mediante upsert único por seriesId + accountingPeriod.
+- Un job puede pre-materializar solo ocurrencias necesarias para recordatorios; el flujo normal no depende del cron.
+- Una serie bimestral no genera ocurrencia, importe ni allocation durante su mes intermedio.
+- La serie guarda la regla de vencimiento y cada ocurrencia conserva su fecha efectiva.
+- Cambiar el vencimiento de una ocurrencia no pagada actualiza el mes actual y la regla de meses futuros.
+- Cambiar un importe ofrece “solo este mes” o “este mes y futuros”.
+- Estados: PLANNED, DUE, PAID, COVERED, SKIPPED y CANCELLED.
+- Marcar pagado crea ExpensePayment con fecha y canal; no existe pago parcial de este agregado.
+- Una ocurrencia pagada es inmutable. Para corregirla se deshace el pago, se edita y se vuelve a pagar.
+- Un pago anual crea CoveragePeriod sin cambiar la recurrencia mensual subyacente.
+- Los meses cubiertos continúan visibles como “Pagado anual”, con estado COVERED y payableAmountMinor igual a cero.
+- El importe nominal puede conservarse para contexto, pero nunca se suma al total pendiente.
+- Si el pago anual es compartido, la allocation se proyecta una sola vez en el mes del desembolso anual.
 
-## H.5. Compartidos y allocations
+## H.6. Compartidos, allocations y saldos derivados
 
-Cada allocation debe guardar:
+El reparto se define al crear un gasto regular o de tarjeta. Todas las allocations, incluido el propietario, suman 10.000 basis points. El propietario puede tener 0% y otra persona 100%.
 
-- usuario propietario, usuario conectado futuro o contacto manual;
-- `shareBps`, donde 10.000 = 100%;
-- importe calculado en unidades menores;
-- nombre snapshot;
-- versión de la distribución.
+Cada snapshot guarda:
 
-Las allocations del propietario y de las demás personas suman 10.000 basis points. El propietario puede tener `shareBps = 0` y Juan `shareBps = 10_000`. Para evitar foreign keys polimórficas ambiguas, pueden persistirse allocations especializadas por agregado —ocurrencia mensual y cargo de tarjeta— reutilizando las mismas reglas de dominio.
+- referencia al propietario, contacto manual o usuario conectado;
+- shareBps;
+- amountMinor calculado;
+- moneda;
+- nickname/nombre visible en ese momento;
+- versión de distribución;
+- período y origen inmutable.
 
-La división automática igual debe repartir porcentajes y centavos residuales de forma determinista. Para tres participantes podría producir:
+La división igual reparte porcentajes y unidades menores residuales de forma determinista. La suma se valida en contrato Zod, caso de uso transaccional y constraint o trigger diferido de PostgreSQL.
+
+Una allocation no tiene estado OPEN/PAID, settlement ni pagos parciales. Sin embargo, cuando refiere a usuarios conectados, se proyecta desde ambas perspectivas:
 
 ```text
-33.33%
-33.33%
-33.34%
+Ricky crea $100.000 al 50% con Juan
+
+Cuenta de Ricky
+→ Juan me debe $50.000
+
+Cuenta de Juan
+→ debo $50.000 a Ricky
 ```
 
-La suma se valida en tres niveles:
+SharedBalanceProjection agrupa por conexión y moneda cuánto debe cada lado. Es una query/read model derivado de allocations, no un saldo editable ni una PersonalDebt persistida. Los cambios no reescriben períodos pagados; un mes pagado se corrige únicamente deshaciendo primero su pago.
 
-1. schema Zod del contrato;
-2. caso de uso dentro de la transacción;
-3. constraint trigger diferido en PostgreSQL.
+Los impuestos, percepciones, intereses, descuentos globales, saldo a favor y otros conceptos generales del statement no participan en allocations. GastApp distribuye exclusivamente los consumos cargados.
 
-Cambiar porcentajes crea una nueva versión para ocurrencias futuras. No modifica históricos.
+## H.7. Contactos y usuarios conectados
 
-Una allocation no tiene estado de deuda, aceptación, cobro ni pago. Es un snapshot que responde: “de este importe del período, ¿cuánto corresponde a cada persona?”. Los totales se proyectan por período, persona y moneda.
-
-## H.6. Contactos y usuarios conectados
-
-Entidades sugeridas:
+Entidades conceptuales:
 
 ```text
 Contact
 UserConnection
 ```
 
-- `Contact` representa una persona manual y puede archivarse.
-- Un contacto puede vincularse opcionalmente con un usuario real.
-- `UserConnection` maneja `PENDING`, `ACCEPTED`, `REJECTED`, `BLOCKED`.
-- Las allocations pueden referenciar un usuario o un contacto, nunca ambos.
-- Las ocurrencias guardan un snapshot de nombre para preservar historia.
-- Desconectar usuarios no elimina allocations históricos.
+- Contact pertenece a un usuario, requiere nickname y puede archivarse.
+- El email es opcional y permite iniciar la vinculación con una cuenta GastApp.
+- Cada propietario conserva su nickname privado aunque el contacto quede vinculado.
+- UserConnection usa PENDING, ACCEPTED, REJECTED y BLOCKED.
+- Una allocation referencia un contacto manual o una conexión aceptada, nunca ambos.
+- El creador del gasto es el único editor; el usuario conectado ve el gasto compartido y su porcentaje en modo lectura.
+- La contraparte no obtiene acceso al mes financiero completo, tarjetas o gastos no compartidos del creador.
+- Desconectar o bloquear no borra snapshots ni saldos históricos.
 
-Las conexiones son opcionales y no forman parte del núcleo necesario: el producto puede operar únicamente con contactos privados. Si se agregan usuarios conectados, la aceptación corresponde a la conexión entre usuarios, no a cada reparto.
+Las conexiones forman parte del alcance V2, no son una mejora opcional posterior.
 
-## H.7. Deudas manuales independientes
+## H.8. Deudas manuales independientes
 
 ```text
 PersonalDebt
 PersonalDebtPayment
+PersonalDebtAdjustment   # solo para ajustes explícitos
 ```
 
-Una `PersonalDebt` representa una cuenta manual independiente, como prestar USD 1.000 en efectivo a una hermana y registrar devoluciones de importes variables.
+PersonalDebt registra dinero que otra persona debe al usuario, como un préstamo de USD 1.000 en efectivo.
 
-- Principal, moneda, contraparte, fecha, nota y vencimiento opcional.
-- Pagos parciales arbitrarios mediante `PersonalDebtPayment`.
-- Estados sugeridos: `OPEN`, `PARTIALLY_PAID`, `PAID`, `CANCELLED`.
-- El usuario es acreedor y la contraparte es quien le debe; no se modelan inicialmente deudas del usuario hacia terceros.
-- El saldo se deriva del principal y los pagos; no se guarda como una segunda fuente de verdad sin control.
-- `PersonalDebtAdjustment` se agrega únicamente si se confirman aumentos de capital, intereses manuales o condonaciones; todo ajuste será explícito y auditable.
+- Guarda principal, moneda, contraparte, fecha, descripción/notas y vencimiento opcional.
+- Estados derivados: OPEN sin pagos, PARTIALLY_PAID con pagos parciales, PAID al cubrir el principal y CANCELLED al perdonar saldo.
+- Cada pago tiene importe, fecha y nota.
+- El pago se contabiliza en la moneda de la deuda.
+- La nota puede documentar que físicamente se recibió otra moneda y a qué cambio, pero GastApp no calcula ni registra FX.
+- No hay interés automático.
+- Un aumento de principal o condonación es un ajuste explícito, fechado, motivado y auditable.
+- Cancelar no inventa un pago.
+- No existe sourceType ni automatización desde gastos, allocations, cuotas, statements o saldos compartidos.
 
-No existe `sourceType` hacia gastos, allocations, cuotas o statements. Crear o pagar un gasto compartido nunca crea, actualiza ni liquida una `PersonalDebt`. Si el usuario excepcionalmente quiere llevar también ese compromiso en Deudas, debe crearlo de manera manual y consciente; V2 no debe duplicarlo automáticamente.
+## H.9. Tarjetas y conciliación manual
 
-## H.8. Tarjetas y conciliación
-
-Entidades:
+Entidades conceptuales:
 
 ```text
 CreditCard
@@ -1104,34 +1029,32 @@ CardInstallment
 CardStatement
 StatementLine
 StatementMatch
-StatementAdjustment
 CardPayment
 ```
 
-`CardPurchase` o su plan recurrente conserva la distribución elegida al crear el gasto. Cada cuota/cargo materializado conserva un snapshot del porcentaje aplicable a ese período. Una compra asignada 100% a Juan sigue perteneciendo a la tarjeta y al statement del propietario: el reparto no cambia la obligación frente al banco ni crea una `PersonalDebt`.
+Una compra o cargo recurrente conserva su distribución. Cada cuota materializada guarda el snapshot aplicable al período del statement; una compra de $120.000 en 12 cuotas compartida 50% proyecta $5.000 para la otra persona en cada uno de los 12 statements.
 
 Fechas separadas:
 
-- `occurredAt`: compra o consumo real conocido.
-- `expectedPeriod`: expectativa de aparición.
-- `postedOn`: fecha informada por el banco.
-- `closingDate`: cierre real.
-- `statementPeriod`: período contable del resumen.
-- `dueDate`: vencimiento.
+- occurredAt: compra conocida;
+- expectedPeriod: mes esperado;
+- postedOn: fecha informada por el banco;
+- closingDate: cierre real;
+- statementPeriod: período contable;
+- dueDate: vencimiento.
 
-El statement real define el período contable. `expectedPeriod` solo ayuda a sugerir matches.
+El flujo principal sigue siendo manual:
 
-Ejemplo HBO:
+1. el usuario abre el statement real;
+2. revisa y marca uno a uno los consumos esperados que aparecen;
+3. ajusta antes de pagar cualquier diferencia, por ejemplo $10.000 esperados frente a $10.000,50 reales;
+4. resuelve cargos desconocidos o esperados ausentes;
+5. confirma la conciliación;
+6. marca pagado el statement completo.
 
-```text
-Cargo esperado en julio
-→ no aparece en statement de julio
-→ permanece unmatched
-→ aparecen dos líneas en agosto
-→ cada línea se concilia con su ocurrencia esperada
-```
+Las líneas de impuestos, percepciones, intereses, descuentos globales o saldo a favor pueden conservarse como evidencia del PDF/statement y marcarse `IGNORED_WITH_REASON`, pero no forman parte de los totales de gastos ni de los repartos de GastApp. El total bancario informado puede guardarse como metadata de conciliación sin convertirse en un gasto del producto.
 
-Un statement tendrá N ajustes con importe, moneda, descripción y tipo. No se guardará únicamente un saldo agregado.
+Una cuota individual no se paga por separado. CardPayment aplica al statement y las cuotas incluidas heredan ese resultado. El matching inicial es 1:1; dividir o combinar es una excepción manual. CSV no es prioridad inicial.
 
 Estados de conciliación:
 
@@ -1144,208 +1067,296 @@ UNMATCHED_ACTUAL
 IGNORED_WITH_REASON
 ```
 
-## H.9. Dinero y monedas
+## H.10. Statement PDF e IA opcional
 
-Representación recomendada:
+La acción “Subir PDF” asiste al flujo manual, pero nunca lo reemplaza:
+
+```text
+Usuario sube PDF
+        ↓
+GastApp Hono API
+        ↓
+bucket privado en Supabase Storage
+        ↓
+StatementParser
+        ↓
+proveedor externo IA/LLM
+        ↓
+JSON estructurado validado con Zod
+        ↓
+motor determinista de conciliación
+        ↓
+sugerencias
+        ↓
+revisión/corrección y confirmación humana
+```
+
+Contrato conceptual:
+
+```ts
+interface StatementParser {
+  parse(input: StatementDocument): Promise<ParsedStatement>
+}
+```
+
+La abstracción impide acoplar dominio o API a OpenAI, Anthropic, Gemini u otro proveedor. Las keys viven únicamente como secretos de Edge Functions.
+
+La salida no es confiable hasta superar:
+
+- validación estructural;
+- validación de moneda, totales y fechas;
+- límites de cantidad e importes;
+- detección de líneas duplicadas;
+- asociación al statement y usuario correctos.
+
+La IA puede proponer líneas, matches, diferencias, cargos desconocidos y cargos esperados ausentes. No puede crear CardPayment, finalizar conciliación ni modificar importes sin confirmación explícita.
+
+El documento debe guardarse en un bucket privado con ownership, acceso temporal y política de retención. La API registra hash, estado de análisis, proveedor/version, errores y auditoría sin tratar la salida del modelo como fuente de verdad.
+
+## H.11. Dinero, monedas, fechas y períodos
 
 ```text
 amountMinor BIGINT
 currency CHAR(3)
 ```
 
-La API serializará `amountMinor` como string para evitar problemas con `BigInt` y JSON.
+- amountMinor se serializa como string en JSON para no perder precisión.
+- ARS y USD se almacenan, muestran y totalizan por separado.
+- No existe conversión FX implícita.
+- DATE se usa para vencimientos, cierres y posted date.
+- TIMESTAMPTZ se usa para eventos y auditoría.
+- El período contable se representa por su primer día, por ejemplo 2026-08-01.
+- El usuario tiene zona horaria.
+- Un vencimiento 29, 30 o 31 cae en el último día válido de un mes corto.
+- Nunca se asigna un statement comparando solamente el número de mes de una compra.
 
-No habrá conversión automática. Toda conversión futura deberá registrar:
+## H.12. Límites de API
 
-- monto origen;
-- moneda origen;
-- monto destino;
-- moneda destino;
-- tipo de cambio;
-- fecha;
-- motivo.
-
-Los totales siempre se agrupan por moneda.
-
-## H.10. Fechas y períodos
-
-- `DATE` para vencimientos, cierres y posted date.
-- `TIMESTAMPTZ` para eventos.
-- Período contable como primer día del mes, por ejemplo `2026-08-01`.
-- Zona horaria por usuario.
-- Regla explícita para último día válido del mes.
-- Nunca se asignará statement mediante `purchase.month === statement.month`.
-
-## H.11. API boundaries
-
-API inicial:
+Endpoints conceptuales:
 
 ```text
 GET    /api/v1/months/:period
 
-POST   /api/v1/monthly-expense-series
-PATCH  /api/v1/monthly-expense-series/:id
+GET    /api/v1/expenses
+POST   /api/v1/expenses
+PATCH  /api/v1/expenses/:id
 POST   /api/v1/occurrences/:id/payments
+POST   /api/v1/occurrences/:id/undo-payment
 POST   /api/v1/occurrences/:id/skip
 
-POST   /api/v1/connections
-POST   /api/v1/connections/:id/accept
-GET    /api/v1/contacts
-
-POST   /api/v1/personal-debts
-PATCH  /api/v1/personal-debts/:id
-POST   /api/v1/personal-debts/:id/payments
-
+GET    /api/v1/cards
 POST   /api/v1/cards
 POST   /api/v1/cards/:id/purchases
-POST   /api/v1/cards/:id/statements
-POST   /api/v1/statements/:id/lines
-POST   /api/v1/statements/:id/matches
-POST   /api/v1/statements/:id/finalize
+
+GET    /api/v1/statements/:id
+POST   /api/v1/statements/:id/reconcile
 POST   /api/v1/statements/:id/payments
+POST   /api/v1/statements/:id/pdf-analysis
+
+GET    /api/v1/shared-balances
+
+GET    /api/v1/debts
+POST   /api/v1/debts
+POST   /api/v1/debts/:id/payments
+POST   /api/v1/debts/:id/cancel
+
+GET    /api/v1/contacts
+POST   /api/v1/contacts
+POST   /api/v1/connections
+POST   /api/v1/connections/:id/accept
 ```
 
-Toda mutation financiera debe incluir:
+Los nombres pueden refinarse sin romper el límite: todas las operaciones de producto pasan por la GastApp API. Los clientes usan Supabase directamente solo para el flujo de Auth; no tratan tablas, Data API o RPC como contratos públicos.
 
-- `Idempotency-Key`;
-- `version` para optimistic concurrency;
-- transacción;
-- tenant/owner derivado exclusivamente del token;
+Toda mutation financiera incluye:
+
+- Idempotency-Key;
+- versión para optimistic concurrency;
+- transacción o RPC atómica;
+- usuario/tenant derivado exclusivamente del JWT;
+- autorización de recurso;
 - audit log;
 - error estructurado;
 - validación de contrato y dominio.
 
-Nunca se recibirán objetos Prisma completos desde el cliente.
+Los DTO son contratos propios; ningún tipo de tabla o librería de persistencia atraviesa la API.
 
-## H.12. State management y cache
+## H.13. Autenticación, autorización y RLS
 
-- TanStack Query para todo server state.
-- Query keys por módulo y período.
-- Optimistic UI únicamente en operaciones reversibles y con rollback.
-- React local state para formularios y modales.
-- Zustand solo si aparece estado transversal no derivable de URL o queries.
-- No duplicar datos de API en un store global.
-- Cache corto para dashboard y listas; invalidación dirigida tras mutations.
-- Sin cache HTTP compartida para datos financieros privados salvo diseño explícito.
+- Supabase Auth con Google es el único proveedor inicial.
+- Web y Expo obtienen un JWT y lo envían como Authorization Bearer a la Hono API.
+- Middleware verifica firma, issuer, audience y expiración mediante mecanismos soportados por Supabase.
+- El backend deriva currentUserId del subject autenticado.
+- Ningún endpoint acepta userId del cliente para decidir ownership.
+- Cada query y mutation aplica autorización explícita del caso de uso.
+- RLS permanece habilitado en las tablas como defensa en profundidad.
+- Para operaciones RLS-sensitive, persistencia propaga el JWT del usuario o usa una RPC con políticas verificables.
+- Una service-role key omite RLS: se reserva para operaciones administrativas estrechas, con autorización explícita y auditoría.
+- Publishable keys pueden existir en los clientes; service-role, secretos de IA y cualquier secreto backend nunca se incluyen en bundles Vite o Expo.
+- V2 elimina cifrado application-level de descriptions y se apoya en encryption at rest, RLS, autorización y mínimo privilegio.
 
-## H.13. Realtime
+La relación entre autorización de aplicación y políticas RLS se prueba mediante una matriz owner, contraparte conectada, tercero autenticado y anónimo.
 
-No se incluye en V2 inicial.
+## H.14. Estado, cache y sincronización
 
-Se evaluará cuando existan usuarios conectados y sea necesario reflejar cambios visibles entre cuentas en segundos. Hasta entonces:
+- TanStack Query administra todo server state.
+- Query keys se separan por módulo, usuario y período.
+- Mutations invalidan únicamente queries afectadas.
+- Optimistic UI se limita a operaciones reversibles y siempre tiene rollback.
+- React Hook Form + Zod manejan formularios y errores de validación.
+- React local state maneja modales y estado efímero.
+- No se duplica data de API en un store global.
+- Zustand se agrega solo frente a estado transversal real no derivable de URL, formulario o query.
+- Cache de datos financieros privados es corto y scoped por usuario.
+- Refetch por foco/reconexión y polling puntual cubren el primer release con usuarios conectados.
+- Supabase Realtime no es requisito inicial; se incorpora únicamente si la experiencia o las métricas muestran necesidad.
 
-- invalidación de TanStack Query;
-- refetch por foco/reconexión;
-- polling puntual en pantallas colaborativas si fuera necesario.
+React Router loaders pueden precargar shell o datos, pero llaman al mismo typed API client y no contienen reglas financieras.
 
-## H.14. Background jobs
+## H.15. Background jobs y procesos asíncronos
 
-Inicialmente:
+Inicialmente, Supabase debe cubrir:
 
 - outbox de notificaciones;
-- worker/cron para envío y retry;
-- limpieza segura de idempotency keys expiradas;
-- recordatorios de vencimiento.
+- email y retries;
+- recordatorios;
+- pre-materialización mínima para avisos;
+- limpieza de idempotency keys expiradas;
+- reintento controlado de análisis PDF;
+- mantenimiento de proyecciones solo si una query derivada deja de ser suficiente.
 
-No se requiere una plataforma de jobs adicional mientras Vercel Cron y una tabla outbox cubran el volumen.
+La materialización normal sigue siendo on-demand. Los jobs pueden ejecutarse mediante capacidades programadas de Supabase y Edge Functions; no se introduce otro runtime.
 
-## H.15. Estrategia de migración
+Edge Functions admiten tareas server-side y orquestación de llamadas externas, pero tienen límites y cold starts. El PDF debe limitar tamaño, páginas, tiempo, concurrencia y costo. Si pruebas representativas demuestran que el parser o proveedor excede esos límites, se documenta la evidencia antes de separar ese workload.
+
+- [Supabase Background Tasks](https://supabase.com/docs/guides/functions/background-tasks)
+- [Supabase Cron](https://supabase.com/docs/guides/cron)
+
+## H.16. Estrategia de migración
 
 ### Enfoque strangler
 
-1. Corregir seguridad crítica de V1.
-2. Crear schema y tablas V2 en paralelo.
-3. Mantener V1 funcional.
-4. Migrar usuarios, contactos y tarjetas.
-5. Convertir gastos en series mensuales.
-6. Convertir summaries en occurrences.
-7. Convertir relaciones compartidas en allocations iguales con snapshots mensuales, preservando el comportamiento vigente y sin crear deudas.
-8. Convertir consumos en purchases/installments.
-9. Importar resúmenes antiguos como `LEGACY_ACCEPTED`.
-10. Representar saldos agregados históricos como un ajuste legacy por moneda.
-11. Comparar totales V1/V2 por mes y moneda.
-12. Activar V2 por usuario mediante feature flag.
-13. Mantener rollback de lectura durante un período.
-14. Retirar V1 financiera; Invoice permanece separada.
+1. Mantener V1 Next.js/NextAuth/Prisma operativa.
+2. Corregir primero IDOR, secretos y riesgos de build en V1.
+3. Crear V2 en paralelo con React Router Web, Supabase Auth, PostgreSQL y una Hono Edge API.
+4. Versionar todo cambio nuevo mediante migraciones Supabase/SQL.
+5. Definir contratos y casos de uso antes de migrar pantallas.
+6. Migrar usuarios Google conservando un mapeo estable entre identidad V1 y Supabase Auth.
+7. Migrar contactos, tarjetas y datos maestros.
+8. Convertir gastos en MonthlyExpenseSeries y summaries en occurrences.
+9. Inferir únicamente recurrencias demostrables; las series bimestrales nuevas requieren anchorPeriod explícito.
+10. Convertir el flag anual existente en CoveragePeriod solo cuando sus fechas permitan establecer cobertura.
+11. Convertir relaciones compartidas históricas en allocations iguales y snapshots por período sin inventar porcentajes.
+12. No crear conexiones entre cuentas a partir de un nickname; requieren email/identidad confirmada.
+13. Construir saldos bidireccionales únicamente para conexiones reales y allocations migradas confiables.
+14. Convertir consumos en purchases/installments.
+15. Importar statements antiguos como LEGACY_ACCEPTED y conservar totales agregados únicamente como metadata legacy por moneda, fuera de allocations y cálculos de gastos.
+16. Comparar V1/V2 por usuario, período y moneda.
+17. Activar V2 por cohortes/feature flag y mantener rollback de lectura.
+18. Retirar V1 financiera solo después de la reconciliación; Invoice permanece separada.
+19. Agregar Expo después de estabilizar web, API y contratos.
 
-### Limitaciones de migración
+### Limitaciones históricas
 
-Los datos viejos no permiten reconstruir:
+V1 no permite reconstruir con certeza:
 
 - líneas reales de statements;
 - matches históricos;
-- porcentajes diferentes de partes iguales;
+- porcentajes distintos de partes iguales;
 - fechas reales de compra/posted;
-- pagos parciales históricos de Deudas, porque ese módulo todavía no existe;
-- descripciones individuales de saldos a favor agregados.
+- conexiones entre usuarios a partir de personas manuales;
+- saldos bidireccionales previos si la contraparte no estaba identificada;
+- historial de PersonalDebt, porque el módulo no existía;
+- descripciones individuales de créditos agregados;
+- PDFs bancarios que nunca fueron almacenados.
 
-Estas limitaciones deben marcarse explícitamente. No debe inventarse historia.
+Estos vacíos se etiquetan como legacy. Nunca se inventan datos para completar una migración.
 
-## H.16. Roadmap
+## H.17. Roadmap
 
-### Fase 0 — Seguridad
+### Fase 0 — Seguridad y continuidad V1
 
 - Rotar secretos y credenciales.
-- Diseñar recifrado de descripciones.
-- Actualizar Next.js a una versión parcheada.
-- Cerrar IDOR en todas las acciones.
-- Reemplazar `prisma db push` en producción.
-- Agregar audit y logging básico.
+- Recifrar datos existentes antes de retirar el cifrado por campo en V2.
+- Actualizar Next.js V1 a una versión parcheada.
+- Cerrar IDOR.
+- Eliminar db push del build productivo.
+- Backup y plan de rollback.
 
-### Fase 1 — Characterization y métricas
+### Fase 1 — Characterization
 
 - Tests sobre comportamiento útil de V1.
+- Fixtures anonimizados.
 - Baseline de queries, p50/p95 y bundle.
-- Export y backup de datos.
-- Matriz de migración.
-- Fixtures anonimizados representativos.
+- Matriz de migración y comparación mensual.
 
-### Fase 2 — Fundación V2
+### Fase 2 — Fundación V2 web/backend
 
-- Monorepo.
-- Auth compartida.
-- Contratos API.
-- Money, dates, idempotency y autorización.
-- Nuevo schema.
-- CI con unit, integration y migration tests.
+- React Router 8 Framework Mode SPA, React 19, Vite y TypeScript.
+- Supabase project, Auth Google, PostgreSQL, Storage y RLS.
+- Migraciones SQL.
+- Edge Function api con Hono.
+- Contratos Zod, typed API client, errores, Money, fechas e idempotencia.
+- Tests unitarios, de integración, RLS, migración y contratos.
+- Deploy estático web y CI dentro de free tiers razonables.
 
-### Fase 3 — Gastos mensuales
+### Fase 3 — Gastos periódicos
 
-- Series mensuales y bimestrales con mes de anclaje.
-- Ocurrencias automáticas.
-- Marcación de pago con fecha, canal y reversión auditable.
-- Pago anual y coberturas mensuales visibles.
-- Nuevo dashboard mensual.
+- Series mensuales/bimestrales y anchorPeriod.
+- Ocurrencias on-demand.
+- Edición current/future.
+- Pago, undo y auditoría.
+- Pago anual y CoveragePeriod.
+- Dashboard mensual.
 
-### Fase 4 — Compartidos informativos y Deudas independientes
+### Fase 4 — Contactos, conexiones y compartidos
 
-- Contacts; connections solo si se confirman como requisito.
+- Contactos manuales con nickname/email opcional.
+- Invitaciones y conexiones.
 - Allocations versionadas.
-- Proyecciones por persona, período y moneda sin estados de deuda.
-- `PersonalDebt` y pagos parciales, sin integración automática con Gastos o Tarjetas; ajustes solo si se confirman como requisito.
+- Visibilidad read-only en cuenta contraparte.
+- Saldos bidireccionales por persona y moneda.
 
-### Fase 5 — Tarjetas
+### Fase 5 — PersonalDebt
 
-- Compras y cuotas.
-- Cargos recurrentes esperados.
+- Principal y pagos parciales.
+- Estados derivados.
+- Cancelación/condonación.
+- Notas y ajustes explícitos.
+- Separación verificada respecto de saldos compartidos.
+
+### Fase 6 — Tarjetas y conciliación manual
+
+- Compras, cuotas y cargos recurrentes.
 - Statements y líneas reales.
-- Conciliación.
-- Ajustes, cargos desconocidos y cargos trasladados.
+- Matching manual 1:1.
+- Corrección de importes antes de pago.
+- Pago exclusivo del statement.
+- Cargos desconocidos y esperados ausentes.
 
-### Fase 6 — Migración y cutover
+### Fase 7 — PDF/IA opcional
 
-- Backfill.
+- Bucket privado y políticas.
+- StatementParser agnóstico de proveedor.
+- Extracción estructurada y validación Zod.
+- Sugerencias de matching.
+- Revisión humana obligatoria.
+- Límites, costo, retry, retención y auditoría.
+
+### Fase 8 — Migración y cutover
+
+- Backfill idempotente.
 - Comparación V1/V2.
-- Feature flag.
+- Activación por cohortes.
 - Rollback.
 - Retiro de V1 financiera.
 
-### Fase 7 — Expo
+### Fase 9 — Expo
 
-- Aplicación móvil sobre el mismo API client.
-- Secure storage para sesión.
-- Cache offline.
-- Retry idempotente.
+- Aplicación React Native separada.
+- Mismo typed API client y contratos.
+- Sesión Supabase Auth en secure storage.
+- Cache offline y retries idempotentes.
 - Push notifications.
 
 ---
@@ -1367,16 +1378,28 @@ Estas limitaciones deben marcarse explícitamente. No debe inventarse historia.
 
 # Decisión recomendada
 
-Adoptar la **Opción 1**:
+Adoptar la arquitectura web-first definida:
 
 ```text
-Next.js Active LTS como web y host de API
-REST /api/v1 con Route Handlers
-Supabase PostgreSQL + Supabase Auth
-Prisma estable actualizado
+React Router 8 Framework Mode como SPA
+React 19 + Vite + TypeScript
 TanStack Query
-Zod compartido
-Expo futuro sobre el mismo API client
+React Hook Form + Zod
+typed API client
+        ↓
+una Supabase Edge Function principal
+        ↓
+Hono REST API
+        ↓
+casos de uso + dominio + persistencia SQL/RPC
+        ↓
+Supabase PostgreSQL + Auth + Storage + RLS
+
+Futuro: Expo / React Native sobre la misma API
 ```
 
-Construir V2 mediante migración strangler, comenzando por seguridad y caracterización de V1. El dominio queda dividido en gastos mensuales, tarjetas conciliables, repartos informativos y Deudas manuales independientes. La UI puede unificar la creación y la lectura mensual, pero la base de datos debe conservar agregados especializados. Las decisiones pendientes más importantes son cuándo proyectar cada cuota compartida, cómo distribuir ajustes del statement y cuál es el alcance exacto del módulo Deudas.
+Construir V2 mediante migración strangler, manteniendo V1 operativa hasta reconciliar cada cohorte. No recomendar Next.js, Route Handlers, Server Actions, Prisma obligatorio, Vercel backend ni un servidor Node independiente para V2.
+
+El dominio queda dividido en gastos periódicos, tarjetas/conciliación, saldos compartidos derivados entre cuentas conectadas y `PersonalDebt` manual. La UI unifica la creación y la lectura mensual, mientras la base de datos conserva agregados especializados.
+
+No quedan preguntas de producto abiertas para iniciar el diseño detallado. Permanecen dos validaciones operativas: comprobar con PDFs bancarios reales que el pipeline cabe dentro de límites y costos aceptables de Edge Functions, y seleccionar un hosting estático gratuito para la SPA. Ninguna exige cambiar el dominio ni el contrato API.
