@@ -1,75 +1,43 @@
-import { Router, type Request, type Response } from "express";
-import { z } from "zod";
+import { Router } from "express";
 import {
+  annualPaymentSchema,
   changeOccurrenceSchema,
   createMonthlyExpenseSchema,
   payOccurrenceSchema,
   periodSchema,
+  reasonInputSchema,
+  renameMonthlyExpenseSchema,
   undoPaymentSchema,
+  versionOnlySchema,
 } from "../../shared/contracts/expenses";
+import { putSharesSchema } from "../../shared/contracts/sharing";
 import {
+  cancelFromOccurrence,
   changeOccurrence,
+  changeShares,
   createMonthlyExpense,
   getMonth,
+  payAnnual,
   payOccurrence,
+  renameMonthlyExpense,
+  restoreOccurrence,
+  skipOccurrence,
   undoPayment,
 } from "../application/monthly-expenses";
-import {
-  idempotencyKeyPattern,
-  idempotent,
-  type MutationContext,
-} from "../application/mutations";
 import { HttpError, parseBody } from "../http";
-import { withUser, type Databases } from "../persistence/database";
-
-const idSchema = z.uuid();
-
-function resourceId(req: Request) {
-  const id = idSchema.safeParse(req.params.id);
-  if (!id.success)
-    throw new HttpError(404, "NOT_FOUND", "No encontramos ese gasto.");
-  return id.data;
-}
+import type { Databases } from "../persistence/database";
+import { createMutate, readAs, resourceId } from "./helpers";
 
 export function monthlyExpensesRouter(databases: Databases) {
   const router = Router();
-
-  // Autenticación, origen e identidad ya fueron validados por el middleware de /api/v2.
-  async function mutate<T>(
-    req: Request,
-    res: Response,
-    input: { scope: string; body: T; status: number },
-    operation: (context: MutationContext) => Promise<object>,
-  ) {
-    const key = req.get("idempotency-key");
-    if (!key || !idempotencyKeyPattern.test(key))
-      throw new HttpError(
-        400,
-        "IDEMPOTENCY_KEY_REQUIRED",
-        "La operación requiere un encabezado Idempotency-Key válido.",
-      );
-    const ownerId: string = res.locals.user.id;
-    const result = await withUser(databases.app, ownerId, (tx) => {
-      const context = { tx, ownerId, requestId: res.locals.requestId };
-      return idempotent(
-        context,
-        { key, scope: input.scope, body: input.body },
-        async () => ({
-          status: input.status,
-          body: { data: JSON.parse(JSON.stringify(await operation(context))) },
-        }),
-      );
-    });
-    res.status(result.status).json(result.body);
-  }
+  const mutate = createMutate(databases);
 
   router.get("/months/:period", async (req, res) => {
     const period = periodSchema.safeParse(req.params.period);
     if (!period.success)
       throw new HttpError(400, "VALIDATION_ERROR", "El período no es válido.");
-    const ownerId: string = res.locals.user.id;
-    const month = await withUser(databases.app, ownerId, (tx) =>
-      getMonth(tx, ownerId, period.data),
+    const month = await readAs(databases, res, (tx) =>
+      getMonth(tx, res.locals.user.id, period.data),
     );
     res.json({ data: month });
   });
@@ -81,6 +49,17 @@ export function monthlyExpensesRouter(databases: Databases) {
       res,
       { scope: "POST /expenses", body, status: 201 },
       (context) => createMonthlyExpense(context, body),
+    );
+  });
+
+  router.patch("/expenses/:id", async (req, res) => {
+    const id = resourceId(req);
+    const body = parseBody(renameMonthlyExpenseSchema, req.body);
+    await mutate(
+      req,
+      res,
+      { scope: `PATCH /expenses/${id}`, body, status: 200 },
+      (context) => renameMonthlyExpense(context, id, body),
     );
   });
 
@@ -114,6 +93,61 @@ export function monthlyExpensesRouter(databases: Databases) {
       res,
       { scope: `POST /occurrences/${id}/undo-payment`, body, status: 200 },
       (context) => undoPayment(context, id, body),
+    );
+  });
+
+  router.put("/occurrences/:id/shares", async (req, res) => {
+    const id = resourceId(req);
+    const body = parseBody(putSharesSchema, req.body);
+    await mutate(
+      req,
+      res,
+      { scope: `PUT /occurrences/${id}/shares`, body, status: 200 },
+      (context) => changeShares(context, id, body),
+    );
+  });
+
+  router.post("/occurrences/:id/annual-payments", async (req, res) => {
+    const id = resourceId(req);
+    const body = parseBody(annualPaymentSchema, req.body);
+    await mutate(
+      req,
+      res,
+      { scope: `POST /occurrences/${id}/annual-payments`, body, status: 201 },
+      (context) => payAnnual(context, id, body),
+    );
+  });
+
+  router.post("/occurrences/:id/skip", async (req, res) => {
+    const id = resourceId(req);
+    const body = parseBody(reasonInputSchema, req.body);
+    await mutate(
+      req,
+      res,
+      { scope: `POST /occurrences/${id}/skip`, body, status: 200 },
+      (context) => skipOccurrence(context, id, body),
+    );
+  });
+
+  router.post("/occurrences/:id/cancel", async (req, res) => {
+    const id = resourceId(req);
+    const body = parseBody(reasonInputSchema, req.body);
+    await mutate(
+      req,
+      res,
+      { scope: `POST /occurrences/${id}/cancel`, body, status: 200 },
+      (context) => cancelFromOccurrence(context, id, body),
+    );
+  });
+
+  router.post("/occurrences/:id/restore", async (req, res) => {
+    const id = resourceId(req);
+    const body = parseBody(versionOnlySchema, req.body);
+    await mutate(
+      req,
+      res,
+      { scope: `POST /occurrences/${id}/restore`, body, status: 200 },
+      (context) => restoreOccurrence(context, id, body),
     );
   });
 

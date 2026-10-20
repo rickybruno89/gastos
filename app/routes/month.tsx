@@ -1,249 +1,104 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { flushSync } from "react-dom";
 import {
+  CalendarCheck,
   CalendarDays,
   Check,
   CheckCheck,
   ChevronLeft,
   ChevronRight,
   CircleCheck,
+  CircleSlash,
   Pencil,
   Plus,
   ReceiptText,
+  Repeat,
   Search,
   ShieldCheck,
 } from "lucide-react";
 import { Workspace } from "../components/workspace";
 import { Badge, Button, Modal } from "../components/ui";
 import {
-  errorMessage,
-  useChangeOccurrence,
-  useCreateExpense,
-  useMonth,
-  useTogglePayment,
-} from "../lib/expenses";
-import {
-  amountInput,
-  formatMoney,
-  parseAmount,
-  periodLabel,
-  shortDate,
-} from "../lib/format";
+  CreateExpenseForm,
+  OccurrenceSheet,
+  statusSummary,
+} from "../components/expense-forms";
+import { errorMessage, useMonth, useTogglePayment } from "../lib/expenses";
+import { formatMoney, periodLabel, shortDate } from "../lib/format";
 import { periodSchema, type Occurrence } from "../../shared/contracts/expenses";
 import type { CurrentUser } from "../../shared/contracts/account";
 import { addMonths, todayIn } from "../../shared/domain/periods";
 import type { Currency } from "../../shared/domain/money";
 
-const amountError =
-  "Ingresá un importe mayor a cero, con hasta dos decimales. Ej. 28000 o 1.250,50";
-
-function CreateExpenseForm({
-  userId,
-  period,
-  onCreated,
-}: {
-  userId: string;
-  period: string;
-  onCreated: (name: string) => void;
-}) {
-  const create = useCreateExpense(userId);
-  const [error, setError] = useState("");
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const amountMinor = parseAmount(String(data.get("amount")));
-    if (!amountMinor) return setError(amountError);
-    setError("");
-    const name = String(data.get("name")).trim();
-    create.mutate(
-      {
-        name,
-        amountMinor,
-        currency: data.get("currency") === "USD" ? "USD" : "ARS",
-        dueDay: Number(data.get("dueDay")),
-        firstPeriod: period,
-      },
-      { onSuccess: () => onCreated(name) },
-    );
-  }
-  return (
-    <form onSubmit={submit}>
-      <div className="form-field">
-        <label htmlFor="expense-name">Nombre del gasto</label>
-        <input
-          id="expense-name"
-          name="name"
-          placeholder="Ej. Alquiler"
-          required
-          maxLength={80}
-          pattern=".*\S.*"
-          autoComplete="off"
-        />
-      </div>
-      <div className="form-grid">
-        <div className="form-field">
-          <label htmlFor="expense-amount">Importe</label>
-          <input
-            id="expense-amount"
-            name="amount"
-            inputMode="decimal"
-            placeholder="0,00"
-            required
-            maxLength={18}
-            autoComplete="off"
-          />
-        </div>
-        <div className="form-field">
-          <label htmlFor="expense-currency">Moneda</label>
-          <select name="currency" id="expense-currency">
-            <option value="ARS">Pesos (ARS)</option>
-            <option value="USD">Dólares (USD)</option>
-          </select>
-        </div>
-      </div>
-      <div className="form-field">
-        <label htmlFor="expense-day">Día de vencimiento</label>
-        <input
-          type="number"
-          inputMode="numeric"
-          name="dueDay"
-          id="expense-day"
-          min={1}
-          max={31}
-          defaultValue={10}
-          required
-        />
-        <span className="field-help">
-          Se repite todos los meses desde {periodLabel(period).toLowerCase()}.
-          Si el mes es más corto, vence el último día.
-        </span>
-      </div>
-      {(error || create.isError) && (
-        <p role="alert" className="error-message">
-          {error || errorMessage(create.error)}
-        </p>
-      )}
-      <div className="dialog-actions">
-        <Button
-          type="submit"
-          className="full-width"
-          disabled={create.isPending}
-        >
-          <Plus size={17} />
-          {create.isPending ? "Guardando…" : "Crear gasto mensual"}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function EditOccurrenceForm({
-  userId,
-  occurrence,
-  onDone,
-}: {
-  userId: string;
-  occurrence: Occurrence;
-  onDone: (message: string) => void;
-}) {
-  const change = useChangeOccurrence(userId);
-  const [error, setError] = useState("");
-  const month = periodLabel(occurrence.period).toLowerCase();
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const amountMinor = parseAmount(String(data.get("amount")));
-    if (!amountMinor) return setError(amountError);
-    const dueDay = Number(data.get("dueDay"));
-    const scope =
-      data.get("scope") === "THIS_AND_FUTURE"
-        ? "THIS_AND_FUTURE"
-        : "THIS_MONTH";
-    const amountChanged = amountMinor !== occurrence.amountMinor;
-    const dueChanged = dueDay !== occurrence.dueDay;
-    if (!amountChanged && !dueChanged)
-      return setError("No hay cambios para guardar.");
-    setError("");
-    change.mutate(
-      {
-        occurrence,
-        ...(amountChanged && { amount: { amountMinor, scope } }),
-        ...(dueChanged && { dueDay }),
-      },
-      { onSuccess: () => onDone(`${occurrence.name} se actualizó.`) },
-    );
-  }
-  return (
-    <form onSubmit={submit}>
-      <div className="form-field">
-        <label htmlFor="edit-amount">Importe ({occurrence.currency})</label>
-        <input
-          id="edit-amount"
-          name="amount"
-          inputMode="decimal"
-          defaultValue={amountInput(occurrence.amountMinor)}
-          required
-          maxLength={18}
-          autoComplete="off"
-        />
-      </div>
-      <fieldset className="choice-group">
-        <legend>¿A qué meses aplica el nuevo importe?</legend>
-        <label>
-          <input type="radio" name="scope" value="THIS_MONTH" defaultChecked />
-          <span>
-            Solo {month}
-            <small>Los meses siguientes conservan su importe.</small>
-          </span>
-        </label>
-        <label>
-          <input type="radio" name="scope" value="THIS_AND_FUTURE" />
-          <span>
-            {periodLabel(occurrence.period)} y los meses siguientes
-            <small>Los meses ya pagados no cambian.</small>
-          </span>
-        </label>
-      </fieldset>
-      <div className="form-field">
-        <label htmlFor="edit-day">Día de vencimiento</label>
-        <input
-          type="number"
-          inputMode="numeric"
-          name="dueDay"
-          id="edit-day"
-          min={1}
-          max={31}
-          defaultValue={occurrence.dueDay}
-          required
-        />
-        <span className="field-help">
-          Un nuevo vencimiento aplica a {month} y a los meses siguientes.
-        </span>
-      </div>
-      {(error || change.isError) && (
-        <p role="alert" className="error-message">
-          {error || errorMessage(change.error)}
-        </p>
-      )}
-      <div className="dialog-actions">
-        <Button
-          type="submit"
-          className="full-width"
-          disabled={change.isPending}
-        >
-          {change.isPending ? "Guardando…" : "Guardar cambios"}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
 function dueState(occurrence: Occurrence, today: string) {
-  if (occurrence.status === "PAID") return null;
+  if (occurrence.status !== "PLANNED") return null;
   if (occurrence.dueDate < today) return "Vencido";
   if (occurrence.dueDate === today) return "Vence hoy";
   return null;
+}
+
+// Un pago anual muestra lo desembolsado; el resto, el importe del mes.
+function displayedAmount(occurrence: Occurrence) {
+  return occurrence.payment?.annual
+    ? occurrence.payment.amountMinor
+    : occurrence.amountMinor;
+}
+
+function RowAction({
+  occurrence,
+  pending,
+  onToggle,
+  onOpen,
+}: {
+  occurrence: Occurrence;
+  pending: boolean;
+  onToggle: () => void;
+  onOpen: () => void;
+}) {
+  const { name, status } = occurrence;
+  if (status === "PLANNED" || status === "PAID")
+    return (
+      <button
+        className={status === "PAID" ? "paid-action" : "pay-action"}
+        disabled={pending}
+        onClick={onToggle}
+        aria-label={
+          status === "PAID"
+            ? `Deshacer pago de ${name}`
+            : `Marcar ${name} como pagado`
+        }
+      >
+        {status === "PAID" ? (
+          <>
+            <Check size={14} />
+            <span>{occurrence.payment?.annual ? "Pago anual" : "Pagado"}</span>
+            <span className="undo-label">Deshacer</span>
+          </>
+        ) : (
+          <>
+            <span className="empty-check" />
+            {pending ? "Guardando…" : "Marcar pago"}
+          </>
+        )}
+      </button>
+    );
+  const label =
+    status === "COVERED"
+      ? { text: "Pago anual", icon: CalendarCheck }
+      : status === "SKIPPED"
+        ? { text: "Omitido", icon: Repeat }
+        : { text: "De baja", icon: CircleSlash };
+  return (
+    <button
+      className="status-action"
+      onClick={onOpen}
+      aria-label={`${label.text}: ver ${name}`}
+    >
+      <label.icon size={14} aria-hidden="true" />
+      {label.text}
+    </button>
+  );
 }
 
 function MonthView({ user }: { user: CurrentUser }) {
@@ -264,12 +119,13 @@ function MonthView({ user }: { user: CurrentUser }) {
     undo?: Occurrence;
   } | null>(null);
   const [creating, setCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   function goTo(next: string) {
     setParams({ periodo: next });
     setNotice(null);
+    setOpenId(null);
   }
   function togglePayment(occurrence: Occurrence) {
     setPendingId(occurrence.id);
@@ -292,23 +148,24 @@ function MonthView({ user }: { user: CurrentUser }) {
 
   const data = month.data;
   const rows = data?.occurrences ?? [];
-  const paidCount = rows.filter((row) => row.status === "PAID").length;
+  const resolved = (row: Occurrence) => row.status !== "PLANNED";
+  const resolvedCount = rows.filter(resolved).length;
   const visible = rows
     .filter(
       (row) =>
-        (filter === "all" || (filter === "paid") === (row.status === "PAID")) &&
+        (filter === "all" || (filter === "resolved") === resolved(row)) &&
         row.name
           .toLocaleLowerCase("es")
           .includes(search.toLocaleLowerCase("es")),
     )
     .sort(
       (a, b) =>
-        Number(a.status === "PAID") - Number(b.status === "PAID") ||
+        Number(resolved(a)) - Number(resolved(b)) ||
         a.dueDate.localeCompare(b.dueDate),
     );
   const label = periodLabel(period);
-  // La edición usa siempre la versión más reciente cargada de la fila.
-  const editing = rows.find((row) => row.id === editingId) ?? null;
+  // El detalle usa siempre la versión más reciente cargada de la fila.
+  const open = rows.find((row) => row.id === openId) ?? null;
 
   return (
     <>
@@ -369,11 +226,14 @@ function MonthView({ user }: { user: CurrentUser }) {
       ) : rows.length === 0 ? (
         <section className="card empty-state">
           <ReceiptText size={27} />
-          <h3>Todavía no hay gastos en {label.toLowerCase()}</h3>
-          <p>Creá tus gastos mensuales una vez: GastApp los repite cada mes.</p>
+          <h3>No hay gastos en {label.toLowerCase()}</h3>
+          <p>
+            Creá tus gastos una vez: GastApp los repite cada mes o cada dos
+            meses.
+          </p>
           <Button onClick={() => setCreating(true)}>
             <Plus size={17} />
-            Crear el primero
+            Crear gasto
           </Button>
         </section>
       ) : (
@@ -403,12 +263,12 @@ function MonthView({ user }: { user: CurrentUser }) {
                       {rows.map((row) => (
                         <span
                           key={row.id}
-                          className={row.status === "PAID" ? "complete" : ""}
+                          className={resolved(row) ? "complete" : ""}
                         />
                       ))}
                     </div>
                     <span>
-                      {paidCount} de {rows.length} gastos resueltos
+                      {resolvedCount} de {rows.length} gastos resueltos
                       <CheckCheck size={16} />
                     </span>
                   </div>
@@ -447,7 +307,7 @@ function MonthView({ user }: { user: CurrentUser }) {
               >
                 {[
                   { id: "pending", label: "Pendientes" },
-                  { id: "paid", label: "Pagados" },
+                  { id: "resolved", label: "Resueltos" },
                   { id: "all", label: "Todos" },
                 ].map((item) => (
                   <button
@@ -489,27 +349,31 @@ function MonthView({ user }: { user: CurrentUser }) {
               <div role="rowgroup">
                 {visible.map((row) => {
                   const state = dueState(row, data!.today);
-                  const paid = row.status === "PAID";
+                  const excluded = ["COVERED", "SKIPPED", "CANCELLED"].includes(
+                    row.status,
+                  );
                   return (
                     <div
-                      className={`expense-row ${paid ? "is-paid" : ""}`}
+                      className={`expense-row ${resolved(row) ? "is-paid" : ""}`}
                       role="row"
                       key={row.id}
                     >
                       <div role="cell" className="expense-name">
                         <span className="tile-icon blue">
-                          <ReceiptText size={19} />
+                          {row.intervalMonths === 2 ? (
+                            <Repeat size={19} />
+                          ) : (
+                            <ReceiptText size={19} />
+                          )}
                         </span>
                         <button
                           className="expense-edit"
-                          onClick={() => setEditingId(row.id)}
-                          aria-label={`Editar ${row.name}`}
+                          onClick={() => setOpenId(row.id)}
+                          aria-label={`Ver o editar ${row.name}`}
                         >
                           <strong>{row.name}</strong>
                           <small>
-                            {paid && row.payment
-                              ? `Pagado el ${shortDate(row.payment.paidOn)}`
-                              : "Mensual"}
+                            {statusSummary(row)}
                             <Pencil size={11} aria-hidden="true" />
                           </small>
                         </button>
@@ -521,35 +385,19 @@ function MonthView({ user }: { user: CurrentUser }) {
                         {shortDate(row.dueDate)}
                         {state && <small>{state}</small>}
                       </span>
-                      <strong role="cell" className="expense-amount">
-                        {formatMoney(row.amountMinor, row.currency)}
+                      <strong
+                        role="cell"
+                        className={`expense-amount ${excluded ? "is-excluded" : ""}`}
+                      >
+                        {formatMoney(displayedAmount(row), row.currency)}
                       </strong>
                       <div role="cell" className="expense-action">
-                        <button
-                          className={paid ? "paid-action" : "pay-action"}
-                          disabled={pendingId === row.id}
-                          onClick={() => togglePayment(row)}
-                          aria-label={
-                            paid
-                              ? `Deshacer pago de ${row.name}`
-                              : `Marcar ${row.name} como pagado`
-                          }
-                        >
-                          {paid ? (
-                            <>
-                              <Check size={14} />
-                              <span>Pagado</span>
-                              <span className="undo-label">Deshacer</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="empty-check" />
-                              {pendingId === row.id
-                                ? "Guardando…"
-                                : "Marcar pago"}
-                            </>
-                          )}
-                        </button>
+                        <RowAction
+                          occurrence={row}
+                          pending={pendingId === row.id}
+                          onToggle={() => togglePayment(row)}
+                          onOpen={() => setOpenId(row.id)}
+                        />
                       </div>
                     </div>
                   );
@@ -581,8 +429,9 @@ function MonthView({ user }: { user: CurrentUser }) {
             <footer className="list-footer">
               <ShieldCheck size={14} />
               <span>
-                Los pagos se pueden deshacer. Las monedas nunca se suman entre
-                sí.
+                Los pagos se pueden deshacer. Lo omitido, dado de baja o
+                cubierto por un pago anual no suma al pendiente. Las monedas
+                nunca se suman entre sí.
               </span>
             </footer>
           </section>
@@ -627,72 +476,50 @@ function MonthView({ user }: { user: CurrentUser }) {
       <Modal
         open={creating}
         onOpenChange={setCreating}
-        title="Crear gasto mensual"
-        description={`Se agrega a ${label.toLowerCase()} y a los meses siguientes.`}
+        title="Crear gasto"
+        description="Se repite solo: cada mes o cada dos meses."
       >
         <CreateExpenseForm
           userId={user.id}
           period={period}
-          onCreated={(name) => {
+          onCreated={(name, firstPeriod) => {
             setCreating(false);
             setFilter("pending");
             setSearch("");
             setNotice({
-              text: `${name} se agregó a ${label.toLowerCase()}.`,
+              text: `${name} se agregó desde ${periodLabel(firstPeriod).toLowerCase()}.`,
               tone: "ok",
             });
           }}
         />
       </Modal>
       <Modal
-        open={editing !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditingId(null);
+        open={open !== null}
+        onOpenChange={(value) => {
+          if (!value) setOpenId(null);
         }}
-        title={editing ? `Editar ${editing.name}` : "Editar gasto"}
+        title={open?.name ?? "Gasto"}
         description={
-          editing
-            ? `${label} · ${formatMoney(editing.amountMinor, editing.currency)}`
+          open
+            ? `${label} · ${formatMoney(displayedAmount(open), open.currency)}`
             : ""
         }
       >
-        {editing?.status === "PAID" ? (
-          <>
-            <p className="notice">
-              Este mes ya está pagado
-              {editing.payment
-                ? ` (el ${shortDate(editing.payment.paidOn)})`
-                : ""}
-              . Para corregirlo, primero deshacé el pago; después podés editarlo
-              y volver a marcarlo como pagado.
-            </p>
-            <div className="dialog-actions">
-              <Button
-                variant="secondary"
-                className="full-width"
-                disabled={toggle.isPending}
-                onClick={() => {
-                  const target = editing;
-                  setEditingId(null);
-                  togglePayment(target);
-                }}
-              >
-                Deshacer pago
-              </Button>
-            </div>
-          </>
-        ) : (
-          editing && (
-            <EditOccurrenceForm
-              key={editing.id}
-              userId={user.id}
-              occurrence={editing}
-              onDone={(text) => {
-                setEditingId(null);
-                setNotice({ text, tone: "ok" });
-              }}
-            />
-          )
+        {open && (
+          <OccurrenceSheet
+            key={`${open.id}-${open.status}`}
+            userId={user.id}
+            occurrence={open}
+            onDone={(text, undo) => {
+              setOpenId(null);
+              setNotice({ text, tone: "ok", undo });
+            }}
+            onTogglePayment={(occurrence) => {
+              setOpenId(null);
+              togglePayment(occurrence);
+            }}
+            onGoTo={goTo}
+          />
         )}
       </Modal>
     </>

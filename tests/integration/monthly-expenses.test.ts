@@ -207,6 +207,8 @@ test("gastos mensuales: crear, consultar, cambiar importe, pagar y deshacer", as
         assert.deepEqual(paidBody.data.payment, {
           paidOn: today,
           channel: null,
+          amountMinor: "29000000",
+          annual: false,
         });
 
         const replay = await send(
@@ -233,7 +235,7 @@ test("gastos mensuales: crear, consultar, cambiar importe, pagar y deshacer", as
           },
         );
         assert.equal(again.status, 409);
-        assert.equal((await again.json()).error.code, "ALREADY_PAID");
+        assert.equal((await again.json()).error.code, "OCCURRENCE_PAID");
         const edit = await send("PATCH", `/occurrences/${october.id}`, {
           version: paidBody.data.version,
           amount: { amountMinor: "1", scope: "THIS_MONTH" },
@@ -273,6 +275,8 @@ test("gastos mensuales: crear, consultar, cambiar importe, pagar y deshacer", as
         assert.deepEqual(after.payment, {
           paidOn: "2027-01-03",
           channel: "Débito",
+          amountMinor: "30000000",
+          annual: false,
         });
         assert.equal(
           (await find("2027-02", "Alquiler")).amountMinor,

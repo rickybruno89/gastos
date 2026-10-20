@@ -73,14 +73,17 @@ export async function startTestApp() {
       plugins: [testUtils()],
     });
     const helpers = (await testAuth.$context).test;
-    const userA = await helpers.saveUser(
-      helpers.createUser({ email: "ricky@example.test", name: "Ricky" }),
-    );
-    const userB = await helpers.saveUser(
-      helpers.createUser({ email: "juan@example.test", name: "Juan" }),
-    );
+    // Google entrega emails verificados; las invitaciones lo exigen.
+    const user = (email: string, name: string) =>
+      helpers.saveUser(
+        helpers.createUser({ email, name, emailVerified: true }),
+      );
+    const userA = await user("ricky@example.test", "Ricky");
+    const userB = await user("juan@example.test", "Juan");
+    const userC = await user("caro@example.test", "Caro");
     const loginA = await helpers.login({ userId: userA.id });
     const loginB = await helpers.login({ userId: userB.id });
+    const loginC = await helpers.login({ userId: userC.id });
     const { app } = createApp(config, databases);
     app.use(errorHandler);
     const server = app.listen(0, "127.0.0.1");
@@ -106,9 +109,11 @@ export async function startTestApp() {
       databases,
       userA,
       userB,
+      userC,
       loginA,
       cookieA: loginA.headers.get("cookie")!,
       cookieB: loginB.headers.get("cookie")!,
+      cookieC: loginC.headers.get("cookie")!,
       call,
       close,
     };

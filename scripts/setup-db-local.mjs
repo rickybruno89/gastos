@@ -33,6 +33,13 @@ try {
     );
   }
   const owner = pg.escapeIdentifier(process.env.POSTGRES_USER);
+  // --reset recrea la base: necesario al regenerar la migración única init.
+  if (process.argv.includes("--reset")) {
+    await client.query(
+      `DROP DATABASE IF EXISTS ${pg.escapeIdentifier(database)} WITH (FORCE)`,
+    );
+    console.log(`Base ${database} eliminada.`);
+  }
   const found = await client.query(
     "SELECT 1 FROM pg_database WHERE datname = $1",
     [database],

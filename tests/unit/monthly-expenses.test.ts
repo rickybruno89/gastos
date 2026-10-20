@@ -26,6 +26,12 @@ test("crear gasto exige importe exacto positivo y no acepta campos extra", () =>
     firstPeriod: "2026-10",
   };
   assert.equal(createMonthlyExpenseSchema.parse(valid).name, "Internet");
+  assert.equal(createMonthlyExpenseSchema.parse(valid).intervalMonths, 1);
+  assert.equal(
+    createMonthlyExpenseSchema.parse({ ...valid, intervalMonths: 2 })
+      .intervalMonths,
+    2,
+  );
   for (const invalid of [
     { ...valid, amountMinor: "-1" },
     { ...valid, amountMinor: "0100" },
@@ -33,7 +39,7 @@ test("crear gasto exige importe exacto positivo y no acepta campos extra", () =>
     { ...valid, name: "   " },
     { ...valid, dueDay: 0 },
     { ...valid, firstPeriod: "1999-12" },
-    { ...valid, intervalMonths: 2 },
+    { ...valid, intervalMonths: 3 },
   ])
     assert.equal(
       createMonthlyExpenseSchema.safeParse(invalid).success,

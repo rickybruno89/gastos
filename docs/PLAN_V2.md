@@ -1,27 +1,27 @@
 # GastApp V2: plan de producto, arquitectura y producción
 
-Actualizado: **20/10/2026**. Estado: **fundación V2 y Fase 1 (primer recorrido de gasto mensual) implementadas y validadas en local**; resto de módulos financieros y despliegue en el VPS pendientes. El login Google completo con una cuenta real requiere configurar las credenciales del cliente OAuth local.
+Actualizado: **20/10/2026**. Estado: **fundación V2, Fase 1 (primer recorrido de gasto mensual), Fase 2 (gastos periódicos) y Fase 3 (compartidos) implementadas y validadas en local**; resto de módulos financieros y despliegue en el VPS pendientes. El login Google completo con una cuenta real requiere configurar las credenciales del cliente OAuth local.
 
 Este es el documento único de referencia de GastApp V2. Reúne el assessment funcional, las decisiones de arquitectura y el procedimiento de VPS/Coolify adaptado de Auguri. Sustituye las guías dispersas de V1, Opción B, Vercel y las copias de documentación de Auguri que había en este repositorio.
 
 ## 1. Decisiones y estado real
 
-| Tema                   | Decisión o estado                                                                                                                                             |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Producto               | Obligaciones por período, tarjetas, repartos informativos y Deudas manuales independientes.                                                                   |
-| Stack confirmado       | React Router + Node/Express + Prisma + PostgreSQL, con autenticación Google.                                                                                  |
-| Construcción           | V2 desde cero, con schema y contratos propios; primera producción con base vacía.                                                                             |
-| Forma de trabajo       | Implementar y probar primero todo el alcance de la primera publicación en local; después desplegar el mismo código y migraciones en Coolify.                  |
-| Alojamiento confirmado | App y PostgreSQL en el VPS existente con Coolify, siguiendo la operación de Auguri.                                                                           |
-| Dominio de GastApp     | **`gastapp.ingbruno.ar`**, confirmado por el usuario.                                                                                                         |
-| Dominio raíz           | **`ingbruno.ar`**, reservado para una futura landing; contenido y tecnología por definir.                                                                     |
-| Staging propuesto      | `staging.gastapp.ingbruno.ar`, separado de producción.                                                                                                        |
-| Registro/delegación    | Pendientes según lo informado por el usuario; disponibilidad y titularidad no verificadas.                                                                    |
-| DNS propuesto          | Cloudflare en la misma cuenta de Auguri, pendiente de configurar.                                                                                             |
-| Presupuesto            | Reutilizar el VPS y servicios gratuitos, sin nuevas suscripciones. Registrar/renovar `ingbruno.ar` tiene un arancel propio de NIC Argentina; ver sección 7.3. |
-| Login                  | Better Auth 1.7.12 + Google implementados con Prisma. Inicio OAuth, sesiones y permisos probados; login real pendiente de credenciales locales.               |
-| Importación de V1      | Script posterior e independiente desde Supabase; fuera del camino de lanzamiento.                                                                             |
-| Estado del código      | Rama `v2`: fundación, auth, preferencias y “Mi mes” real (crear, consultar, cambiar importe, pagar/deshacer) sobre Postgres.app; pruebas e imagen Docker.     |
+| Tema                   | Decisión o estado                                                                                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Producto               | Obligaciones por período, tarjetas, repartos informativos y Deudas manuales independientes.                                                                                  |
+| Stack confirmado       | React Router + Node/Express + Prisma + PostgreSQL, con autenticación Google.                                                                                                 |
+| Construcción           | V2 desde cero, con schema y contratos propios; primera producción con base vacía.                                                                                            |
+| Forma de trabajo       | Implementar y probar primero todo el alcance de la primera publicación en local; después desplegar el mismo código y migraciones en Coolify.                                 |
+| Alojamiento confirmado | App y PostgreSQL en el VPS existente con Coolify, siguiendo la operación de Auguri.                                                                                          |
+| Dominio de GastApp     | **`gastapp.ingbruno.ar`**, confirmado por el usuario.                                                                                                                        |
+| Dominio raíz           | **`ingbruno.ar`**, reservado para una futura landing; contenido y tecnología por definir.                                                                                    |
+| Staging propuesto      | `staging.gastapp.ingbruno.ar`, separado de producción.                                                                                                                       |
+| Registro/delegación    | Pendientes según lo informado por el usuario; disponibilidad y titularidad no verificadas.                                                                                   |
+| DNS propuesto          | Cloudflare en la misma cuenta de Auguri, pendiente de configurar.                                                                                                            |
+| Presupuesto            | Reutilizar el VPS y servicios gratuitos, sin nuevas suscripciones. Registrar/renovar `ingbruno.ar` tiene un arancel propio de NIC Argentina; ver sección 7.3.                |
+| Login                  | Better Auth 1.7.12 + Google implementados con Prisma. Inicio OAuth, sesiones y permisos probados; login real pendiente de credenciales locales.                              |
+| Importación de V1      | Script posterior e independiente desde Supabase; fuera del camino de lanzamiento.                                                                                            |
+| Estado del código      | Rama `v2`: fundación, auth, preferencias y “Mi mes” y “Compartidos” reales (periódicos, pagos, reparto, contactos y conexiones) sobre Postgres.app; pruebas e imagen Docker. |
 
 V2 tiene libertad para definir tablas, IDs, API, sesiones y pantallas nuevos. No requiere convivencia, sincronización ni retrocompatibilidad con V1. Los datos del futuro importador se adaptarán al modelo de V2.
 
@@ -179,14 +179,17 @@ Reglas:
 - La serie guarda la regla de vencimiento y cada ocurrencia conserva su fecha efectiva.
 - Cambiar el vencimiento de una ocurrencia no pagada actualiza el mes actual y la regla de meses futuros.
 - Cambiar un importe ofrece “solo este mes” o “este mes y futuros”.
-- Estados: PLANNED, DUE, PAID, COVERED, SKIPPED y CANCELLED. Implementado en Fase 1: se persisten `PLANNED` y `PAID`; “vencido” y “vence hoy” se derivan de `dueDate` y la fecha del usuario, sin job. COVERED, SKIPPED y CANCELLED se agregan en Fase 2.
+- Estados: PLANNED, DUE, PAID, COVERED, SKIPPED y CANCELLED. Se persisten `PLANNED`, `PAID`, `COVERED`, `SKIPPED` y `CANCELLED`; “vencido” y `DUE` se derivan de `dueDate` y la fecha del usuario, sin job. `SKIPPED` (omitir el mes) y `CANCELLED` (baja de la serie desde ese mes) exigen motivo y se revierten con “Restaurar” o “Reactivar”.
 - Marcar pagado crea ExpensePayment con fecha y canal; no existe pago parcial de este agregado. Fase 1: fecha de hoy en la zona del usuario y canal opcional (sin canal predeterminado configurable todavía). Deshacer marca el pago como revertido y lo conserva para auditoría.
 - Importe y día de vencimiento viven en versiones de condiciones (`MonthlyExpenseTerms`) con vigencia desde un período; “este mes y futuros” crea o actualiza la versión del período, ajusta las posteriores y las ocurrencias futuras no pagadas ya materializadas.
 - Una ocurrencia pagada es inmutable. Para corregirla se deshace el pago, se edita y se vuelve a pagar.
 - Un pago anual crea CoveragePeriod sin cambiar la recurrencia mensual subyacente.
 - Los meses cubiertos continúan visibles como “Pagado anual”, con estado COVERED y payableAmountMinor igual a cero.
 - El importe nominal puede conservarse para contexto, pero nunca se suma al total pendiente.
-- Si el pago anual es compartido, la allocation se proyecta una sola vez en el mes del desembolso anual.
+- Si el pago anual es compartido, la allocation se proyecta una sola vez en el mes del desembolso anual (pendiente de Fase 3).
+- Implementado en Fase 2: el pago anual se registra sobre un mes pendiente indicando cuántos meses cubre (2 a 24) y el total pagado. Ese mes queda `PAID` con un ExpensePayment por el total y un CoveragePeriod; los meses siguientes del rango, materializados o no, quedan `COVERED`. Se rechaza si se superpone con otra cobertura, si hay meses del rango pagados/omitidos/de baja o si supera la baja de la serie. Deshacer el pago del mes anual revierte la cobertura y devuelve los meses cubiertos a pendiente.
+- Dar de baja guarda `endPeriod` en la serie: ese mes queda `CANCELLED` y los posteriores dejan de generarse y mostrarse. Se rechaza si hay meses posteriores pagados o cubiertos. Reactivar limpia `endPeriod`.
+- El total pagado del mes suma lo desembolsado (un pago anual cuenta completo en su mes); omitidos, de baja y cubiertos no suman al pendiente.
 
 ### 4.2. Compartidos, allocations y saldos derivados
 
@@ -242,6 +245,15 @@ UserConnection
 - Desconectar o bloquear no borra snapshots ni saldos históricos.
 
 Las conexiones forman parte del alcance V2, no son una mejora opcional posterior.
+
+**Implementado en Fase 3:**
+
+- El reparto vive en la versión de condiciones (`MonthlyExpenseTermsShare` por `MonthlyExpenseTerms`), con la misma vigencia por período que importe y vencimiento. “Cambiar reparto” aplica a este mes y a los siguientes no pagados.
+- Cada ocurrencia pendiente o pagada que reparte tiene su snapshot `OccurrenceAllocation`: fila del propietario (`contactId` nulo) y una por contacto, con porcentaje, importe calculado con `allocateMoney`, base, moneda, nombre del gasto y período. Un trigger por sentencia exige que sumen 10.000 bps; otro impide modificar el snapshot de un mes pagado. Omitidos, de baja y cubiertos no tienen snapshot; el pago anual lo calcula una sola vez sobre el total.
+- La allocation siempre referencia al contacto del propietario (su apodo privado); si el contacto está vinculado, guarda además la conexión. Así una sola fila sirve al propietario y, en lectura, a la contraparte. Esto sustituye la regla conceptual “contacto o conexión, nunca ambos”.
+- Invitación: el propietario agrega el email al contacto e invita. El destinatario ve la invitación al ingresar con ese email verificado por Google (sin envío de correo hasta la Fase 6 ni enlace con token todavía). Vence a los 30 días. Al aceptar, el destinatario obtiene su propio contacto con el nombre del invitador, y ambos pueden compartir en las dos direcciones.
+- Desconectar (cualquiera de los dos) deja la conexión `BLOCKED`: la contraparte deja de ver; los snapshots y saldos propios se conservan. Se puede volver a invitar.
+- RLS: la contraparte solo lee sus propias filas de allocation, con conexión aceptada y período desde la aceptación. No accede a ocurrencias, series, contactos ni a otros participantes. La invitación pendiente es visible para el email invitado mediante `gastapp.user_email`, fijado solo con email verificado.
 
 La identidad Google se asocia a una cuenta `User` propia de GastApp mediante el identificador estable del proveedor; el email no es la clave de las relaciones financieras. Las invitaciones identifican al destinatario y requieren aceptación autenticada antes de conceder visibilidad compartida. Si todavía no tiene cuenta, puede registrarse con Google y luego aceptar; no se crean usuarios ficticios a partir de contactos.
 
@@ -393,7 +405,10 @@ POST   /api/v2/expenses
 PATCH  /api/v2/expenses/:id
 POST   /api/v2/occurrences/:id/payments
 POST   /api/v2/occurrences/:id/undo-payment
+POST   /api/v2/occurrences/:id/annual-payments
 POST   /api/v2/occurrences/:id/skip
+POST   /api/v2/occurrences/:id/cancel
+POST   /api/v2/occurrences/:id/restore
 
 GET    /api/v2/cards
 POST   /api/v2/cards
@@ -413,8 +428,14 @@ POST   /api/v2/debts/:id/cancel
 
 GET    /api/v2/contacts
 POST   /api/v2/contacts
-POST   /api/v2/connections
-POST   /api/v2/connections/:id/accept
+PATCH  /api/v2/contacts/:id
+POST   /api/v2/contacts/:id/invitation
+GET    /api/v2/invitations
+POST   /api/v2/invitations/:id/accept
+POST   /api/v2/invitations/:id/reject
+POST   /api/v2/connections/:id/disconnect
+GET    /api/v2/shared/:period          # implementado como saldos por período
+PUT    /api/v2/occurrences/:id/shares
 ```
 
 Los nombres pueden refinarse sin romper el límite: todas las operaciones de producto pasan por la GastApp API. El flujo de Google se integra mediante la librería de autenticación elegida; las tablas y el ORM no son contratos públicos.
@@ -449,7 +470,7 @@ El email se usa para contacto e invitaciones; la identidad no depende de que per
 
 Para conectar cuentas, el destinatario inicia sesión y acepta. Si todavía no tiene cuenta, puede crearla con Google y aceptar después. Las invitaciones por enlace se validan en servidor, vencen y se consumen una sola vez. Al asignar una conexión a un gasto se comprueba que pertenece al propietario y está aceptada. El creador sigue siendo el único editor.
 
-No se publica automáticamente el historial al vincular un contacto. Antes de implementar esa transición se concretará el alcance de lectura de asignaciones anteriores al vínculo, conservando los snapshots pagados. Este detalle no impide implementar primero contactos manuales y nuevos repartos entre conexiones aceptadas.
+No se publica automáticamente el historial al vincular un contacto. **Decisión de Fase 3 (a confirmar por el usuario):** la contraparte ve los repartos desde el período en que acepta la invitación; los meses anteriores siguen privados, incluidos los pagados. Es configurable cambiando la condición de período en la política RLS.
 
 ### 5.1. Login, sesiones y permisos
 
@@ -656,7 +677,7 @@ Abrir `http://localhost:3000`. Vite atiende la web en 3000 y reenvía API/health
 
 `setup:local` crea secretos nuevos una sola vez y respeta una configuración local existente. `db:setup` se conecta con el superusuario de Postgres.app (el usuario de macOS) y crea o actualiza los roles `gastapp_owner` (migraciones, con `CREATEDB` para las bases de prueba), `gastapp_auth` y `gastapp_app` con las contraseñas de `.env.local`, y la base `gastappv2`; puede repetirse. `db:migrate` valida que el destino sea `gastappv2` en localhost y aplica las migraciones versionadas. Para un VPS nuevo deberán prepararse esos roles con sus propios secretos antes de aplicar la migración.
 
-**Migración única mientras no haya despliegue.** Hasta la primera publicación, el schema completo vive en una sola migración `202610200001_init` que se regenera al cambiar el modelo (`prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script`, más el SQL manual de constraints, triggers, grants y RLS al final del archivo). Para aplicarla de nuevo en local se recrea la base `gastappv2`. A partir del primer despliegue, cada cambio de schema tendrá su propia migración incremental.
+**Migración única mientras no haya despliegue.** Hasta la primera publicación, el schema completo vive en una sola migración `202610200001_init` que se regenera al cambiar el modelo (`prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script`, más el SQL manual de constraints, triggers, grants y RLS al final del archivo). Para aplicarla de nuevo en local, `npm run db:reset` elimina y recrea `gastappv2` y aplica la migración (borra los datos locales). A partir del primer despliegue, cada cambio de schema tendrá su propia migración incremental.
 
 ```bash
 npm run check
@@ -872,8 +893,8 @@ Agregar a Kuma los healthchecks de producción y staging, y activar las alertas 
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | 0. Fundación                  | **Implementada en local:** React Router/Express, Prisma, schema inicial, roles/RLS, auth, preferencias, Money/fechas, comandos y Docker. | Checks, 18 resultados de pruebas automatizadas, build y ensayo Docker aprobados. Login real Google pendiente de credenciales locales. |
 | 1. Primer recorrido completo  | **Implementada en local:** crear gasto mensual, consultar período, cambiar importe/vencimiento, pagar y deshacer, en API y “Mi mes”.     | Flujo UI/API/base completo, idempotente y transaccional; 22 pruebas automatizadas, recorrido en navegador y ensayo Docker aprobados.  |
-| 2. Gastos periódicos          | Bimestrales, anclajes, vencimientos cortos, omitir/cancelar y cobertura anual.                                                           | Períodos correctos; historial pagado protegido; cobertura anual y reparto sin duplicación.                                            |
-| 3. Compartidos                | Contactos manuales sin cuenta, porcentajes/snapshots, invitaciones y conexiones reales.                                                  | Reparto manual completo sin registro de contraparte; vista conectada solo de lectura y sin filtraciones.                              |
+| 2. Gastos periódicos          | **Implementada en local:** bimestrales con anclaje, vencimientos cortos, omitir/restaurar, baja/reactivar, pago anual y renombrar.       | Períodos correctos; historial pagado protegido; cobertura anual y reparto sin duplicación.                                            |
+| 3. Compartidos                | **Implementada en local:** contactos sin cuenta, reparto con snapshots, saldos por persona y moneda, invitaciones y conexiones.          | Reparto manual completo sin registro de contraparte; vista conectada solo de lectura y sin filtraciones.                              |
 | 4. Deudas                     | Principal, pagos parciales, cancelación y ajustes auditables.                                                                            | Estados y saldos exactos, separados del reparto de gastos y tarjetas.                                                                 |
 | 5. Tarjetas                   | Compras, cuotas, recurrentes, statements y conciliación manual.                                                                          | Una fuente de verdad para cuotas; pago/reversión del statement consistente; cargos desconocidos y ausentes resueltos.                 |
 | 6. Notificaciones y operación | Preferencias, outbox, reintentos, herramientas de DB y backups.                                                                          | Envíos idempotentes; configuración de recursos y restauración verificadas.                                                            |
@@ -895,6 +916,10 @@ La landing `ingbruno.ar` y el importador desde V1 son trabajos independientes. L
 - Roles y RLS con conexiones del pool reutilizadas entre usuarios distintos.
 - Instalación limpia, persistencia tras redeploy, salud y restauración aislada.
 
+La Fase 3 agrega 3 pruebas unitarias y 11 resultados de integración: contactos privados y versionados, validación de porcentajes y contactos ajenos/archivados, parte exacta al centavo con contacto sin cuenta y 0%/100%, pago que no salda y congela el snapshot (trigger de inmutabilidad y de suma 100%), recálculo por importe y por reparto desde un mes, omitido sin reparto y pago anual repartido una sola vez, invitación con email obligatorio y sin auto-invitación, aceptación con visibilidad solo desde ese mes y solo de la propia parte (RLS verificado directamente), compartido bidireccional, desconexión que conserva saldos propios, rechazo y vencimiento. El recorrido de navegador cubre crear compartido con persona nueva, partes iguales, cambio de reparto, invitación y aceptación desde el iPhone de la contraparte.
+
+La Fase 2 agrega 7 resultados de integración: bimestral anclado y sin importe en meses intermedios, omitir con motivo y restaurar, baja que oculta meses posteriores y se rechaza ante meses resueltos, pago anual con meses ya materializados y futuros cubiertos, doble envío concurrente, superposición, conflicto con meses pagados, límite por baja, undo completo, inmutabilidad de meses cubiertos en la base y renombrar con versión y aislamiento. El recorrido de navegador cubre crear mensual/USD/bimestral, omitir/restaurar, pago anual y navegación al mes de pago, editar con alcance y renombrar, baja/reactivar y móvil 375/390/430.
+
 La Fase 1 agrega 4 pruebas unitarias y 11 resultados de integración: validación de contratos, Idempotency-Key obligatoria y replay, origen, materialización única con GET concurrentes, meses cortos, “solo este mes” frente a “este mes y futuros”, nuevo vencimiento, pago bloqueando la edición, pagos futuros protegidos, deshacer y corregir, doble click concurrente con un solo pago, aislamiento entre cuentas, RLS, trigger de ocurrencia pagada y audit log solo de alta. El recorrido “Mi mes” se verificó en navegador (escritorio y emulación iPhone 375/390/430) con un usuario sintético temporal: crear, validar importe, pagar, deshacer desde el aviso, editar con alcance, mes pagado bloqueado y persistencia tras recargar. WebKit no está instalado en este equipo; la revisión en Safari real sigue pendiente.
 
 La fundación tiene 7 pruebas unitarias y 11 resultados de integración aprobados (incluyendo el caso principal y sus 10 subcasos). Cubren dinero, porcentajes, fechas, configuración, migración limpia, sesiones, errores, CSRF, permisos, RLS, concurrencia del pool, inicio OAuth y revocación. También se verificó la imagen Docker y la interfaz con usuarios sintéticos temporales. El rediseño V2 se revisó en escritorio y móvil (360, 390 y 768 px), incluyendo filtros, búsqueda, creación temporal, pagar/deshacer y navegación de modales con teclado. La revisión automática WCAG A/AA de las cinco pantallas públicas del prototipo no detectó infracciones; no sustituye la revisión con usuarios y tecnologías de asistencia. Los criterios de los módulos financieros completos siguen como objetivos de sus próximas fases. El intercambio real con Google requiere credenciales del cliente local y una cuenta de prueba.
@@ -909,15 +934,16 @@ Las instrucciones y ejemplos de Opción B/Vercel describían el sistema anterior
 
 ## 10. Pendientes concretos y siguiente entrega
 
-La fundación técnica y la Fase 1 ya están implementadas. Quedan tareas de configuración, módulos e infraestructura:
+La fundación técnica y las Fases 1 a 3 ya están implementadas. Quedan tareas de configuración, módulos e infraestructura:
 
 - Completar las credenciales del cliente OAuth local y validar el ingreso real con Google; la integración y las versiones ya están fijadas y probadas automáticamente.
 - Completar registro/delegación del dominio y DNS; cerrar staging y certificados según el proxy real.
 - Medir recursos y preparar el proyecto GastApp con sus credenciales, bases y volúmenes.
-- Concretar visibilidad histórica al conectar un contacto antes de implementar esa transición.
+- Confirmar la visibilidad al conectar (implementada: desde el mes de aceptación).
+- Envío de invitaciones por correo y enlace de un solo uso (Fase 6, con el outbox de notificaciones).
 - Fijar parámetros operativos de sesiones, backups, recuperación, correo y jobs en sus fases.
 
-**Siguiente entrega:** Fase 2, gastos periódicos: bimestrales con anclaje (el schema ya admite `intervalMonths` 1 o 2), omitir/cancelar con motivo, cobertura por pago anual (`COVERED`), renombrar y finalizar una serie. También conviene un canal de pago predeterminado en preferencias. La configuración del cliente Google permite revisar antes el acceso con una cuenta real. No se migran datos de V1 ni se despliega al VPS durante esa entrega local.
+**Siguiente entrega:** Fase 4, Deudas: préstamos manuales con principal fijo, pagos parciales en la moneda de la deuda, cancelación y ajustes explícitos auditables, con estados derivados (`OPEN`, `PARTIALLY_PAID`, `PAID`, `CANCELLED`) y navegación propia, separados de los repartos. Decisión de Fase 2: el pago rápido sigue usando la fecha de hoy y un canal opcional, sin canal predeterminado configurable. No se migran datos de V1 ni se despliega al VPS durante esa entrega local.
 
 ## 11. Referencias técnicas
 

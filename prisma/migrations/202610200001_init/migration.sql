@@ -8,7 +8,10 @@ CREATE SCHEMA IF NOT EXISTS "public";
 CREATE TYPE "Currency" AS ENUM ('ARS', 'USD');
 
 -- CreateEnum
-CREATE TYPE "OccurrenceStatus" AS ENUM ('PLANNED', 'PAID');
+CREATE TYPE "OccurrenceStatus" AS ENUM ('PLANNED', 'PAID', 'COVERED', 'SKIPPED', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "ConnectionStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED', 'BLOCKED');
 
 -- CreateTable
 CREATE TABLE "auth"."user" (
@@ -86,6 +89,7 @@ CREATE TABLE "MonthlyExpenseSeries" (
     "currency" "Currency" NOT NULL,
     "intervalMonths" SMALLINT NOT NULL DEFAULT 1,
     "firstPeriod" DATE NOT NULL,
+    "endPeriod" DATE,
     "version" INTEGER NOT NULL DEFAULT 1,
     "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ(3) NOT NULL,
@@ -116,6 +120,8 @@ CREATE TABLE "MonthlyExpenseOccurrence" (
     "amountMinor" BIGINT NOT NULL,
     "currency" "Currency" NOT NULL,
     "status" "OccurrenceStatus" NOT NULL DEFAULT 'PLANNED',
+    "statusReason" VARCHAR(200),
+    "coverageId" UUID,
     "version" INTEGER NOT NULL DEFAULT 1,
     "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ(3) NOT NULL,
@@ -134,8 +140,22 @@ CREATE TABLE "ExpensePayment" (
     "currency" "Currency" NOT NULL,
     "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "revertedAt" TIMESTAMPTZ(3),
+    "coverageId" UUID,
 
     CONSTRAINT "ExpensePayment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CoveragePeriod" (
+    "id" UUID NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "seriesId" UUID NOT NULL,
+    "fromPeriod" DATE NOT NULL,
+    "toPeriod" DATE NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "revertedAt" TIMESTAMPTZ(3),
+
+    CONSTRAINT "CoveragePeriod_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -163,6 +183,67 @@ CREATE TABLE "IdempotencyKey" (
     "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "IdempotencyKey_pkey" PRIMARY KEY ("ownerId","key")
+);
+
+-- CreateTable
+CREATE TABLE "Contact" (
+    "id" UUID NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "nickname" VARCHAR(60) NOT NULL,
+    "email" VARCHAR(254),
+    "connectionId" UUID,
+    "archivedAt" TIMESTAMPTZ(3),
+    "version" INTEGER NOT NULL DEFAULT 1,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(3) NOT NULL,
+
+    CONSTRAINT "Contact_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserConnection" (
+    "id" UUID NOT NULL,
+    "inviterId" TEXT NOT NULL,
+    "inviterName" VARCHAR(120) NOT NULL,
+    "inviteeEmail" VARCHAR(254) NOT NULL,
+    "inviteeId" TEXT,
+    "inviteeName" VARCHAR(120),
+    "status" "ConnectionStatus" NOT NULL DEFAULT 'PENDING',
+    "acceptedPeriod" DATE,
+    "expiresAt" TIMESTAMPTZ(3) NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "respondedAt" TIMESTAMPTZ(3),
+
+    CONSTRAINT "UserConnection_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MonthlyExpenseTermsShare" (
+    "id" UUID NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "termsId" UUID NOT NULL,
+    "contactId" UUID NOT NULL,
+    "shareBps" INTEGER NOT NULL,
+
+    CONSTRAINT "MonthlyExpenseTermsShare_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OccurrenceAllocation" (
+    "id" UUID NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "occurrenceId" UUID NOT NULL,
+    "contactId" UUID,
+    "connectionId" UUID,
+    "period" DATE NOT NULL,
+    "expenseName" VARCHAR(80) NOT NULL,
+    "shareBps" INTEGER NOT NULL,
+    "baseAmountMinor" BIGINT NOT NULL,
+    "amountMinor" BIGINT NOT NULL,
+    "currency" "Currency" NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "OccurrenceAllocation_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -193,6 +274,9 @@ CREATE UNIQUE INDEX "MonthlyExpenseSeries_id_ownerId_key" ON "MonthlyExpenseSeri
 CREATE UNIQUE INDEX "MonthlyExpenseTerms_seriesId_effectivePeriod_key" ON "MonthlyExpenseTerms"("seriesId", "effectivePeriod");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "MonthlyExpenseTerms_id_ownerId_key" ON "MonthlyExpenseTerms"("id", "ownerId");
+
+-- CreateIndex
 CREATE INDEX "MonthlyExpenseOccurrence_ownerId_period_idx" ON "MonthlyExpenseOccurrence"("ownerId", "period");
 
 -- CreateIndex
@@ -205,10 +289,43 @@ CREATE UNIQUE INDEX "MonthlyExpenseOccurrence_id_ownerId_key" ON "MonthlyExpense
 CREATE INDEX "ExpensePayment_occurrenceId_idx" ON "ExpensePayment"("occurrenceId");
 
 -- CreateIndex
+CREATE INDEX "CoveragePeriod_seriesId_fromPeriod_idx" ON "CoveragePeriod"("seriesId", "fromPeriod");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CoveragePeriod_id_ownerId_key" ON "CoveragePeriod"("id", "ownerId");
+
+-- CreateIndex
 CREATE INDEX "AuditLog_ownerId_entityType_entityId_idx" ON "AuditLog"("ownerId", "entityType", "entityId");
 
 -- CreateIndex
 CREATE INDEX "IdempotencyKey_createdAt_idx" ON "IdempotencyKey"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "Contact_ownerId_idx" ON "Contact"("ownerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Contact_id_ownerId_key" ON "Contact"("id", "ownerId");
+
+-- CreateIndex
+CREATE INDEX "UserConnection_inviteeEmail_status_idx" ON "UserConnection"("inviteeEmail", "status");
+
+-- CreateIndex
+CREATE INDEX "UserConnection_inviterId_idx" ON "UserConnection"("inviterId");
+
+-- CreateIndex
+CREATE INDEX "UserConnection_inviteeId_idx" ON "UserConnection"("inviteeId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MonthlyExpenseTermsShare_termsId_contactId_key" ON "MonthlyExpenseTermsShare"("termsId", "contactId");
+
+-- CreateIndex
+CREATE INDEX "OccurrenceAllocation_occurrenceId_idx" ON "OccurrenceAllocation"("occurrenceId");
+
+-- CreateIndex
+CREATE INDEX "OccurrenceAllocation_ownerId_period_idx" ON "OccurrenceAllocation"("ownerId", "period");
+
+-- CreateIndex
+CREATE INDEX "OccurrenceAllocation_connectionId_period_idx" ON "OccurrenceAllocation"("connectionId", "period");
 
 -- AddForeignKey
 ALTER TABLE "auth"."session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "auth"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -229,7 +346,16 @@ ALTER TABLE "MonthlyExpenseTerms" ADD CONSTRAINT "MonthlyExpenseTerms_seriesId_o
 ALTER TABLE "MonthlyExpenseOccurrence" ADD CONSTRAINT "MonthlyExpenseOccurrence_seriesId_ownerId_fkey" FOREIGN KEY ("seriesId", "ownerId") REFERENCES "MonthlyExpenseSeries"("id", "ownerId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "MonthlyExpenseOccurrence" ADD CONSTRAINT "MonthlyExpenseOccurrence_coverageId_ownerId_fkey" FOREIGN KEY ("coverageId", "ownerId") REFERENCES "CoveragePeriod"("id", "ownerId") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
 ALTER TABLE "ExpensePayment" ADD CONSTRAINT "ExpensePayment_occurrenceId_ownerId_fkey" FOREIGN KEY ("occurrenceId", "ownerId") REFERENCES "MonthlyExpenseOccurrence"("id", "ownerId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ExpensePayment" ADD CONSTRAINT "ExpensePayment_coverageId_ownerId_fkey" FOREIGN KEY ("coverageId", "ownerId") REFERENCES "CoveragePeriod"("id", "ownerId") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "CoveragePeriod" ADD CONSTRAINT "CoveragePeriod_seriesId_ownerId_fkey" FOREIGN KEY ("seriesId", "ownerId") REFERENCES "MonthlyExpenseSeries"("id", "ownerId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "auth"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -237,12 +363,42 @@ ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_ownerId_fkey" FOREIGN KEY ("owne
 -- AddForeignKey
 ALTER TABLE "IdempotencyKey" ADD CONSTRAINT "IdempotencyKey_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "auth"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- AddForeignKey
+ALTER TABLE "Contact" ADD CONSTRAINT "Contact_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "auth"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Contact" ADD CONSTRAINT "Contact_connectionId_fkey" FOREIGN KEY ("connectionId") REFERENCES "UserConnection"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserConnection" ADD CONSTRAINT "UserConnection_inviterId_fkey" FOREIGN KEY ("inviterId") REFERENCES "auth"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserConnection" ADD CONSTRAINT "UserConnection_inviteeId_fkey" FOREIGN KEY ("inviteeId") REFERENCES "auth"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MonthlyExpenseTermsShare" ADD CONSTRAINT "MonthlyExpenseTermsShare_termsId_ownerId_fkey" FOREIGN KEY ("termsId", "ownerId") REFERENCES "MonthlyExpenseTerms"("id", "ownerId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MonthlyExpenseTermsShare" ADD CONSTRAINT "MonthlyExpenseTermsShare_contactId_ownerId_fkey" FOREIGN KEY ("contactId", "ownerId") REFERENCES "Contact"("id", "ownerId") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "OccurrenceAllocation" ADD CONSTRAINT "OccurrenceAllocation_occurrenceId_ownerId_fkey" FOREIGN KEY ("occurrenceId", "ownerId") REFERENCES "MonthlyExpenseOccurrence"("id", "ownerId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OccurrenceAllocation" ADD CONSTRAINT "OccurrenceAllocation_contactId_ownerId_fkey" FOREIGN KEY ("contactId", "ownerId") REFERENCES "Contact"("id", "ownerId") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "OccurrenceAllocation" ADD CONSTRAINT "OccurrenceAllocation_connectionId_fkey" FOREIGN KEY ("connectionId") REFERENCES "UserConnection"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
 
 -- Domain constraints: periods are first-of-month dates and money is positive minor units.
 ALTER TABLE "MonthlyExpenseSeries"
   ADD CONSTRAINT "MonthlyExpenseSeries_name_check" CHECK (length(btrim("name")) > 0),
   ADD CONSTRAINT "MonthlyExpenseSeries_interval_check" CHECK ("intervalMonths" IN (1, 2)),
-  ADD CONSTRAINT "MonthlyExpenseSeries_firstPeriod_check" CHECK (EXTRACT(DAY FROM "firstPeriod") = 1);
+  ADD CONSTRAINT "MonthlyExpenseSeries_firstPeriod_check" CHECK (EXTRACT(DAY FROM "firstPeriod") = 1),
+  ADD CONSTRAINT "MonthlyExpenseSeries_endPeriod_check" CHECK (
+    "endPeriod" IS NULL OR (EXTRACT(DAY FROM "endPeriod") = 1 AND "endPeriod" >= "firstPeriod")
+  );
 ALTER TABLE "MonthlyExpenseTerms"
   ADD CONSTRAINT "MonthlyExpenseTerms_amount_check" CHECK ("amountMinor" > 0),
   ADD CONSTRAINT "MonthlyExpenseTerms_dueDay_check" CHECK ("dueDay" BETWEEN 1 AND 31),
@@ -250,17 +406,44 @@ ALTER TABLE "MonthlyExpenseTerms"
 ALTER TABLE "MonthlyExpenseOccurrence"
   ADD CONSTRAINT "MonthlyExpenseOccurrence_amount_check" CHECK ("amountMinor" > 0),
   ADD CONSTRAINT "MonthlyExpenseOccurrence_period_check" CHECK (EXTRACT(DAY FROM "period") = 1),
-  ADD CONSTRAINT "MonthlyExpenseOccurrence_dueDate_check" CHECK (date_trunc('month', "dueDate") = "period");
+  ADD CONSTRAINT "MonthlyExpenseOccurrence_dueDate_check" CHECK (date_trunc('month', "dueDate") = "period"),
+  ADD CONSTRAINT "MonthlyExpenseOccurrence_reason_check" CHECK (
+    ("status" IN ('SKIPPED', 'CANCELLED')) = ("statusReason" IS NOT NULL AND length(btrim("statusReason")) > 0)
+  ),
+  ADD CONSTRAINT "MonthlyExpenseOccurrence_coverage_check" CHECK (("status" = 'COVERED') = ("coverageId" IS NOT NULL));
+ALTER TABLE "CoveragePeriod"
+  ADD CONSTRAINT "CoveragePeriod_range_check" CHECK (
+    EXTRACT(DAY FROM "fromPeriod") = 1 AND EXTRACT(DAY FROM "toPeriod") = 1 AND "toPeriod" > "fromPeriod"
+  );
 ALTER TABLE "ExpensePayment"
   ADD CONSTRAINT "ExpensePayment_amount_check" CHECK ("amountMinor" > 0);
+
+ALTER TABLE "Contact"
+  ADD CONSTRAINT "Contact_nickname_check" CHECK (length(btrim("nickname")) > 0),
+  ADD CONSTRAINT "Contact_email_check" CHECK ("email" IS NULL OR ("email" = lower(btrim("email")) AND "email" LIKE '%_@_%'));
+ALTER TABLE "UserConnection"
+  ADD CONSTRAINT "UserConnection_email_check" CHECK ("inviteeEmail" = lower(btrim("inviteeEmail"))),
+  ADD CONSTRAINT "UserConnection_self_check" CHECK ("inviteeId" IS NULL OR "inviteeId" <> "inviterId"),
+  ADD CONSTRAINT "UserConnection_accepted_check" CHECK (
+    "status" <> 'ACCEPTED' OR ("inviteeId" IS NOT NULL AND "acceptedPeriod" IS NOT NULL AND EXTRACT(DAY FROM "acceptedPeriod") = 1)
+  );
+ALTER TABLE "MonthlyExpenseTermsShare"
+  ADD CONSTRAINT "MonthlyExpenseTermsShare_bps_check" CHECK ("shareBps" BETWEEN 1 AND 10000);
+ALTER TABLE "OccurrenceAllocation"
+  ADD CONSTRAINT "OccurrenceAllocation_bps_check" CHECK ("shareBps" BETWEEN 0 AND 10000),
+  ADD CONSTRAINT "OccurrenceAllocation_amount_check" CHECK ("amountMinor" >= 0 AND "baseAmountMinor" > 0),
+  ADD CONSTRAINT "OccurrenceAllocation_period_check" CHECK (EXTRACT(DAY FROM "period") = 1);
+-- One owner row per occurrence (contactId NULL) and one row per contact.
+CREATE UNIQUE INDEX "OccurrenceAllocation_owner_key" ON "OccurrenceAllocation"("occurrenceId") WHERE "contactId" IS NULL;
+CREATE UNIQUE INDEX "OccurrenceAllocation_contact_key" ON "OccurrenceAllocation"("occurrenceId", "contactId") WHERE "contactId" IS NOT NULL;
 
 -- An occurrence has at most one active payment; undo keeps the reverted row for audit.
 CREATE UNIQUE INDEX "ExpensePayment_active_key" ON "ExpensePayment"("occurrenceId") WHERE "revertedAt" IS NULL;
 
--- Paid occurrences are immutable until their payment is undone.
+-- Paid and annually covered occurrences are immutable until their payment is undone.
 CREATE FUNCTION public.protect_paid_occurrence() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-  IF OLD."status" = 'PAID' AND NEW."status" = 'PAID' AND (
+  IF OLD."status" IN ('PAID', 'COVERED') AND NEW."status" = OLD."status" AND (
     NEW."amountMinor" <> OLD."amountMinor" OR NEW."dueDate" <> OLD."dueDate" OR NEW."currency" <> OLD."currency"
   ) THEN
     RAISE EXCEPTION 'paid occurrence % is immutable', OLD."id" USING ERRCODE = 'check_violation';
@@ -281,9 +464,78 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth TO gastapp_aut
 GRANT USAGE ON SCHEMA public TO gastapp_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public."UserPreferences" TO gastapp_app;
 GRANT SELECT, INSERT, UPDATE ON public."MonthlyExpenseSeries", public."MonthlyExpenseTerms",
-  public."MonthlyExpenseOccurrence", public."ExpensePayment", public."IdempotencyKey" TO gastapp_app;
+  public."MonthlyExpenseOccurrence", public."ExpensePayment", public."CoveragePeriod",
+  public."IdempotencyKey" TO gastapp_app;
 -- The audit log is append-only for the application.
 GRANT SELECT, INSERT ON public."AuditLog" TO gastapp_app;
+GRANT SELECT, INSERT, UPDATE ON public."Contact", public."UserConnection" TO gastapp_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."MonthlyExpenseTermsShare", public."OccurrenceAllocation" TO gastapp_app;
+
+-- Allocations of an occurrence always add up to 100% (or there are none). Checked per statement:
+-- the application replaces an occurrence's allocations with one DELETE and one INSERT.
+CREATE FUNCTION public.check_allocation_total() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+  invalid UUID;
+BEGIN
+  SELECT a."occurrenceId" INTO invalid
+  FROM public."OccurrenceAllocation" a
+  WHERE a."occurrenceId" IN (SELECT "occurrenceId" FROM changed)
+  GROUP BY a."occurrenceId"
+  HAVING SUM(a."shareBps") <> 10000
+  LIMIT 1;
+  IF invalid IS NOT NULL THEN
+    RAISE EXCEPTION 'allocations of occurrence % must add up to 10000 bps', invalid USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+CREATE TRIGGER "OccurrenceAllocation_total_insert" AFTER INSERT ON "OccurrenceAllocation"
+  REFERENCING NEW TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION public.check_allocation_total();
+CREATE TRIGGER "OccurrenceAllocation_total_update" AFTER UPDATE ON "OccurrenceAllocation"
+  REFERENCING NEW TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION public.check_allocation_total();
+CREATE TRIGGER "OccurrenceAllocation_total_delete" AFTER DELETE ON "OccurrenceAllocation"
+  REFERENCING OLD TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION public.check_allocation_total();
+
+-- Contacts never receive more than 100% of an expense rule.
+CREATE FUNCTION public.check_share_total() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public."MonthlyExpenseTermsShare" s
+    WHERE s."termsId" IN (SELECT "termsId" FROM changed)
+    GROUP BY s."termsId" HAVING SUM(s."shareBps") > 10000
+  ) THEN
+    RAISE EXCEPTION 'shares exceed 10000 bps' USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+CREATE TRIGGER "MonthlyExpenseTermsShare_total_insert" AFTER INSERT ON "MonthlyExpenseTermsShare"
+  REFERENCING NEW TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION public.check_share_total();
+CREATE TRIGGER "MonthlyExpenseTermsShare_total_update" AFTER UPDATE ON "MonthlyExpenseTermsShare"
+  REFERENCING NEW TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION public.check_share_total();
+
+-- Allocations of a paid occurrence are an immutable snapshot; only the connection link may change.
+-- The rule binds the application role; account deletion cascades run as the table owner.
+CREATE FUNCTION public.protect_paid_allocation() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF current_user <> 'gastapp_app' THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM public."MonthlyExpenseOccurrence" o WHERE o."id" = OLD."occurrenceId" AND o."status" = 'PAID'
+  ) AND (
+    TG_OP = 'DELETE' OR NEW."shareBps" <> OLD."shareBps" OR NEW."amountMinor" <> OLD."amountMinor"
+    OR NEW."baseAmountMinor" <> OLD."baseAmountMinor" OR NEW."currency" <> OLD."currency"
+    OR NEW."contactId" IS DISTINCT FROM OLD."contactId" OR NEW."expenseName" <> OLD."expenseName"
+    OR NEW."period" <> OLD."period"
+  ) THEN
+    RAISE EXCEPTION 'allocations of paid occurrence % are immutable', OLD."occurrenceId" USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+CREATE TRIGGER "OccurrenceAllocation_protect_paid" BEFORE UPDATE OR DELETE ON "OccurrenceAllocation"
+  FOR EACH ROW EXECUTE FUNCTION public.protect_paid_allocation();
 
 -- Every private table is scoped to the user set by withUser() for the current transaction.
 DO $$
@@ -292,7 +544,8 @@ DECLARE
   owner_column TEXT;
 BEGIN
   FOREACH name IN ARRAY ARRAY['UserPreferences', 'MonthlyExpenseSeries', 'MonthlyExpenseTerms',
-    'MonthlyExpenseOccurrence', 'ExpensePayment', 'AuditLog', 'IdempotencyKey']
+    'MonthlyExpenseOccurrence', 'ExpensePayment', 'CoveragePeriod', 'AuditLog', 'IdempotencyKey',
+    'Contact', 'MonthlyExpenseTermsShare', 'OccurrenceAllocation']
   LOOP
     owner_column := CASE WHEN name = 'UserPreferences' THEN 'userId' ELSE 'ownerId' END;
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', name);
@@ -305,3 +558,32 @@ BEGIN
   END LOOP;
 END;
 $$;
+
+-- A connected counterpart reads only its own allocation rows, from the acceptance period on,
+-- while the connection stays accepted. Expense, month and other participants stay private.
+CREATE POLICY "OccurrenceAllocation_counterpart" ON public."OccurrenceAllocation" FOR SELECT TO gastapp_app
+  USING (
+    "ownerId" <> NULLIF(current_setting('gastapp.user_id', true), '')
+    AND EXISTS (
+      SELECT 1 FROM public."UserConnection" c
+      WHERE c."id" = "connectionId" AND c."status" = 'ACCEPTED' AND "period" >= c."acceptedPeriod"
+        AND NULLIF(current_setting('gastapp.user_id', true), '') IN (c."inviterId", c."inviteeId")
+    )
+  );
+
+-- Connections are visible to both parties; a pending invitation also to the invited email.
+ALTER TABLE public."UserConnection" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."UserConnection" FORCE ROW LEVEL SECURITY;
+CREATE POLICY "UserConnection_parties" ON public."UserConnection" FOR SELECT TO gastapp_app
+  USING (
+    NULLIF(current_setting('gastapp.user_id', true), '') IN ("inviterId", "inviteeId")
+    OR ("status" = 'PENDING' AND "inviteeEmail" = NULLIF(current_setting('gastapp.user_email', true), ''))
+  );
+CREATE POLICY "UserConnection_invite" ON public."UserConnection" FOR INSERT TO gastapp_app
+  WITH CHECK ("inviterId" = NULLIF(current_setting('gastapp.user_id', true), '') AND "status" = 'PENDING');
+CREATE POLICY "UserConnection_respond" ON public."UserConnection" FOR UPDATE TO gastapp_app
+  USING (
+    NULLIF(current_setting('gastapp.user_id', true), '') IN ("inviterId", "inviteeId")
+    OR ("status" = 'PENDING' AND "inviteeEmail" = NULLIF(current_setting('gastapp.user_email', true), ''))
+  )
+  WITH CHECK (NULLIF(current_setting('gastapp.user_id', true), '') IN ("inviterId", "inviteeId"));

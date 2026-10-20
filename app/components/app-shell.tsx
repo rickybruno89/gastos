@@ -60,6 +60,10 @@ export function AppShell({
         <LayoutGrid size={19} />
         <span>Mi mes</span>
       </NavLink>
+      <NavLink className="nav-item" to="/compartidos">
+        <Users size={19} />
+        <span>Compartidos</span>
+      </NavLink>
       <NavLink className="nav-item" to="/cuenta">
         <Settings2 size={19} />
         <span>Tu cuenta</span>

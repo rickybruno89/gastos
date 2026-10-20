@@ -17,17 +17,19 @@ export function createDatabases(config: AppConfig) {
 }
 export type Databases = ReturnType<typeof createDatabases>;
 
+// `email` solo se fija con un email verificado: habilita ver invitaciones dirigidas a él.
 export async function withUser<T>(
   database: PrismaClient,
   userId: string,
   operation: (tx: Prisma.TransactionClient) => Promise<T>,
+  email?: string,
 ): Promise<T> {
   if (!userId)
     throw new Error(
       "Se requiere identidad autenticada para acceder a datos privados.",
     );
   return database.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT set_config('gastapp.user_id', ${userId}, true)`;
+    await tx.$queryRaw`SELECT set_config('gastapp.user_id', ${userId}, true), set_config('gastapp.user_email', ${email?.toLowerCase() ?? ""}, true)`;
     return operation(tx);
   });
 }

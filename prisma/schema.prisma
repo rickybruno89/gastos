@@ -22,6 +22,9 @@ model User {
   expenseSeries MonthlyExpenseSeries[]
   auditEntries  AuditLog[]
   idempotency   IdempotencyKey[]
+  contacts      Contact[]
+  invitesSent   UserConnection[]       @relation("ConnectionInviter")
+  invitesTaken  UserConnection[]       @relation("ConnectionInvitee")
 
   @@map("user")
   @@schema("auth")
@@ -99,6 +102,9 @@ enum Currency {
 enum OccurrenceStatus {
   PLANNED
   PAID
+  COVERED
+  SKIPPED
+  CANCELLED
 
   @@schema("public")
 }
@@ -110,12 +116,15 @@ model MonthlyExpenseSeries {
   currency       Currency
   intervalMonths Int                        @default(1) @db.SmallInt
   firstPeriod    DateTime                   @db.Date
+  // Último período de la serie cuando se da de baja; null mientras siga vigente.
+  endPeriod      DateTime?                  @db.Date
   version        Int                        @default(1)
   createdAt      DateTime                   @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime                   @updatedAt @db.Timestamptz(3)
   owner          User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   terms          MonthlyExpenseTerms[]
   occurrences    MonthlyExpenseOccurrence[]
+  coverages      CoveragePeriod[]
 
   @@unique([id, ownerId])
   @@index([ownerId, firstPeriod])
@@ -124,33 +133,41 @@ model MonthlyExpenseSeries {
 
 // Importe y vencimiento vigentes desde effectivePeriod hasta la siguiente versión.
 model MonthlyExpenseTerms {
-  id              String               @id @default(uuid(7)) @db.Uuid
+  id              String                     @id @default(uuid(7)) @db.Uuid
   ownerId         String
-  seriesId        String               @db.Uuid
-  effectivePeriod DateTime             @db.Date
+  seriesId        String                     @db.Uuid
+  effectivePeriod DateTime                   @db.Date
   amountMinor     BigInt
-  dueDay          Int                  @db.SmallInt
-  createdAt       DateTime             @default(now()) @db.Timestamptz(3)
-  series          MonthlyExpenseSeries @relation(fields: [seriesId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  dueDay          Int                        @db.SmallInt
+  createdAt       DateTime                   @default(now()) @db.Timestamptz(3)
+  series          MonthlyExpenseSeries       @relation(fields: [seriesId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  // Reparto vigente con esta versión; el propietario conserva el porcentaje restante.
+  shares          MonthlyExpenseTermsShare[]
 
   @@unique([seriesId, effectivePeriod])
+  @@unique([id, ownerId])
   @@schema("public")
 }
 
 model MonthlyExpenseOccurrence {
-  id          String               @id @default(uuid(7)) @db.Uuid
-  ownerId     String
-  seriesId    String               @db.Uuid
-  period      DateTime             @db.Date
-  dueDate     DateTime             @db.Date
-  amountMinor BigInt
-  currency    Currency
-  status      OccurrenceStatus     @default(PLANNED)
-  version     Int                  @default(1)
-  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime             @updatedAt @db.Timestamptz(3)
-  series      MonthlyExpenseSeries @relation(fields: [seriesId, ownerId], references: [id, ownerId], onDelete: Cascade)
-  payments    ExpensePayment[]
+  id           String                 @id @default(uuid(7)) @db.Uuid
+  ownerId      String
+  seriesId     String                 @db.Uuid
+  period       DateTime               @db.Date
+  dueDate      DateTime               @db.Date
+  amountMinor  BigInt
+  currency     Currency
+  status       OccurrenceStatus       @default(PLANNED)
+  // Motivo obligatorio para SKIPPED y CANCELLED.
+  statusReason String?                @db.VarChar(200)
+  coverageId   String?                @db.Uuid
+  version      Int                    @default(1)
+  createdAt    DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime               @updatedAt @db.Timestamptz(3)
+  series       MonthlyExpenseSeries   @relation(fields: [seriesId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  coverage     CoveragePeriod?        @relation(fields: [coverageId, ownerId], references: [id, ownerId], onDelete: NoAction, onUpdate: NoAction)
+  payments     ExpensePayment[]
+  allocations  OccurrenceAllocation[]
 
   @@unique([seriesId, period])
   @@unique([id, ownerId])
@@ -168,9 +185,30 @@ model ExpensePayment {
   currency     Currency
   createdAt    DateTime                 @default(now()) @db.Timestamptz(3)
   revertedAt   DateTime?                @db.Timestamptz(3)
+  // Presente cuando el pago es anual y cubre los meses siguientes.
+  coverageId   String?                  @db.Uuid
   occurrence   MonthlyExpenseOccurrence @relation(fields: [occurrenceId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  coverage     CoveragePeriod?          @relation(fields: [coverageId, ownerId], references: [id, ownerId], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([occurrenceId])
+  @@schema("public")
+}
+
+// Pago anual: se paga en fromPeriod y cubre hasta toPeriod inclusive.
+model CoveragePeriod {
+  id          String                     @id @default(uuid(7)) @db.Uuid
+  ownerId     String
+  seriesId    String                     @db.Uuid
+  fromPeriod  DateTime                   @db.Date
+  toPeriod    DateTime                   @db.Date
+  createdAt   DateTime                   @default(now()) @db.Timestamptz(3)
+  revertedAt  DateTime?                  @db.Timestamptz(3)
+  series      MonthlyExpenseSeries       @relation(fields: [seriesId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  occurrences MonthlyExpenseOccurrence[]
+  payments    ExpensePayment[]
+
+  @@unique([id, ownerId])
+  @@index([seriesId, fromPeriod])
   @@schema("public")
 }
 
@@ -201,5 +239,98 @@ model IdempotencyKey {
 
   @@id([ownerId, key])
   @@index([createdAt])
+  @@schema("public")
+}
+
+model Contact {
+  id           String                     @id @default(uuid(7)) @db.Uuid
+  ownerId      String
+  // Apodo privado del propietario; nunca se muestra a la contraparte.
+  nickname     String                     @db.VarChar(60)
+  email        String?                    @db.VarChar(254)
+  connectionId String?                    @db.Uuid
+  archivedAt   DateTime?                  @db.Timestamptz(3)
+  version      Int                        @default(1)
+  createdAt    DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime                   @updatedAt @db.Timestamptz(3)
+  owner        User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  connection   UserConnection?            @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  shares       MonthlyExpenseTermsShare[]
+  allocations  OccurrenceAllocation[]
+
+  @@unique([id, ownerId])
+  @@index([ownerId])
+  @@schema("public")
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+
+  @@schema("public")
+}
+
+// Invitación (PENDING) y conexión aceptada entre dos cuentas de GastApp.
+model UserConnection {
+  id             String                 @id @default(uuid(7)) @db.Uuid
+  inviterId      String
+  inviterName    String                 @db.VarChar(120)
+  inviteeEmail   String                 @db.VarChar(254)
+  inviteeId      String?
+  inviteeName    String?                @db.VarChar(120)
+  status         ConnectionStatus       @default(PENDING)
+  // La contraparte ve los repartos desde este período; los anteriores siguen privados.
+  acceptedPeriod DateTime?              @db.Date
+  expiresAt      DateTime               @db.Timestamptz(3)
+  createdAt      DateTime               @default(now()) @db.Timestamptz(3)
+  respondedAt    DateTime?              @db.Timestamptz(3)
+  inviter        User                   @relation("ConnectionInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee        User?                  @relation("ConnectionInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+  contacts       Contact[]
+  allocations    OccurrenceAllocation[]
+
+  @@index([inviteeEmail, status])
+  @@index([inviterId])
+  @@index([inviteeId])
+  @@schema("public")
+}
+
+model MonthlyExpenseTermsShare {
+  id        String              @id @default(uuid(7)) @db.Uuid
+  ownerId   String
+  termsId   String              @db.Uuid
+  contactId String              @db.Uuid
+  shareBps  Int
+  terms     MonthlyExpenseTerms @relation(fields: [termsId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  contact   Contact             @relation(fields: [contactId, ownerId], references: [id, ownerId], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([termsId, contactId])
+  @@schema("public")
+}
+
+// Snapshot del reparto de una ocurrencia. Sin estado ni pagos propios.
+model OccurrenceAllocation {
+  id              String                   @id @default(uuid(7)) @db.Uuid
+  ownerId         String
+  occurrenceId    String                   @db.Uuid
+  // null = parte del propietario.
+  contactId       String?                  @db.Uuid
+  connectionId    String?                  @db.Uuid
+  period          DateTime                 @db.Date
+  expenseName     String                   @db.VarChar(80)
+  shareBps        Int
+  baseAmountMinor BigInt
+  amountMinor     BigInt
+  currency        Currency
+  createdAt       DateTime                 @default(now()) @db.Timestamptz(3)
+  occurrence      MonthlyExpenseOccurrence @relation(fields: [occurrenceId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  contact         Contact?                 @relation(fields: [contactId, ownerId], references: [id, ownerId], onDelete: Cascade, onUpdate: NoAction)
+  connection      UserConnection?          @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+
+  @@index([occurrenceId])
+  @@index([ownerId, period])
+  @@index([connectionId, period])
   @@schema("public")
 }

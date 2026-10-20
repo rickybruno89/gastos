@@ -32,7 +32,11 @@ export async function request<T>(
 export function send<T>(
   path: string,
   schema: z.ZodType<T>,
-  options: { method: "POST" | "PATCH"; body: unknown; idempotencyKey: string },
+  options: {
+    method: "POST" | "PATCH" | "PUT";
+    body: unknown;
+    idempotencyKey: string;
+  },
 ) {
   return request(path, schema, {
     method: options.method,

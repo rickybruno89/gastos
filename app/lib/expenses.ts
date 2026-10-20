@@ -31,6 +31,7 @@ function useExpenseMutation<V, T>(
     onSettled: (_data, error) => {
       // Un conflicto o un cambio de regla puede afectar otros meses ya cargados.
       void client.invalidateQueries({ queryKey: ["months", userId] });
+      void client.invalidateQueries({ queryKey: ["shared", userId] });
       if (error instanceof ApiError && error.status === 401)
         void client.invalidateQueries({ queryKey: ["account"] });
     },
@@ -40,7 +41,7 @@ function useExpenseMutation<V, T>(
 export function useCreateExpense(userId: string) {
   return useExpenseMutation(
     userId,
-    (body: z.infer<typeof createMonthlyExpenseSchema>, idempotencyKey) =>
+    (body: z.input<typeof createMonthlyExpenseSchema>, idempotencyKey) =>
       send("/expenses", monthlyExpenseSchema, {
         method: "POST",
         body,
@@ -90,4 +91,43 @@ export function errorMessage(error: unknown) {
   return error instanceof ApiError
     ? error.message
     : "No pudimos completar la operación. Revisá tu conexión e intentá de nuevo.";
+}
+
+export function useRenameExpense(userId: string) {
+  return useExpenseMutation(
+    userId,
+    (
+      { occurrence, name }: { occurrence: Occurrence; name: string },
+      idempotencyKey,
+    ) =>
+      send(`/expenses/${occurrence.seriesId}`, monthlyExpenseSchema, {
+        method: "PATCH",
+        body: { version: occurrence.seriesVersion, name },
+        idempotencyKey,
+      }),
+  );
+}
+
+export type OccurrenceAction =
+  | { action: "skip" | "cancel"; reason: string }
+  | { action: "restore" }
+  | { action: "annual-payments"; months: number; amountMinor: string };
+
+// Omitir, dar de baja, restaurar y pago anual comparten forma: POST con versión.
+export function useOccurrenceAction(userId: string) {
+  return useExpenseMutation(
+    userId,
+    (
+      {
+        occurrence,
+        action: { action, ...body },
+      }: { occurrence: Occurrence; action: OccurrenceAction },
+      idempotencyKey,
+    ) =>
+      send(`/occurrences/${occurrence.id}/${action}`, occurrenceSchema, {
+        method: "POST",
+        body: { version: occurrence.version, ...body },
+        idempotencyKey,
+      }),
+  );
 }

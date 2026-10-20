@@ -11,6 +11,7 @@ import { createAuth } from "./auth/index";
 import type { AppConfig } from "./config";
 import { HttpError } from "./http";
 import { monthlyExpensesRouter } from "./routes/monthly-expenses";
+import { sharingRouter } from "./routes/sharing";
 
 export { HttpError };
 
@@ -115,6 +116,7 @@ export function createApp(config: AppConfig, databases: Databases) {
     });
   });
   app.use("/api/v2", monthlyExpensesRouter(databases));
+  app.use("/api/v2", sharingRouter(databases));
   app.use("/api", (_req, _res, next) =>
     next(new HttpError(404, "NOT_FOUND", "La ruta solicitada no existe.")),
   );

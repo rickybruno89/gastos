@@ -1,6 +1,6 @@
 # GastApp V2
 
-Base local en la rama `v2`: React Router + Node/Express + Prisma/PostgreSQL, con Better Auth y Google. Incluye acceso, sesiones, cuenta, preferencias y **Mi mes**: gastos mensuales reales (crear, consultar el período, cambiar importe o vencimiento, pagar y deshacer). El resto de los módulos sigue el roadmap del **[plan único de V2](docs/PLAN_V2.md)**.
+Base local en la rama `v2`: React Router + Node/Express + Prisma/PostgreSQL, con Better Auth y Google. Incluye acceso, sesiones, cuenta, preferencias y **Mi mes** y **Compartidos**: gastos mensuales y bimestrales reales (crear, cambiar importe o vencimiento, pagar y deshacer, omitir un mes, dar de baja, pago anual y renombrar; repartos con contactos sin cuenta, saldos por persona e invitaciones entre cuentas). El resto de los módulos sigue el roadmap del **[plan único de V2](docs/PLAN_V2.md)**.
 
 ## Empezar en local
 
@@ -29,7 +29,7 @@ npm run test:docker
 
 Integración crea y elimina una base temporal en Postgres.app. El ensayo Docker construye la imagen y comprueba, contra Postgres.app, arranque, base, rutas, assets, API y reinicio.
 
-El build no modifica la base. `db:migrate` solo admite `gastappv2` en localhost. Hasta el primer despliegue hay una única migración `init`; ver [comandos locales](docs/PLAN_V2.md#comandos-disponibles-para-la-fundación-local). Para staging/producción se prepararán recursos y migraciones controladas según el plan, sin conectar esos entornos durante las pruebas locales.
+El build no modifica la base. `db:migrate` solo admite `gastappv2` en localhost. Hasta el primer despliegue hay una única migración `init`: si cambia, `npm run db:reset` recrea la base local (borra sus datos); ver [comandos locales](docs/PLAN_V2.md#comandos-disponibles-para-la-fundación-local). Para staging/producción se prepararán recursos y migraciones controladas según el plan, sin conectar esos entornos durante las pruebas locales.
 
 ## Destinos
 
