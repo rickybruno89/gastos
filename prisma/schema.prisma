@@ -1,244 +1,205 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../server/generated/prisma"
+}
+
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schemas  = ["auth", "public"]
 }
 
 model User {
-  id                         String                     @id @default(cuid())
-  name                       String?
-  email                      String?                    @unique
-  emailVerified              DateTime?
-  image                      String?
-  accounts                   Account[]
-  sessions                   Session[]
-  sharedPaymentPersons       Person[]
-  expenses                   Expense[]
-  expensePaymentSummaries    ExpensePaymentSummary[]
-  creditCards                CreditCard[]
-  creditCardPaymentSummaries CreditCardPaymentSummary[]
-  creditCardExpenseItems     CreditCardExpenseItem[]
+  id            String                 @id
+  name          String
+  email         String                 @unique
+  emailVerified Boolean                @default(false)
+  image         String?
+  createdAt     DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime               @updatedAt @db.Timestamptz(3)
+  sessions      Session[]
+  accounts      Account[]
+  preferences   UserPreferences?
+  expenseSeries MonthlyExpenseSeries[]
+  auditEntries  AuditLog[]
+  idempotency   IdempotencyKey[]
+
+  @@map("user")
+  @@schema("auth")
 }
 
-model VerificationToken {
+model Session {
+  id        String   @id
+  expiresAt DateTime @db.Timestamptz(3)
+  token     String   @unique
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+  @@schema("auth")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(3)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(3)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
+  @@schema("auth")
+}
+
+model Verification {
+  id         String   @id
   identifier String
-  token      String   @unique
-  expires    DateTime
+  value      String
+  expiresAt  DateTime @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
 
-  @@unique([identifier, token])
+  @@index([identifier])
+  @@map("verification")
+  @@schema("auth")
 }
 
-model Person {
-  id                           String                  @id @default(cuid())
-  name                         String
-  sharedExpenses               Expense[]
-  sharedCreditCardExpenseItems CreditCardExpenseItem[]
-  user                         User                    @relation(fields: [userId], references: [id])
-  userId                       String
-  deleted                      Boolean                 @default(false)
-  deletedAt                    DateTime?
+model UserPreferences {
+  userId    String   @id
+  timeZone  String   @default("America/Argentina/Tucuman")
+  locale    String   @default("es-AR")
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([name, userId])
-}
-
-enum PaymentChannel {
-  EFECTIVO
-  BANCARIZADO
-  DEBITO_AUTOMATICO
+  @@schema("public")
 }
 
 enum Currency {
   ARS
   USD
+
+  @@schema("public")
 }
 
-model CreditCard {
-  id                     String                     @id @default(cuid())
-  name                   String
-  lastFourDigits         String?
-  color                  String                     @default("#143273")
-  textColor              String                     @default("#FFFFFF")
-  defaultCurrency        Currency                   @default(ARS)
-  paymentSummaries       CreditCardPaymentSummary[]
-  creditCardExpenseItems CreditCardExpenseItem[]
-  user                   User                       @relation(fields: [userId], references: [id])
-  userId                 String
-  deleted                Boolean                    @default(false)
-  deletedAt              DateTime?
-  createdAt              DateTime                   @default(now())
-  updatedAt              DateTime                   @updatedAt
+// DUE/vencido se deriva de dueDate y la fecha del usuario; no se persiste.
+enum OccurrenceStatus {
+  PLANNED
+  PAID
+
+  @@schema("public")
 }
 
-model CreditCardExpenseItem {
-  id                   String                         @id @default(cuid())
-  description          String
-  notes                String
-  amount               Float                          @default(0) // only for items with installments (this is the total amount)
-  currency             Currency                       @default(ARS)
-  sharedWith           Person[]
-  recurrent            Boolean
-  installmentsQuantity Int                            @default(0)
-  installmentsPaid     Int                            @default(0)
-  installmentsAmount   Float // this is the amount for recurrent items TOO
-  paymentBeginning     String
-  finished             Boolean                        @default(false)
-  finishedAt           DateTime?
-  creditCard           CreditCard                     @relation(fields: [creditCardId], references: [id])
-  creditCardId         String
-  paymentHistory       CreditCardSummaryExpenseItem[]
-  installmentPayments  InstallmentPayment[]
-  user                 User                           @relation(fields: [userId], references: [id])
-  userId               String
-  deleted              Boolean                        @default(false)
-  deletedAt            DateTime?
-  createdAt            DateTime                       @default(now())
-  updatedAt            DateTime                       @updatedAt
+model MonthlyExpenseSeries {
+  id             String                     @id @default(uuid(7)) @db.Uuid
+  ownerId        String
+  name           String                     @db.VarChar(80)
+  currency       Currency
+  intervalMonths Int                        @default(1) @db.SmallInt
+  firstPeriod    DateTime                   @db.Date
+  version        Int                        @default(1)
+  createdAt      DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime                   @updatedAt @db.Timestamptz(3)
+  owner          User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  terms          MonthlyExpenseTerms[]
+  occurrences    MonthlyExpenseOccurrence[]
 
-  @@index([finished, recurrent])
+  @@unique([id, ownerId])
+  @@index([ownerId, firstPeriod])
+  @@schema("public")
 }
 
-model CreditCardSummaryExpenseItem {
-  id                         String                   @id @default(cuid())
-  creditCardExpenseItem      CreditCardExpenseItem    @relation(fields: [creditCardExpenseItemId], references: [id])
-  creditCardExpenseItemId    String
-  creditCardPaymentSummary   CreditCardPaymentSummary @relation(fields: [creditCardPaymentSummaryId], references: [id])
-  creditCardPaymentSummaryId String
-  installmentsPaid           Int                      @default(0)
-  installmentsAmount         Float                    @default(0)
-  installmentsQuantity       Int                      @default(0)
+// Importe y vencimiento vigentes desde effectivePeriod hasta la siguiente versión.
+model MonthlyExpenseTerms {
+  id              String               @id @default(uuid(7)) @db.Uuid
+  ownerId         String
+  seriesId        String               @db.Uuid
+  effectivePeriod DateTime             @db.Date
+  amountMinor     BigInt
+  dueDay          Int                  @db.SmallInt
+  createdAt       DateTime             @default(now()) @db.Timestamptz(3)
+  series          MonthlyExpenseSeries @relation(fields: [seriesId, ownerId], references: [id, ownerId], onDelete: Cascade)
+
+  @@unique([seriesId, effectivePeriod])
+  @@schema("public")
 }
 
-model InstallmentPayment {
-  id                         String                    @id @default(cuid())
-  creditCardExpenseItem      CreditCardExpenseItem     @relation(fields: [creditCardExpenseItemId], references: [id])
-  creditCardExpenseItemId    String
-  creditCardPaymentSummary   CreditCardPaymentSummary? @relation(fields: [creditCardPaymentSummaryId], references: [id])
-  creditCardPaymentSummaryId String?
-  installmentNumber          Int
-  amount                     Float
-  currency                   Currency                  @default(ARS)
-  isPaid                     Boolean                   @default(false)
-  paymentDate                String?
-  createdAt                  DateTime                  @default(now())
-  updatedAt                  DateTime                  @updatedAt
+model MonthlyExpenseOccurrence {
+  id          String               @id @default(uuid(7)) @db.Uuid
+  ownerId     String
+  seriesId    String               @db.Uuid
+  period      DateTime             @db.Date
+  dueDate     DateTime             @db.Date
+  amountMinor BigInt
+  currency    Currency
+  status      OccurrenceStatus     @default(PLANNED)
+  version     Int                  @default(1)
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime             @updatedAt @db.Timestamptz(3)
+  series      MonthlyExpenseSeries @relation(fields: [seriesId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  payments    ExpensePayment[]
 
-  @@unique([creditCardExpenseItemId, installmentNumber])
-  @@index([isPaid, paymentDate])
+  @@unique([seriesId, period])
+  @@unique([id, ownerId])
+  @@index([ownerId, period])
+  @@schema("public")
 }
 
-model CreditCardPaymentSummary {
-  id                  String                         @id @default(cuid())
-  date                String
-  amount              Float
-  paid                Boolean                        @default(false)
-  dueDate             String
-  taxes               Float                          @default(0)
-  summarySequence     Int?
-  totalAmountARS      Float?
-  totalAmountUSD      Float?
-  taxesARS            Float                          @default(0)
-  taxesUSD            Float                          @default(0)
-  creditBalanceARS    Float                          @default(0)
-  creditBalanceUSD    Float                          @default(0)
-  itemHistoryPayment  CreditCardSummaryExpenseItem[]
-  installmentPayments InstallmentPayment[]
-  creditCard          CreditCard                     @relation(fields: [creditCardId], references: [id])
-  creditCardId        String
-  user                User                           @relation(fields: [userId], references: [id])
-  userId              String
-  createdAt           DateTime                       @default(now())
-  updatedAt           DateTime                       @updatedAt
+model ExpensePayment {
+  id           String                   @id @default(uuid(7)) @db.Uuid
+  ownerId      String
+  occurrenceId String                   @db.Uuid
+  paidOn       DateTime                 @db.Date
+  channel      String?                  @db.VarChar(40)
+  amountMinor  BigInt
+  currency     Currency
+  createdAt    DateTime                 @default(now()) @db.Timestamptz(3)
+  revertedAt   DateTime?                @db.Timestamptz(3)
+  occurrence   MonthlyExpenseOccurrence @relation(fields: [occurrenceId, ownerId], references: [id, ownerId], onDelete: Cascade)
 
-  @@unique([creditCardId, date])
-  @@unique([creditCardId, summarySequence])
+  @@index([occurrenceId])
+  @@schema("public")
 }
 
-model Expense {
-  id                String                  @id @default(cuid())
-  description       String
-  notes             String
-  amount            Float
-  currency          Currency                @default(ARS)
-  dueDate           String?
-  sharedWith        Person[]
-  paymentChannel    PaymentChannel          @default(BANCARIZADO)
-  isAnnualPayment   Boolean                 @default(false)
-  annualPaymentDate String?
-  user              User                    @relation(fields: [userId], references: [id])
-  userId            String
-  paymentSummaries  ExpensePaymentSummary[]
-  deleted           Boolean                 @default(false)
-  deletedAt         DateTime?
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
+model AuditLog {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  ownerId    String
+  action     String   @db.VarChar(80)
+  entityType String   @db.VarChar(60)
+  entityId   String   @db.Uuid
+  data       Json
+  requestId  String?  @db.VarChar(64)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, entityType, entityId])
+  @@schema("public")
 }
 
-model ExpensePaymentSummary {
-  id             String         @id @default(cuid())
-  expense        Expense        @relation(fields: [expenseId], references: [id])
-  expenseId      String
-  date           String
-  dueDate        String?
-  amount         Float
-  currency       Currency       @default(ARS)
-  paid           Boolean        @default(false)
-  paymentChannel PaymentChannel @default(BANCARIZADO)
-  user           User           @relation(fields: [userId], references: [id])
-  userId         String
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+model IdempotencyKey {
+  ownerId        String
+  key            String   @db.VarChar(80)
+  scope          String   @db.VarChar(160)
+  requestHash    String   @db.Char(64)
+  responseStatus Int?     @db.SmallInt
+  responseBody   Json?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  owner          User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  @@unique([expenseId, date])
-}
-
-model Invoice {
-  id                String @id @default(cuid())
-  contractorName    String
-  personalEmail     String
-  personalStreet    String
-  personalState     String
-  personalZip       String
-  destinationName   String
-  destinationStreet String
-  destinationState  String
-  destinationZip    String
-  destinationEmail  String
-  destinationTaxId  String
-  bankName          String
-  bankAddress       String
-  bankRoutingNumber String
-  bankAccountNumber String
-  bankAccountType   String
-  arsPayment        Float  @default(0)
-  usdPayment        Float  @default(0)
+  @@id([ownerId, key])
+  @@index([createdAt])
+  @@schema("public")
 }

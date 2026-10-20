@@ -1,0 +1,15 @@
+.git
+node_modules
+build
+.react-router
+server/generated
+.next
+.env
+.env.*
+!.env.example
+.data
+backups
+coverage
+tests
+*.dump
+*.tsbuildinfo

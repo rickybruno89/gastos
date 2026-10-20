@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "CreditCard" ADD COLUMN     "color" TEXT NOT NULL DEFAULT '#143273',
-ADD COLUMN     "textColor" TEXT NOT NULL DEFAULT '#FFFFFF';

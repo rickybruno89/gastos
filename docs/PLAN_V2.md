@@ -1,31 +1,31 @@
 # GastApp V2: plan de producto, arquitectura y producción
 
-Actualizado: **20/10/2026**. Estado: **listo para iniciar la implementación por etapas**; aplicación V2 e infraestructura de GastApp todavía pendientes de ejecutar.
+Actualizado: **20/10/2026**. Estado: **fundación V2 y Fase 1 (primer recorrido de gasto mensual) implementadas y validadas en local**; resto de módulos financieros y despliegue en el VPS pendientes. El login Google completo con una cuenta real requiere configurar las credenciales del cliente OAuth local.
 
 Este es el documento único de referencia de GastApp V2. Reúne el assessment funcional, las decisiones de arquitectura y el procedimiento de VPS/Coolify adaptado de Auguri. Sustituye las guías dispersas de V1, Opción B, Vercel y las copias de documentación de Auguri que había en este repositorio.
 
 ## 1. Decisiones y estado real
 
-| Tema | Decisión o estado |
-| --- | --- |
-| Producto | Obligaciones por período, tarjetas, repartos informativos y Deudas manuales independientes. |
-| Stack confirmado | React Router + Node/Express + Prisma + PostgreSQL, con autenticación Google. |
-| Construcción | V2 desde cero, con schema y contratos propios; primera producción con base vacía. |
-| Forma de trabajo | Implementar y probar primero todo el alcance de la primera publicación en local; después desplegar el mismo código y migraciones en Coolify. |
-| Alojamiento confirmado | App y PostgreSQL en el VPS existente con Coolify, siguiendo la operación de Auguri. |
-| Dominio de GastApp | **`gastapp.ingbruno.ar`**, confirmado por el usuario. |
-| Dominio raíz | **`ingbruno.ar`**, reservado para una futura landing; contenido y tecnología por definir. |
-| Staging propuesto | `staging.gastapp.ingbruno.ar`, separado de producción. |
-| Registro/delegación | Pendientes según lo informado por el usuario; disponibilidad y titularidad no verificadas. |
-| DNS propuesto | Cloudflare en la misma cuenta de Auguri, pendiente de configurar. |
-| Presupuesto | Reutilizar el VPS y servicios gratuitos, sin nuevas suscripciones. Registrar/renovar `ingbruno.ar` tiene un arancel propio de NIC Argentina; ver sección 7.3. |
-| Login | Google confirmado. Better Auth recomendado para Express/Prisma; integración pendiente de validar. |
-| Importación de V1 | Script posterior e independiente desde Supabase; fuera del camino de lanzamiento. |
-| Estado del código | El repositorio aún contiene V1 (Next.js/NextAuth/Prisma); V2 no está implementada. |
+| Tema                   | Decisión o estado                                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Producto               | Obligaciones por período, tarjetas, repartos informativos y Deudas manuales independientes.                                                                   |
+| Stack confirmado       | React Router + Node/Express + Prisma + PostgreSQL, con autenticación Google.                                                                                  |
+| Construcción           | V2 desde cero, con schema y contratos propios; primera producción con base vacía.                                                                             |
+| Forma de trabajo       | Implementar y probar primero todo el alcance de la primera publicación en local; después desplegar el mismo código y migraciones en Coolify.                  |
+| Alojamiento confirmado | App y PostgreSQL en el VPS existente con Coolify, siguiendo la operación de Auguri.                                                                           |
+| Dominio de GastApp     | **`gastapp.ingbruno.ar`**, confirmado por el usuario.                                                                                                         |
+| Dominio raíz           | **`ingbruno.ar`**, reservado para una futura landing; contenido y tecnología por definir.                                                                     |
+| Staging propuesto      | `staging.gastapp.ingbruno.ar`, separado de producción.                                                                                                        |
+| Registro/delegación    | Pendientes según lo informado por el usuario; disponibilidad y titularidad no verificadas.                                                                    |
+| DNS propuesto          | Cloudflare en la misma cuenta de Auguri, pendiente de configurar.                                                                                             |
+| Presupuesto            | Reutilizar el VPS y servicios gratuitos, sin nuevas suscripciones. Registrar/renovar `ingbruno.ar` tiene un arancel propio de NIC Argentina; ver sección 7.3. |
+| Login                  | Better Auth 1.7.12 + Google implementados con Prisma. Inicio OAuth, sesiones y permisos probados; login real pendiente de credenciales locales.               |
+| Importación de V1      | Script posterior e independiente desde Supabase; fuera del camino de lanzamiento.                                                                             |
+| Estado del código      | Rama `v2`: fundación, auth, preferencias y “Mi mes” real (crear, consultar, cambiar importe, pagar/deshacer) sobre Postgres.app; pruebas e imagen Docker.     |
 
 V2 tiene libertad para definir tablas, IDs, API, sesiones y pantallas nuevos. No requiere convivencia, sincronización ni retrocompatibilidad con V1. Los datos del futuro importador se adaptarán al modelo de V2.
 
-El VPS y los servicios de Auguri se toman como infraestructura existente según sus guías verificadas al 15/10/2026. La capacidad disponible, la IP vigente y la configuración actual del proxy se revisarán antes del despliegue de GastApp. Esta planificación no ejecutó accesos al servidor ni cambios de DNS, base, código o infraestructura.
+El VPS y los servicios de Auguri se toman como infraestructura existente según sus guías verificadas al 15/10/2026. La capacidad disponible, la IP vigente y la configuración actual del proxy se revisarán antes del despliegue de GastApp. La implementación y las pruebas de esta entrega se ejecutaron en local: base y contenedores propios de GastApp. No se accedió al VPS ni se cambiaron DNS, bases remotas o infraestructura de producción.
 
 ### Alcance
 
@@ -69,7 +69,7 @@ La aplicación autenticada no requiere SSR en ejecución. React Router organiza 
 
 ### Versiones y dependencias
 
-Node 24, Prisma 7 y PostgreSQL 18 son las líneas de referencia operativa de Auguri. Las versiones exactas de React Router, React, Express, Prisma y librerías auxiliares se fijarán en el lockfile durante la fundación técnica, verificando compatibilidad y soporte antes de adoptarlas. No se copia la antigüedad de las dependencias de V1 ni se actualizan automáticamente versiones mayores.
+Versiones fijadas en el lockfile de la fundación: Node 24, React Router 7.18.4, React 19.2.6, Express 5.3.0, Prisma 7.10.1, PostgreSQL 18, Vite 8.3.4 y Better Auth 1.7.12. Se verificaron tipos, lint, formato, pruebas y build; las dependencias se ajustaron para resolver los avisos de seguridad detectados. Las futuras actualizaciones se revisarán antes de adoptarlas.
 
 Se conserva la propuesta de TypeScript, Vite, TanStack Query, React Hook Form y Zod. Hono, Drizzle y servicios Supabase quedan fuera del stack destino. La futura landing puede elegir su propia tecnología.
 
@@ -142,10 +142,10 @@ Estas reglas se conservan del assessment. Los mecanismos técnicos se adaptan al
 
 ### Las dos modalidades de compartidos
 
-| Modalidad | Qué requiere la contraparte | Qué ve el propietario | Qué ve la contraparte |
-| --- | --- | --- | --- |
-| Contacto manual | Solo un nickname; no necesita cuenta, email ni aceptación. | Cuánto corresponde a esa persona por período y moneda. | Nada: el contacto es privado del propietario. |
-| Usuario conectado | Cuenta Google/GastApp y conexión aceptada. | Su perspectiva del reparto y los saldos derivados. | El detalle compartido autorizado y su participación, en lectura. |
+| Modalidad         | Qué requiere la contraparte                                | Qué ve el propietario                                  | Qué ve la contraparte                                            |
+| ----------------- | ---------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------- |
+| Contacto manual   | Solo un nickname; no necesita cuenta, email ni aceptación. | Cuánto corresponde a esa persona por período y moneda. | Nada: el contacto es privado del propietario.                    |
+| Usuario conectado | Cuenta Google/GastApp y conexión aceptada.                 | Su perspectiva del reparto y los saldos derivados.     | El detalle compartido autorizado y su participación, en lectura. |
 
 Un gasto de ARS 100.000 repartido al 50% permite al propietario ver “Juan me debe ARS 50.000” incluso si Juan nunca se registra. Una invitación pendiente o rechazada no bloquea ese registro privado. Con una conexión aceptada, Juan ve además “Debo ARS 50.000 a Ricky” desde su cuenta, consultando el mismo origen financiero.
 
@@ -179,8 +179,9 @@ Reglas:
 - La serie guarda la regla de vencimiento y cada ocurrencia conserva su fecha efectiva.
 - Cambiar el vencimiento de una ocurrencia no pagada actualiza el mes actual y la regla de meses futuros.
 - Cambiar un importe ofrece “solo este mes” o “este mes y futuros”.
-- Estados: PLANNED, DUE, PAID, COVERED, SKIPPED y CANCELLED.
-- Marcar pagado crea ExpensePayment con fecha y canal; no existe pago parcial de este agregado.
+- Estados: PLANNED, DUE, PAID, COVERED, SKIPPED y CANCELLED. Implementado en Fase 1: se persisten `PLANNED` y `PAID`; “vencido” y “vence hoy” se derivan de `dueDate` y la fecha del usuario, sin job. COVERED, SKIPPED y CANCELLED se agregan en Fase 2.
+- Marcar pagado crea ExpensePayment con fecha y canal; no existe pago parcial de este agregado. Fase 1: fecha de hoy en la zona del usuario y canal opcional (sin canal predeterminado configurable todavía). Deshacer marca el pago como revertido y lo conserva para auditoría.
+- Importe y día de vencimiento viven en versiones de condiciones (`MonthlyExpenseTerms`) con vigencia desde un período; “este mes y futuros” crea o actualiza la versión del período, ajusta las posteriores y las ocurrencias futuras no pagadas ya materializadas.
 - Una ocurrencia pagada es inmutable. Para corregirla se deshace el pago, se edita y se vuelve a pagar.
 - Un pago anual crea CoveragePeriod sin cambiar la recurrencia mensual subyacente.
 - Los meses cubiertos continúan visibles como “Pagado anual”, con estado COVERED y payableAmountMinor igual a cero.
@@ -345,7 +346,7 @@ Contrato conceptual:
 
 ```ts
 interface StatementParser {
-  parse(input: StatementDocument): Promise<ParsedStatement>
+  parse(input: StatementDocument): Promise<ParsedStatement>;
 }
 ```
 
@@ -433,16 +434,16 @@ Los DTO son contratos propios; ningún tipo de tabla o librería de persistencia
 
 ## 5. Identidad y acceso
 
-Se propone Better Auth para manejar Google y sesiones, con integración Express y adaptador Prisma. Corre dentro del contenedor de GastApp y usa PostgreSQL; no requiere otro servicio de autenticación desplegado en el VPS. La librería sigue como propuesta técnica a validar, mientras Google y el stack principal están confirmados.
+Se implementó Better Auth para manejar Google y sesiones, con integración Express y adaptador Prisma. Corre dentro del contenedor de GastApp y usa PostgreSQL. La fundación separa los roles de autenticación y aplicación, y tiene una primera tabla de preferencias protegida con RLS. Contactos, conexiones y gastos compartidos se implementarán en sus fases según las reglas de este plan.
 
-| Entidad | Responsabilidad |
-| --- | --- |
-| `User` | Cuenta de GastApp con identificador interno estable. |
-| `Account` | Identidad Google vinculada mediante el identificador estable del proveedor. |
-| `Session` | Sesión persistida que permite resolver el usuario autenticado. |
-| `Contact` | Nickname privado y email opcional para repartir sin cuenta real. |
-| `ConnectionInvitation` | Invitación al destinatario; no concede acceso por sí sola. |
-| `UserConnection` | Relación aceptada entre usuarios para visibilidad compartida. |
+| Entidad                | Responsabilidad                                                             |
+| ---------------------- | --------------------------------------------------------------------------- |
+| `User`                 | Cuenta de GastApp con identificador interno estable.                        |
+| `Account`              | Identidad Google vinculada mediante el identificador estable del proveedor. |
+| `Session`              | Sesión persistida que permite resolver el usuario autenticado.              |
+| `Contact`              | Nickname privado y email opcional para repartir sin cuenta real.            |
+| `ConnectionInvitation` | Invitación al destinatario; no concede acceso por sí sola.                  |
+| `UserConnection`       | Relación aceptada entre usuarios para visibilidad compartida.               |
 
 El email se usa para contacto e invitaciones; la identidad no depende de que permanezca igual. Google valida quién ingresa y GastApp decide qué datos puede leer o modificar.
 
@@ -452,8 +453,8 @@ No se publica automáticamente el historial al vincular un contacto. Antes de im
 
 ### 5.1. Login, sesiones y permisos
 
-- Google es el único proveedor inicial. Se recomienda Better Auth con sus integraciones Express y Prisma; esta librería sigue como propuesta a validar durante la fundación técnica.
-- Para la web se proponen sesiones persistidas en PostgreSQL y una cookie opaca segura, limitada al host de cada entorno, con expiración y revocación verificadas en servidor.
+- Google es el único proveedor inicial. Better Auth está integrado con Express y Prisma. El cliente OAuth real se configura por entorno; no se habilitan contraseñas ni proveedores alternativos.
+- La web usa sesiones persistidas en PostgreSQL y una cookie opaca HttpOnly, SameSite=Lax y limitada al host. Secure se activa en producción. La sesión dura siete días, se renueva como máximo una vez al día y se valida sin cache de cookie para respetar la revocación en la siguiente solicitud. Producción exige HTTPS y Google configurado.
 - Las mutaciones financieras requieren protección CSRF y validación de origen, además de los controles del módulo de auth.
 - El middleware obtiene la identidad autenticada y deriva `currentUserId`. Ningún endpoint acepta un `userId` enviado por el cliente como prueba de ownership.
 - Cada caso de uso aplica autorización explícita, incluidas las lecturas compartidas con contrapartes conectadas.
@@ -497,6 +498,45 @@ La materialización normal sigue siendo on-demand. Se propone un worker Node con
 PDF tendrá límites explícitos de tamaño, páginas, tiempo, concurrencia y costo. Se medirán con archivos representativos en el VPS compartido antes de fijar sus parámetros operativos.
 
 ## 6. Experiencia de uso
+
+### Sistema visual V2 y prototipo navegable
+
+La V2 estrena identidad e interfaz desde cero. No se reutilizan el diseño, los layouts, la navegación ni los componentes visuales de V1. Las reglas funcionales de este documento siguen siendo la referencia.
+
+**Dirección visual aceptada por el usuario:** una aplicación clara, cuidada y tranquila: superficies blancas sobre gris azulado, azul profundo como acento principal, jerarquía tipográfica Inter y cifras legibles. Sin estética bancaria recargada, gráficos decorativos ni indicadores que no ayuden a decidir qué pagar.
+
+| Elemento      | Decisión                                                                                                                                                                                                                           |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Color         | Fondo `#f5f7fb`, superficie blanca, texto `#1c2536`, acción principal `#3458dd`. Verde para pagos, ámbar para revisión y rojo para vencidos/errores, siempre acompañados de texto.                                                 |
+| Tipografía    | Inter variable servida desde la app, sin peticiones a Google Fonts. Cifras monetarias alineadas y monedas explícitas.                                                                                                              |
+| Componentes   | Componentes propios compartidos: Button, Badge, Modal, AppShell, tarjetas, filtros, formularios, avisos y estados vacíos. Radix Dialog para foco, teclado y semántica de modales; Lucide para iconos consistentes.                 |
+| Navegación    | Mi mes, Tarjetas, Compartidos y Deudas como destinos principales. Cuenta como destino secundario. Sidebar en escritorio y barra inferior en móvil; sin trasladar una tabla ancha al teléfono.                                      |
+| Jerarquía     | Período y creación visibles; primero lo pendiente, después lo resuelto; importes ARS y USD separados. Cada cifra debe indicar si es importe completo, parte propia o saldo compartido.                                             |
+| Interacción   | Acciones claras en cada fila, filtros de estado y búsqueda; confirmación tras guardar, pagar o deshacer. Las acciones con consecuencias reales usan los contratos y reglas transaccionales del backend.                            |
+| Formularios   | Labels visibles, errores cerca del campo, moneda explícita, entrada decimal y preservación de lo escrito al fallar. Recurrencia y reparto se revelan según la elección, sin un formulario inicial interminable.                    |
+| Accesibilidad | Foco visible, navegación por teclado, textos además de color, avisos anunciados, targets cómodos y movimiento reducido. Los diálogos cierran con Escape y devuelven el foco. Verificar contraste y zoom al implementar cada flujo. |
+| Estados       | Skeleton sin esperas artificiales; error con reintento; vacío con siguiente paso concreto. Nunca mostrar métricas ficticias como si fueran datos reales de la cuenta.                                                              |
+
+**Implementado para revisar el diseño:** `/acceso`, `/cuenta` y la bienvenida autenticada usan la nueva identidad. `/vista-previa` es un prototipo público y aislado con datos ficticios identificados: mes, tarjetas, contactos manuales/usuarios conectados y deudas independientes. Permite buscar, filtrar, cambiar entre tres meses de ejemplo, marcar/deshacer pagos y crear un gasto personal temporal. No consulta datos financieros ni escribe en la base; al recargar se reinicia. Se ofrece desde el acceso para revisar la propuesta sin necesitar credenciales de Google.
+
+El prototipo no sustituye los módulos de producto: faltan los flujos completos de recurrencias, reparto, pago anual, creación unificada mensual/tarjeta, conciliación, invitaciones y deudas conectados a la API. La pantalla mensual final debe incorporar las alertas y reglas detalladas abajo. Las cifras del prototipo son importes completos de gastos; los saldos compartidos se presentan aparte.
+
+Las bases de los componentes están documentadas en [Radix Dialog](https://www.radix-ui.com/primitives/docs/components/dialog), [Lucide React](https://lucide.dev/guide/react) y [Fontsource Inter](https://fontsource.org/fonts/inter/use).
+
+### Mobile first: iPhone como dispositivo principal
+
+El usuario confirmó que GastApp se usa principalmente desde un iPhone. **Todos los nuevos recorridos se diseñan y verifican primero en móvil; escritorio amplía esa base.** La propuesta visual está aceptada, con esta prioridad de uso.
+
+- Navegación inferior persistente y acciones táctiles de al menos 44 × 44 píxeles CSS; ninguna acción depende de hover, gestos ocultos o iconos sin nombre accesible.
+- “Crear gasto” queda al alcance del pulgar aunque se recorra una lista larga, sin tapar el último elemento. Pagar ofrece deshacer en el aviso de confirmación.
+- El mes abre en pendientes; pagados sigue disponible como filtro explícito. Resumen compacto con ARS y USD separados para llegar antes a los gastos, evitando una sucesión de tarjetas de escritorio apiladas.
+- En móvil los gastos se leen como filas con nombre, importe, vencimiento y acción propia. La búsqueda se abre bajo demanda y conserva una entrada cómoda.
+- Los formularios se abren desde abajo, con cierre explícito, scroll propio y botón de envío accesible. VisualViewport ajusta el panel al área visible cuando aparece el teclado; se preserva el zoom del usuario.
+- Inputs y selects de 16 px o más, teclado decimal/numérico según el campo, labels visibles y errores legibles. No se bloquea el zoom de Safari.
+- `viewport-fit=cover` y safe areas en cabecera, laterales y pie; se consideran indicador Home, barras del navegador y orientación horizontal.
+- Revisar como mínimo 375 × 667, 390 × 844 y 430 × 932, horizontal y tamaños de texto aumentados. Probar interacción con WebKit y Chromium; la comprobación final del teclado y safe areas reales requiere Safari en un iPhone físico.
+
+Referencias técnicas: [safe areas en WebKit](https://webkit.org/blog/7929/designing-websites-for-iphone-x/) y [VisualViewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport).
 
 ### 6.1. Dashboard mensual
 
@@ -596,38 +636,67 @@ Esta guía reutiliza la plataforma y el procedimiento de Auguri, con recursos es
 
 Las diferencias entre entornos serán URLs, conexiones de base, secretos, clientes OAuth, destinos de correo y rutas/volúmenes. Los datos locales de prueba no se copian automáticamente a producción. La primera publicación mantiene la decisión de iniciar con base vacía.
 
-La fundación incluirá comandos para levantar desarrollo, ejecutar verificaciones, construir/probar Docker y aplicar migraciones, con instrucciones de uso en este mismo documento cuando estén implementados. Hoy son entregables pendientes, no comandos ya disponibles en V2.
+La fundación incluye comandos para levantar desarrollo, ejecutar verificaciones, construir/probar Docker y aplicar migraciones. Sus instrucciones de uso están en la siguiente sección.
 
 Después de la configuración inicial, el flujo habitual será: **probar local → commit/push → despliegue en Coolify → comprobación en destino**. Los cambios de schema siguen incluyendo su migración y respaldo controlados, según la sección 7.8.
 
+### Comandos disponibles para la fundación local
+
+La rama `v2` ya implementa este recorrido. La base local es **Postgres.app**, servidor “Gastapp v2” (PostgreSQL 18) en `127.0.0.1:5555`, base `gastappv2`; está separada de los demás servidores locales y de la base de V1. Docker/OrbStack solo se necesita para el ensayo de la imagen.
+
+```bash
+npm ci
+npm run setup:local
+npm run db:setup
+npm run db:migrate
+npm run dev
+```
+
+Abrir `http://localhost:3000`. Vite atiende la web en 3000 y reenvía API/healthcheck a Express en 3001 durante desarrollo. La imagen compilada atiende todo con Express en un único puerto. `.env.local` es privada e ignorada por Git; la `.env` de V1 se conserva y no se carga. Vite también tiene deshabilitada su carga automática de archivos env.
+
+`setup:local` crea secretos nuevos una sola vez y respeta una configuración local existente. `db:setup` se conecta con el superusuario de Postgres.app (el usuario de macOS) y crea o actualiza los roles `gastapp_owner` (migraciones, con `CREATEDB` para las bases de prueba), `gastapp_auth` y `gastapp_app` con las contraseñas de `.env.local`, y la base `gastappv2`; puede repetirse. `db:migrate` valida que el destino sea `gastappv2` en localhost y aplica las migraciones versionadas. Para un VPS nuevo deberán prepararse esos roles con sus propios secretos antes de aplicar la migración.
+
+**Migración única mientras no haya despliegue.** Hasta la primera publicación, el schema completo vive en una sola migración `202610200001_init` que se regenera al cambiar el modelo (`prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script`, más el SQL manual de constraints, triggers, grants y RLS al final del archivo). Para aplicarla de nuevo en local se recrea la base `gastappv2`. A partir del primer despliegue, cada cambio de schema tendrá su propia migración incremental.
+
+```bash
+npm run check
+npm run test:integration
+npm run build
+npm run test:docker
+```
+
+`check` ejecuta tipos, lint, formato y pruebas unitarias. Integración instala el schema en una base local temporal `gastapp_test_*` y la elimina al terminar; no cambia los datos de trabajo. `test:docker` construye `gastapp:v2-local`, lanza un contenedor temporal que llega a Postgres.app mediante `host.docker.internal:5555`, comprueba rutas/API/base/assets/reinicio y lo elimina al terminar. Usa `NODE_ENV=test` para probar el build compilado sobre HTTP localhost sin credenciales Google reales; la imagen usa producción por defecto y mantiene sus requisitos de HTTPS/Google para el despliegue público. No se entregan las credenciales del propietario/migrador al contenedor de ensayo.
+
+El ensayo no despliega a Coolify ni accede a bases remotas. Si se cambian passwords de `.env.local`, volver a ejecutar `db:setup` actualiza los roles existentes.
+
 ### 7.1. Qué se reutiliza y qué se crea
 
-| Recurso | Tratamiento |
-| --- | --- |
-| Ubuntu, Docker, acceso SSH y Coolify | Reutilizar el VPS existente. |
-| Traefik y certificados | Reutilizar el proxy, preparando permisos/resolver para la zona `ingbruno.ar`. |
-| GitHub App/source | Autorizar también el repositorio de GastApp en la instalación existente. |
-| Uptime Kuma | Agregar monitores de GastApp en el servicio existente. |
+| Recurso                              | Tratamiento                                                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------- |
+| Ubuntu, Docker, acceso SSH y Coolify | Reutilizar el VPS existente.                                                       |
+| Traefik y certificados               | Reutilizar el proxy, preparando permisos/resolver para la zona `ingbruno.ar`.      |
+| GitHub App/source                    | Autorizar también el repositorio de GastApp en la instalación existente.           |
+| Uptime Kuma                          | Agregar monitores de GastApp en el servicio existente.                             |
 | Notificaciones operativas de Coolify | Reutilizar la configuración del equipo y comprobar eventos de los recursos nuevos. |
-| Proyecto y recursos de GastApp | Crear aplicaciones, bases, secretos y volúmenes propios por entorno. |
-| Backups | Configurar respaldos de GastApp; los scripts de Auguri no los incluyen. |
-| Landing `ingbruno.ar` | Recurso futuro separado, con contenido y stack por definir. |
+| Proyecto y recursos de GastApp       | Crear aplicaciones, bases, secretos y volúmenes propios por entorno.               |
+| Backups                              | Configurar respaldos de GastApp; los scripts de Auguri no los incluyen.            |
+| Landing `ingbruno.ar`                | Recurso futuro separado, con contenido y stack por definir.                        |
 
 La separación por proyectos no aísla CPU, RAM, disco ni necesariamente redes Docker. Medir capacidad y picos de build de ambos proyectos antes de asignar recursos definitivos. Mantener las bases privadas y credenciales restringidas por aplicación/entorno.
 
 ### 7.2. Mapa propuesto de recursos
 
-| Recurso | Producción | Staging |
-| --- | --- | --- |
-| Proyecto Coolify | GastApp | GastApp |
-| Entorno | `production` | `staging` |
-| Rama | `main` | `develop` |
-| Aplicación | `gastapp` | `gastapp-staging` |
-| PostgreSQL | `gastapp-db` | `gastapp-db-staging` |
-| URL | `https://gastapp.ingbruno.ar` | `https://staging.gastapp.ingbruno.ar` (propuesta) |
-| Base y usuarios SQL | Propios de producción | Propios de staging |
-| Volumen PDF, cuando corresponda | `gastapp-private-files` | `gastapp-staging-private-files` |
-| Secretos Google y sesión | Propios de producción | Propios de staging |
+| Recurso                         | Producción                    | Staging                                           |
+| ------------------------------- | ----------------------------- | ------------------------------------------------- |
+| Proyecto Coolify                | GastApp                       | GastApp                                           |
+| Entorno                         | `production`                  | `staging`                                         |
+| Rama                            | `main`                        | `develop`                                         |
+| Aplicación                      | `gastapp`                     | `gastapp-staging`                                 |
+| PostgreSQL                      | `gastapp-db`                  | `gastapp-db-staging`                              |
+| URL                             | `https://gastapp.ingbruno.ar` | `https://staging.gastapp.ingbruno.ar` (propuesta) |
+| Base y usuarios SQL             | Propios de producción         | Propios de staging                                |
+| Volumen PDF, cuando corresponda | `gastapp-private-files`       | `gastapp-staging-private-files`                   |
+| Secretos Google y sesión        | Propios de producción         | Propios de staging                                |
 
 El panel mantiene su dirección documentada `coolify.auguri.ar`. Mudanzas a `coolify.ingbruno.ar` o del panel de Kuma son tareas de plataforma independientes. El dominio raíz queda reservado a la futura landing; el despliegue de GastApp se configura únicamente con sus hosts.
 
@@ -639,15 +708,15 @@ Estado informado: registro o delegación de `ingbruno.ar` pendientes; disponibil
 
 Verificado con fuentes oficiales el **20/10/2026**:
 
-| Concepto | Costo previsto |
-| --- | --- |
-| DNS de `ingbruno.ar` en Cloudflare Free | Sin cargo; puede coexistir con Auguri en la misma cuenta. |
-| Subdominios `gastapp` y `staging.gastapp` | Sin cargo separado por dominio o subdominio en Cloudflare Free. |
-| Delegación en NIC Argentina | Sin cargo. |
-| Certificados Let's Encrypt en Traefik | Sin cargo. |
-| Hosting de app, base y futura landing | Se reutiliza el VPS contratado; capacidad a verificar antes de asignar recursos. |
-| Registro de un `.ar` en NIC Argentina | **ARS 25.500** para el alta, según el arancel publicado. |
-| Renovación anual del `.ar` | **ARS 25.500** según el arancel publicado; confirmar el importe vigente al renovar. |
+| Concepto                                  | Costo previsto                                                                      |
+| ----------------------------------------- | ----------------------------------------------------------------------------------- |
+| DNS de `ingbruno.ar` en Cloudflare Free   | Sin cargo; puede coexistir con Auguri en la misma cuenta.                           |
+| Subdominios `gastapp` y `staging.gastapp` | Sin cargo separado por dominio o subdominio en Cloudflare Free.                     |
+| Delegación en NIC Argentina               | Sin cargo.                                                                          |
+| Certificados Let's Encrypt en Traefik     | Sin cargo.                                                                          |
+| Hosting de app, base y futura landing     | Se reutiliza el VPS contratado; capacidad a verificar antes de asignar recursos.    |
+| Registro de un `.ar` en NIC Argentina     | **ARS 25.500** para el alta, según el arancel publicado.                            |
+| Renovación anual del `.ar`                | **ARS 25.500** según el arancel publicado; confirmar el importe vigente al renovar. |
 
 Cloudflare gestiona la zona DNS; el registro y la renovación del nombre son conceptos distintos. Para conservar `ingbruno.ar` hay que contemplar ese costo adicional al VPS. Una vez registrado, no se paga a NIC por crear sus subdominios. La delegación no transfiere el registro a Cloudflare ni exige contratar Cloudflare Registrar o un plan pago.
 
@@ -678,11 +747,11 @@ Los NS deben coincidir con los asignados a la zona por Cloudflare; los A deben d
 
 Procedimientos oficiales: [Cloudflare: alta de zona y nameservers](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/) y [NIC: delegación](https://nic.ar/es/ayuda/instructivos/delegacion-de-dominios).
 
-| Tipo | Nombre en la zona `ingbruno.ar` | Destino y uso |
-| --- | --- | --- |
-| A | `gastapp` | `IP_DEL_VPS`: GastApp producción. |
-| A | `staging.gastapp` | Misma IP: staging propuesto. |
-| A | `@` | Reservado para la futura landing; configurarlo cuando su hosting esté definido. |
+| Tipo | Nombre en la zona `ingbruno.ar` | Destino y uso                                                                   |
+| ---- | ------------------------------- | ------------------------------------------------------------------------------- |
+| A    | `gastapp`                       | `IP_DEL_VPS`: GastApp producción.                                               |
+| A    | `staging.gastapp`               | Misma IP: staging propuesto.                                                    |
+| A    | `@`                             | Reservado para la futura landing; configurarlo cuando su hosting esté definido. |
 
 Los nombres DNS se muestran completos en la tabla de entornos. Para la preparación inicial se propone DNS only, terminando HTTPS en Traefik. GastApp usa hosts fijos y no necesita copiar los routers wildcard de Auguri. No se requiere un subdominio adicional para la API.
 
@@ -713,34 +782,44 @@ El Dockerfile V2 seguirá el patrón multietapa de Auguri: dependencias, compila
 
 Variables conceptuales por entorno:
 
-| Variable o grupo | Valor previsto |
-| --- | --- |
-| URL pública | `https://gastapp.ingbruno.ar` o la URL de staging; nombre de variable a fijar con auth. |
-| Conexiones PostgreSQL | URLs internas con roles de ejecución, autenticación y migración según permisos. |
-| Google OAuth | Client ID y secreto específicos del entorno. |
-| Secreto de sesión/auth | Nuevo y distinto por entorno, con nombre según la librería elegida. |
-| `PORT` | `3000` como propuesta. |
-| Archivos privados | Ruta interna propuesta `/data/private-files`, cuando se implemente PDF. |
-| SMTP | Configuración de email de producto y recordatorios, independiente de las alertas de Coolify. |
-| IA opcional | Clave solo del backend cuando se habilite PDF/IA. |
+| Variable o grupo       | Valor previsto                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| URL pública            | `https://gastapp.ingbruno.ar` o la URL de staging; nombre de variable a fijar con auth.      |
+| Conexiones PostgreSQL  | URLs internas con roles de ejecución, autenticación y migración según permisos.              |
+| Google OAuth           | Client ID y secreto específicos del entorno.                                                 |
+| Secreto de sesión/auth | Nuevo y distinto por entorno, con nombre según la librería elegida.                          |
+| `PORT`                 | `3000` como propuesta.                                                                       |
+| Archivos privados      | Ruta interna propuesta `/data/private-files`, cuando se implemente PDF.                      |
+| SMTP                   | Configuración de email de producto y recordatorios, independiente de las alertas de Coolify. |
+| IA opcional            | Clave solo del backend cuando se habilite PDF/IA.                                            |
 
 Guardar secretos en Coolify y sus copias privadas en un gestor. Los futuros `.env.staging` y `.env.production`, dumps y backups deberán quedar ignorados por Git antes de crearlos. No se reutilizan credenciales de Auguri ni las antiguas de V1.
 
 ### 7.6. Google por entorno
 
-La librería propuesta es Better Auth. Si se adopta su ruta estándar, los callbacks previstos son:
+La librería implementada es Better Auth y el prefijo es `/api/auth`. El inicio OAuth se probó automáticamente con su callback local. Los callbacks por entorno son:
 
-| Entorno | Callback previsto |
-| --- | --- |
-| Local | `http://localhost:3000/api/auth/callback/google` |
-| Staging | `https://staging.gastapp.ingbruno.ar/api/auth/callback/google` |
-| Producción | `https://gastapp.ingbruno.ar/api/auth/callback/google` |
+| Entorno    | Callback previsto                                              |
+| ---------- | -------------------------------------------------------------- |
+| Local      | `http://localhost:3000/api/auth/callback/google`               |
+| Staging    | `https://staging.gastapp.ingbruno.ar/api/auth/callback/google` |
+| Producción | `https://gastapp.ingbruno.ar/api/auth/callback/google`         |
 
-Las rutas finales se verificarán con la configuración implementada antes de registrarlas en Google Cloud. Los orígenes confiables y cookies corresponden al host de cada entorno. No se comparten cookies mediante `Domain=ingbruno.ar` o `Domain=gastapp.ingbruno.ar`; producción, staging y la futura landing mantienen su aislamiento de sesión.
+Las URLs públicas definitivas se verificarán al preparar cada entorno de Google Cloud. Los orígenes confiables y cookies corresponden al host de cada entorno. No se comparten cookies mediante `Domain=ingbruno.ar` o `Domain=gastapp.ingbruno.ar`; producción, staging y la futura landing mantienen su aislamiento de sesión.
+
+#### Configurar el ingreso real con Google en local
+
+1. En Google Cloud, usar un proyecto propio y preparar su configuración de OAuth/consentimiento si todavía falta. Crear un cliente OAuth de tipo aplicación web para desarrollo.
+2. Registrar `http://localhost:3000` como origen y `http://localhost:3000/api/auth/callback/google` como URI de redirección autorizado.
+3. Si el proyecto está en modo de pruebas, agregar las cuentas Google que se usarán para revisar el login y los compartidos como usuarios de prueba.
+4. Completar `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` en `.env.local`, conservando los secretos nuevos ya generados para PostgreSQL y sesiones.
+5. Reiniciar `npm run dev`, abrir `http://localhost:3000` y elegir Continuar con Google. Comprobar acceso, preferencias, recarga de página y cerrar sesión.
+
+Sin ambas credenciales el entorno local arranca y muestra claramente que Google no está habilitado; no existe un acceso ficticio ni un bypass de autenticación en la aplicación. Los usuarios sintéticos de las pruebas se crean por herramientas internas de test y se eliminan al finalizar.
 
 ### 7.7. Migraciones y primer despliegue
 
-Para la línea Prisma 7 de referencia, las migraciones se crean en desarrollo con `prisma migrate dev`, se revisa su SQL y se aplican con `prisma migrate deploy` en staging/producción. Políticas RLS, constraints y triggers pueden requerir SQL adicional versionado.
+Hasta el primer despliegue se mantiene una única migración `init` (ver comandos locales). Después, para la línea Prisma 7 de referencia, las migraciones se crean en desarrollo con `prisma migrate dev`, se revisa su SQL y se aplican con `prisma migrate deploy` en staging/producción. Políticas RLS, constraints y triggers pueden requerir SQL adicional versionado.
 
 Primer despliegue desde cero:
 
@@ -767,7 +846,7 @@ Patrón de Auguri a implementar para GastApp: push a `develop` despliega staging
 
 Adaptar las herramientas de Auguri para túneles, migraciones, backups, restauración y verificación de variables. Los nombres `db:migrate:staging`, `db:backup:prod`, `backup:prod` y similares son tareas propuestas para la implementación, no comandos disponibles hoy en GastApp.
 
-El código actual sigue siendo V1 y sus scripts de despliegue no son el procedimiento de V2. Su `npm run build` actual incluye `prisma db push`; la fundación nueva debe reemplazar ese comportamiento antes de usar un build como validación o deploy de V2.
+Los scripts antiguos de V1 se retiraron de la rama `v2`. El build actual genera Prisma, compila React Router y empaqueta Express sin conectarse a la base ni modificarla. La imagen puede ejecutar las migraciones de Prisma como paso separado.
 
 ### 7.9. Backups, restauración y monitoreo
 
@@ -789,18 +868,18 @@ Agregar a Kuma los healthchecks de producción y staging, y activar las alertas 
 
 ## 8. Roadmap y criterios de salida
 
-| Fase | Entrega | Criterio para continuar |
-| --- | --- | --- |
-| 0. Fundación | Proyecto React Router/Express, Prisma, base local vacía, contratos, Money y fechas; login Google y sesiones. | Build sin mutar DB; schema instalable desde cero; login/logout/revocación y aislamiento entre usuarios probados. |
-| 1. Primer recorrido completo | Crear gasto mensual, consultar período, cambiar importe, pagar y deshacer. | Flujo UI/API/base completo, idempotente y transaccional, validado primero en local. |
-| 2. Gastos periódicos | Bimestrales, anclajes, vencimientos cortos, omitir/cancelar y cobertura anual. | Períodos correctos; historial pagado protegido; cobertura anual y reparto sin duplicación. |
-| 3. Compartidos | Contactos manuales sin cuenta, porcentajes/snapshots, invitaciones y conexiones reales. | Reparto manual completo sin registro de contraparte; vista conectada solo de lectura y sin filtraciones. |
-| 4. Deudas | Principal, pagos parciales, cancelación y ajustes auditables. | Estados y saldos exactos, separados del reparto de gastos y tarjetas. |
-| 5. Tarjetas | Compras, cuotas, recurrentes, statements y conciliación manual. | Una fuente de verdad para cuotas; pago/reversión del statement consistente; cargos desconocidos y ausentes resueltos. |
-| 6. Notificaciones y operación | Preferencias, outbox, reintentos, herramientas de DB y backups. | Envíos idempotentes; configuración de recursos y restauración verificadas. |
-| 7. Publicación inicial | Alcance completo probado en local, imagen Docker ensayada localmente y despliegue del commit validado con base nueva. | Comprobación en staging/producción de HTTPS, auth, permisos, backup/restauración y monitoreo; producción aprobada operativamente. |
-| 8. PDF/IA opcional | Archivos privados, parser agnóstico, validaciones y sugerencias. | Límites/costos medidos y confirmación humana; no bloquea el primer lanzamiento manual. |
-| 9. Expo | UI React Native, misma API, sesión segura, lectura offline y push. | Web/API estabilizadas; contratos reutilizados y reintentos seguros. |
+| Fase                          | Entrega                                                                                                                                  | Criterio para continuar                                                                                                               |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 0. Fundación                  | **Implementada en local:** React Router/Express, Prisma, schema inicial, roles/RLS, auth, preferencias, Money/fechas, comandos y Docker. | Checks, 18 resultados de pruebas automatizadas, build y ensayo Docker aprobados. Login real Google pendiente de credenciales locales. |
+| 1. Primer recorrido completo  | **Implementada en local:** crear gasto mensual, consultar período, cambiar importe/vencimiento, pagar y deshacer, en API y “Mi mes”.     | Flujo UI/API/base completo, idempotente y transaccional; 22 pruebas automatizadas, recorrido en navegador y ensayo Docker aprobados.  |
+| 2. Gastos periódicos          | Bimestrales, anclajes, vencimientos cortos, omitir/cancelar y cobertura anual.                                                           | Períodos correctos; historial pagado protegido; cobertura anual y reparto sin duplicación.                                            |
+| 3. Compartidos                | Contactos manuales sin cuenta, porcentajes/snapshots, invitaciones y conexiones reales.                                                  | Reparto manual completo sin registro de contraparte; vista conectada solo de lectura y sin filtraciones.                              |
+| 4. Deudas                     | Principal, pagos parciales, cancelación y ajustes auditables.                                                                            | Estados y saldos exactos, separados del reparto de gastos y tarjetas.                                                                 |
+| 5. Tarjetas                   | Compras, cuotas, recurrentes, statements y conciliación manual.                                                                          | Una fuente de verdad para cuotas; pago/reversión del statement consistente; cargos desconocidos y ausentes resueltos.                 |
+| 6. Notificaciones y operación | Preferencias, outbox, reintentos, herramientas de DB y backups.                                                                          | Envíos idempotentes; configuración de recursos y restauración verificadas.                                                            |
+| 7. Publicación inicial        | Alcance completo probado en local, imagen Docker ensayada localmente y despliegue del commit validado con base nueva.                    | Comprobación en staging/producción de HTTPS, auth, permisos, backup/restauración y monitoreo; producción aprobada operativamente.     |
+| 8. PDF/IA opcional            | Archivos privados, parser agnóstico, validaciones y sugerencias.                                                                         | Límites/costos medidos y confirmación humana; no bloquea el primer lanzamiento manual.                                                |
+| 9. Expo                       | UI React Native, misma API, sesión segura, lectura offline y push.                                                                       | Web/API estabilizadas; contratos reutilizados y reintentos seguros.                                                                   |
 
 La landing `ingbruno.ar` y el importador desde V1 son trabajos independientes. La continuidad de Invoice tampoco condiciona la publicación.
 
@@ -816,7 +895,9 @@ La landing `ingbruno.ar` y el importador desde V1 son trabajos independientes. L
 - Roles y RLS con conexiones del pool reutilizadas entre usuarios distintos.
 - Instalación limpia, persistencia tras redeploy, salud y restauración aislada.
 
-Estas pruebas son objetivos del plan, no una suite ya ejecutada en V2. Las verificaciones antiguas de TypeScript/lint correspondían a V1 y no prueban el nuevo sistema.
+La Fase 1 agrega 4 pruebas unitarias y 11 resultados de integración: validación de contratos, Idempotency-Key obligatoria y replay, origen, materialización única con GET concurrentes, meses cortos, “solo este mes” frente a “este mes y futuros”, nuevo vencimiento, pago bloqueando la edición, pagos futuros protegidos, deshacer y corregir, doble click concurrente con un solo pago, aislamiento entre cuentas, RLS, trigger de ocurrencia pagada y audit log solo de alta. El recorrido “Mi mes” se verificó en navegador (escritorio y emulación iPhone 375/390/430) con un usuario sintético temporal: crear, validar importe, pagar, deshacer desde el aviso, editar con alcance, mes pagado bloqueado y persistencia tras recargar. WebKit no está instalado en este equipo; la revisión en Safari real sigue pendiente.
+
+La fundación tiene 7 pruebas unitarias y 11 resultados de integración aprobados (incluyendo el caso principal y sus 10 subcasos). Cubren dinero, porcentajes, fechas, configuración, migración limpia, sesiones, errores, CSRF, permisos, RLS, concurrencia del pool, inicio OAuth y revocación. También se verificó la imagen Docker y la interfaz con usuarios sintéticos temporales. El rediseño V2 se revisó en escritorio y móvil (360, 390 y 768 px), incluyendo filtros, búsqueda, creación temporal, pagar/deshacer y navegación de modales con teclado. La revisión automática WCAG A/AA de las cinco pantallas públicas del prototipo no detectó infracciones; no sustituye la revisión con usuarios y tecnologías de asistencia. Los criterios de los módulos financieros completos siguen como objetivos de sus próximas fases. El intercambio real con Google requiere credenciales del cliente local y una cuenta de prueba.
 
 ## 9. Hallazgos de V1 que orientan el diseño
 
@@ -828,15 +909,15 @@ Las instrucciones y ejemplos de Opción B/Vercel describían el sistema anterior
 
 ## 10. Pendientes concretos y siguiente entrega
 
-El plan permite comenzar la fundación técnica. Quedan tareas de implementación y verificación:
+La fundación técnica y la Fase 1 ya están implementadas. Quedan tareas de configuración, módulos e infraestructura:
 
-- Validar la propuesta Better Auth/Express/Prisma y fijar versiones compatibles.
+- Completar las credenciales del cliente OAuth local y validar el ingreso real con Google; la integración y las versiones ya están fijadas y probadas automáticamente.
 - Completar registro/delegación del dominio y DNS; cerrar staging y certificados según el proxy real.
 - Medir recursos y preparar el proyecto GastApp con sus credenciales, bases y volúmenes.
 - Concretar visibilidad histórica al conectar un contacto antes de implementar esa transición.
 - Fijar parámetros operativos de sesiones, backups, recuperación, correo y jobs en sus fases.
 
-**Siguiente entrega:** crear la base técnica de V2 con schema vacío, primer login Google, API autenticada y build Docker reproducible, sin integrar todavía datos de V1. Antes de ejecutar esa entrega, conservar los cambios de planificación y trabajar sobre una rama de implementación; esta consolidación documental no crea ni despliega V2.
+**Siguiente entrega:** Fase 2, gastos periódicos: bimestrales con anclaje (el schema ya admite `intervalMonths` 1 o 2), omitir/cancelar con motivo, cobertura por pago anual (`COVERED`), renombrar y finalizar una serie. También conviene un canal de pago predeterminado en preferencias. La configuración del cliente Google permite revisar antes el acceso con una cuenta real. No se migran datos de V1 ni se despliega al VPS durante esa entrega local.
 
 ## 11. Referencias técnicas
 
