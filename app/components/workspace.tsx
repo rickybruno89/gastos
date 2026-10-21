@@ -8,12 +8,7 @@ import { AppShell } from "./app-shell";
 import { authClient, useCurrentUser } from "../lib/account";
 import type { CurrentUser } from "../../shared/contracts/account";
 
-export function Workspace({
-  children,
-}: {
-  children: (user: CurrentUser) => ReactNode;
-}) {
-  const account = useCurrentUser();
+export function useSignOut() {
   const client = useQueryClient();
   const navigate = useNavigate();
   const [error, setError] = useState("");
@@ -32,6 +27,15 @@ export function Workspace({
       setSigningOut(false);
     }
   }
+  return { signOut: () => void signOut(), signingOut, error };
+}
+
+export function Workspace({
+  children,
+}: {
+  children: (user: CurrentUser) => ReactNode;
+}) {
+  const account = useCurrentUser();
   if (account.isPending)
     return (
       <main className="standalone max-w-[640px] m-auto px-6 py-20 [&_h1]:mt-[65px] [&_h1]:mb-[17px] [&_h1]:mx-0 [&>p]:text-muted [&>p]:mb-6">
@@ -60,9 +64,7 @@ export function Workspace({
     <AppShell
       name={account.data.name}
       email={account.data.email}
-      signingOut={signingOut}
-      onSignOut={() => void signOut()}
-      error={error}
+      image={account.data.image}
     >
       {children(account.data)}
     </AppShell>

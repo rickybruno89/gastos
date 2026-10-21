@@ -382,7 +382,9 @@ export function ChargeForm({
           .map((a) => ({ contactId: a.contactId!, shareBps: a.shareBps })),
       ),
     ),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    // Se abre solo si ya hay reparto; después no se cierra al quitar personas.
+    [initiallyShared] = useState(rows.length > 0);
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const d = new FormData(e.currentTarget),
@@ -472,7 +474,7 @@ export function ChargeForm({
           ))}
         </fieldset>
       )}
-      <details className="mb-5" open={rows.length > 0}>
+      <details className="mb-5" open={initiallyShared}>
         <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-brand">
           Repartir este gasto con alguien
         </summary>
@@ -635,7 +637,8 @@ export function RecurringForm({
 }) {
   const write = useCardWrite(userId, z.object({ id: z.string() })),
     [rows, setRows] = useState(() => rowsFromShares(series.shares)),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [initiallyShared] = useState(rows.length > 0);
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const d = new FormData(e.currentTarget),
@@ -699,7 +702,7 @@ export function RecurringForm({
           pagados y conciliados se conservan.
         </small>
       </FormField>
-      <details className="mb-5" open={rows.length > 0}>
+      <details className="mb-5" open={initiallyShared}>
         <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-brand">
           Repartir este gasto con alguien
         </summary>

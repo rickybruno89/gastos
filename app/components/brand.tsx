@@ -1,5 +1,7 @@
 import { Link } from "react-router";
-import { Layers2 } from "lucide-react";
+// Inicial "G" del logo de V1, en vectores, sobre el recuadro azul de V2.
+const G_PATH =
+  "M3670 4930 c346 -19 617 -63 858 -137 l82 -25 0 -484 c0 -266 -1 -484 -3 -484 -2 0 -43 14 -93 30 -197 67 -363 99 -653 126 -226 20 -568 15 -706 -10 -422 -78 -662 -297 -746 -678 -40 -182 -44 -500 -8 -678 69 -348 256 -552 580 -634 237 -60 598 -50 862 24 l37 11 0 279 0 280 -385 0 -385 0 0 350 0 350 860 0 860 0 0 -973 0 -973 -127 -66 c-147 -77 -455 -185 -623 -218 -400 -81 -919 -91 -1305 -25 -177 31 -303 63 -430 110 -538 199 -894 586 -1044 1135 -127 463 -102 1117 58 1530 111 288 238 471 479 691 65 59 194 148 302 206 375 204 917 297 1530 263z";
 export function Brand() {
   return (
     <Link
@@ -8,7 +10,13 @@ export function Brand() {
       aria-label="GastApp, inicio"
     >
       <span className="brand-mark w-[31px] h-[31px] grid place-items-center [background:var(--color-brand)] text-white mr-2.5 rounded-[9px] desktop:w-9 desktop:h-9 desktop:rounded-[11px]">
-        <Layers2 size={23} strokeWidth={2.4} aria-hidden="true" />
+        <svg viewBox="0 0 24 24" className="size-6" aria-hidden="true">
+          <path
+            transform="translate(12 12) scale(.0038 -.0038) translate(-3015 -3015)"
+            fill="currentColor"
+            d={G_PATH}
+          />
+        </svg>
       </span>
       gastapp<span className="brand-period text-brand">.</span>
     </Link>

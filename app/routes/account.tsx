@@ -1,11 +1,13 @@
-import { LockKeyhole, UserRound } from "lucide-react";
-import { Workspace } from "../components/workspace";
+import { LockKeyhole, LogOut } from "lucide-react";
+import { Workspace, useSignOut } from "../components/workspace";
+import { Avatar } from "../components/avatar";
 import { NotificationSettings } from "../components/notification-settings";
-import { Badge } from "../components/ui";
+import { Badge, Button } from "../components/ui";
 import { GoogleMark } from "../components/brand";
 import type { CurrentUser } from "../../shared/contracts/account";
 
 function AccountDetails({ user }: { user: CurrentUser }) {
+  const { signOut, signingOut, error } = useSignOut();
   return (
     <>
       <div className="page-heading flex items-center justify-between mb-4.5 flex-wrap gap-3.5 desktop:mb-[25px] [&_h1]:text-[1.875rem] desktop:[&_h1]:text-[2rem]">
@@ -23,9 +25,11 @@ function AccountDetails({ user }: { user: CurrentUser }) {
         <div>
           <section className="card settings-card [background:white] shadow-[0_3px_10px_#1b2d4f02] mb-[23px] p-5.5 border border-solid border-line rounded-card [&_header]:flex [&_header]:items-center [&_header]:mb-6.5 [&_header]:gap-3.5 [&_header_h2]:text-[1rem] [&_header_p]:text-muted [&_header_p]:text-[0.8125rem] [&_header_p]:mt-1">
             <header>
-              <span className="tile-icon blue inline-flex items-center justify-center h-[39px] w-[39px] shrink-0 [background:#edf3ff] text-[#4b70d9] rounded-[11px]">
-                <UserRound size={21} />
-              </span>
+              <Avatar
+                name={user.name}
+                image={user.image}
+                className="size-[39px] text-[13px]"
+              />
               <div>
                 <h2>Información personal</h2>
                 <p>Los datos de tu cuenta de Google.</p>
@@ -50,6 +54,26 @@ function AccountDetails({ user }: { user: CurrentUser }) {
             </dl>
           </section>
           <NotificationSettings userId={user.id} />
+          <section className="card settings-card [background:white] shadow-[0_3px_10px_#1b2d4f02] mb-[23px] p-5.5 border border-solid border-line rounded-card">
+            <header className="mb-4">
+              <h2 className="text-[1rem]">Sesión</h2>
+              <p className="mt-1 text-[0.8125rem] text-muted">
+                Cerrá la sesión en este dispositivo.
+              </p>
+            </header>
+            <Button variant="secondary" disabled={signingOut} onClick={signOut}>
+              <LogOut size={16} aria-hidden="true" />
+              {signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
+            </Button>
+            {error && (
+              <p
+                role="alert"
+                className="error-message mx-0 my-3 text-[12px] leading-[1.7] text-[#b64f51]"
+              >
+                {error}
+              </p>
+            )}
+          </section>
         </div>
         <aside className="account-aside max-[1251px]:max-w-[400px] px-1 py-0 [&_h3]:text-[12px] [&_h3]:mt-4.5 [&_h3]:mb-2.5 [&_h3]:text-muted [&_h3]:mx-0 [&_p]:text-muted [&_p]:text-[0.8125rem] [&_p]:leading-[1.9] max-[1251px]:[&_.tile-icon]:hidden">
           <span className="tile-icon green inline-flex items-center justify-center h-[39px] w-[39px] shrink-0 [background:#eaf8f1] text-[#2e9278] rounded-[11px]">

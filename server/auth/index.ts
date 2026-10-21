@@ -19,6 +19,8 @@ export function authOptions(config: AppConfig, databases: Databases) {
           google: {
             clientId: config.googleClientId,
             clientSecret: config.googleClientSecret,
+            // Mantiene al día la foto y el nombre de Google en cada ingreso.
+            overrideUserInfoOnSignIn: true,
           },
         }
       : {},
