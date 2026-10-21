@@ -22,6 +22,7 @@ model User {
   expenseSeries MonthlyExpenseSeries[]
   auditEntries  AuditLog[]
   idempotency   IdempotencyKey[]
+  cards         CreditCard[]
   contacts      Contact[]
   invitesSent   UserConnection[]       @relation("ConnectionInviter")
   invitesTaken  UserConnection[]       @relation("ConnectionInvitee")
@@ -243,21 +244,22 @@ model IdempotencyKey {
 }
 
 model Contact {
-  id           String                     @id @default(uuid(7)) @db.Uuid
-  ownerId      String
+  id              String                     @id @default(uuid(7)) @db.Uuid
+  ownerId         String
   // Apodo privado del propietario; nunca se muestra a la contraparte.
-  nickname     String                     @db.VarChar(60)
-  email        String?                    @db.VarChar(254)
-  connectionId String?                    @db.Uuid
-  archivedAt   DateTime?                  @db.Timestamptz(3)
-  version      Int                        @default(1)
-  createdAt    DateTime                   @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime                   @updatedAt @db.Timestamptz(3)
-  owner        User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  connection   UserConnection?            @relation(fields: [connectionId], references: [id], onDelete: SetNull)
-  shares       MonthlyExpenseTermsShare[]
-  allocations  OccurrenceAllocation[]
-  debts        PersonalDebt[]
+  nickname        String                     @db.VarChar(60)
+  email           String?                    @db.VarChar(254)
+  connectionId    String?                    @db.Uuid
+  archivedAt      DateTime?                  @db.Timestamptz(3)
+  version         Int                        @default(1)
+  createdAt       DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                   @updatedAt @db.Timestamptz(3)
+  owner           User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  connection      UserConnection?            @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  shares          MonthlyExpenseTermsShare[]
+  allocations     OccurrenceAllocation[]
+  cardAllocations CardAllocation[]
+  debts           PersonalDebt[]
 
   @@unique([id, ownerId])
   @@index([ownerId])
@@ -275,22 +277,23 @@ enum ConnectionStatus {
 
 // Invitación (PENDING) y conexión aceptada entre dos cuentas de GastApp.
 model UserConnection {
-  id             String                 @id @default(uuid(7)) @db.Uuid
-  inviterId      String
-  inviterName    String                 @db.VarChar(120)
-  inviteeEmail   String                 @db.VarChar(254)
-  inviteeId      String?
-  inviteeName    String?                @db.VarChar(120)
-  status         ConnectionStatus       @default(PENDING)
+  id              String                 @id @default(uuid(7)) @db.Uuid
+  inviterId       String
+  inviterName     String                 @db.VarChar(120)
+  inviteeEmail    String                 @db.VarChar(254)
+  inviteeId       String?
+  inviteeName     String?                @db.VarChar(120)
+  status          ConnectionStatus       @default(PENDING)
   // Período en que se aceptó (informativo): la contraparte ve todo el historial compartido.
-  acceptedPeriod DateTime?              @db.Date
-  expiresAt      DateTime               @db.Timestamptz(3)
-  createdAt      DateTime               @default(now()) @db.Timestamptz(3)
-  respondedAt    DateTime?              @db.Timestamptz(3)
-  inviter        User                   @relation("ConnectionInviter", fields: [inviterId], references: [id], onDelete: Cascade)
-  invitee        User?                  @relation("ConnectionInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
-  contacts       Contact[]
-  allocations    OccurrenceAllocation[]
+  acceptedPeriod  DateTime?              @db.Date
+  expiresAt       DateTime               @db.Timestamptz(3)
+  createdAt       DateTime               @default(now()) @db.Timestamptz(3)
+  respondedAt     DateTime?              @db.Timestamptz(3)
+  inviter         User                   @relation("ConnectionInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee         User?                  @relation("ConnectionInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+  contacts        Contact[]
+  cardAllocations CardAllocation[]
+  allocations     OccurrenceAllocation[]
 
   @@index([inviteeEmail, status])
   @@index([inviterId])
@@ -397,5 +400,213 @@ model PersonalDebtAdjustment {
   debt        PersonalDebt       @relation(fields: [debtId, ownerId], references: [id, ownerId], onDelete: Cascade)
 
   @@index([debtId])
+  @@schema("public")
+}
+
+// Tarjetas: el cargo esperado es la única fuente de importe de una cuota.
+enum CardStatementStatus {
+  DRAFT
+  RECONCILED
+  PAID
+
+  @@schema("public")
+}
+
+model CreditCard {
+  id         String                @id @default(uuid(7)) @db.Uuid
+  ownerId    String
+  name       String                @db.VarChar(80)
+  lastFour   String?               @db.VarChar(4)
+  closingDay Int                   @db.SmallInt
+  dueDay     Int                   @db.SmallInt
+  archivedAt DateTime?             @db.Timestamptz(3)
+  version    Int                   @default(1)
+  createdAt  DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime              @updatedAt @db.Timestamptz(3)
+  owner      User                  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  purchases  CardPurchase[]
+  recurring  CardRecurringSeries[]
+  statements CardStatement[]
+
+  @@unique([id, ownerId])
+  @@index([ownerId])
+  @@schema("public")
+}
+
+model CardPurchase {
+  id                 String       @id @default(uuid(7)) @db.Uuid
+  ownerId            String
+  cardId             String       @db.Uuid
+  description        String       @db.VarChar(120)
+  occurredOn         DateTime     @db.Date
+  currency           Currency
+  // Evidencia de lo ingresado, no se usa para totalizar tras corregir una cuota.
+  originalTotalMinor BigInt
+  installments       Int          @db.SmallInt
+  firstPeriod        DateTime     @db.Date
+  createdAt          DateTime     @default(now()) @db.Timestamptz(3)
+  card               CreditCard   @relation(fields: [cardId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  charges            CardCharge[]
+
+  @@unique([id, ownerId])
+  @@schema("public")
+}
+
+model CardRecurringSeries {
+  id          String               @id @default(uuid(7)) @db.Uuid
+  ownerId     String
+  cardId      String               @db.Uuid
+  description String               @db.VarChar(120)
+  currency    Currency
+  firstPeriod DateTime             @db.Date
+  endPeriod   DateTime?            @db.Date
+  version     Int                  @default(1)
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
+  card        CreditCard           @relation(fields: [cardId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  terms       CardRecurringTerms[]
+  charges     CardCharge[]
+
+  @@unique([id, ownerId])
+  @@schema("public")
+}
+
+model CardRecurringTerms {
+  id              String              @id @default(uuid(7)) @db.Uuid
+  ownerId         String
+  seriesId        String              @db.Uuid
+  effectivePeriod DateTime            @db.Date
+  amountMinor     BigInt
+  // Regla futura validada contra contactos propios; cada cargo guarda allocations relacionales.
+  shares          Json
+  series          CardRecurringSeries @relation(fields: [seriesId, ownerId], references: [id, ownerId], onDelete: Cascade)
+
+  @@unique([seriesId, effectivePeriod])
+  @@schema("public")
+}
+
+model CardStatement {
+  id            String               @id @default(uuid(7)) @db.Uuid
+  ownerId       String
+  cardId        String               @db.Uuid
+  period        DateTime             @db.Date
+  closingDate   DateTime             @db.Date
+  dueDate       DateTime             @db.Date
+  status        CardStatementStatus  @default(DRAFT)
+  bankArsMinor  BigInt?
+  bankUsdMinor  BigInt?
+  version       Int                  @default(1)
+  createdAt     DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime             @updatedAt @db.Timestamptz(3)
+  card          CreditCard           @relation(fields: [cardId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  charges       CardCharge[]
+  lines         StatementLine[]
+  payments      CardPayment[]
+  transfersFrom CardChargeTransfer[] @relation("TransferFrom")
+  transfersTo   CardChargeTransfer[] @relation("TransferTo")
+
+  @@unique([cardId, period])
+  @@unique([id, ownerId])
+  @@index([ownerId, period])
+  @@schema("public")
+}
+
+model CardCharge {
+  id             String               @id @default(uuid(7)) @db.Uuid
+  ownerId        String
+  statementId    String               @db.Uuid
+  purchaseId     String?              @db.Uuid
+  recurringId    String?              @db.Uuid
+  expectedPeriod DateTime             @db.Date
+  installmentNo  Int?                 @db.SmallInt
+  description    String               @db.VarChar(120)
+  occurredOn     DateTime             @db.Date
+  amountMinor    BigInt
+  currency       Currency
+  version        Int                  @default(1)
+  createdAt      DateTime             @default(now()) @db.Timestamptz(3)
+  statement      CardStatement        @relation(fields: [statementId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  purchase       CardPurchase?        @relation(fields: [purchaseId, ownerId], references: [id, ownerId], onDelete: NoAction, onUpdate: NoAction)
+  recurring      CardRecurringSeries? @relation(fields: [recurringId, ownerId], references: [id, ownerId], onDelete: NoAction, onUpdate: NoAction)
+  allocations    CardAllocation[]
+  line           StatementLine?
+  transfers      CardChargeTransfer[]
+
+  @@unique([id, ownerId])
+  @@unique([purchaseId, installmentNo])
+  @@unique([recurringId, expectedPeriod])
+  @@index([statementId])
+  @@schema("public")
+}
+
+// Una línea concreta se vincula con un cargo (1:1) o se excluye con motivo.
+model StatementLine {
+  id           String        @id @default(uuid(7)) @db.Uuid
+  ownerId      String
+  statementId  String        @db.Uuid
+  chargeId     String?       @unique @db.Uuid
+  description  String        @db.VarChar(120)
+  postedOn     DateTime      @db.Date
+  amountMinor  BigInt
+  currency     Currency
+  ignoreReason String?       @db.VarChar(200)
+  createdAt    DateTime      @default(now()) @db.Timestamptz(3)
+  statement    CardStatement @relation(fields: [statementId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  charge       CardCharge?   @relation(fields: [chargeId, ownerId], references: [id, ownerId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([chargeId, ownerId])
+  @@index([statementId])
+  @@schema("public")
+}
+
+model CardAllocation {
+  id              String          @id @default(uuid(7)) @db.Uuid
+  ownerId         String
+  chargeId        String          @db.Uuid
+  contactId       String?         @db.Uuid
+  connectionId    String?         @db.Uuid
+  contactName     String?         @db.VarChar(60)
+  period          DateTime        @db.Date
+  expenseName     String          @db.VarChar(120)
+  baseAmountMinor BigInt
+  amountMinor     BigInt
+  shareBps        Int
+  currency        Currency
+  charge          CardCharge      @relation(fields: [chargeId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  contact         Contact?        @relation(fields: [contactId, ownerId], references: [id, ownerId], onDelete: NoAction, onUpdate: NoAction)
+  connection      UserConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId, period])
+  @@index([connectionId, period])
+  @@schema("public")
+}
+
+model CardChargeTransfer {
+  id              String        @id @default(uuid(7)) @db.Uuid
+  ownerId         String
+  chargeId        String        @db.Uuid
+  fromStatementId String        @db.Uuid
+  toStatementId   String        @db.Uuid
+  reason          String        @db.VarChar(200)
+  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
+  charge          CardCharge    @relation(fields: [chargeId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  fromStatement   CardStatement @relation("TransferFrom", fields: [fromStatementId, ownerId], references: [id, ownerId], onDelete: NoAction, onUpdate: NoAction)
+  toStatement     CardStatement @relation("TransferTo", fields: [toStatementId, ownerId], references: [id, ownerId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model CardPayment {
+  id          String        @id @default(uuid(7)) @db.Uuid
+  ownerId     String
+  statementId String        @db.Uuid
+  paidOn      DateTime      @db.Date
+  channel     String?       @db.VarChar(40)
+  arsMinor    BigInt
+  usdMinor    BigInt
+  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
+  revertedAt  DateTime?     @db.Timestamptz(3)
+  statement   CardStatement @relation(fields: [statementId, ownerId], references: [id, ownerId], onDelete: Cascade)
+
+  @@index([statementId])
   @@schema("public")
 }

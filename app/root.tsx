@@ -60,8 +60,13 @@ export default function Root() {
 }
 export function HydrateFallback() {
   return (
-    <div className="startup" role="status">
-      <span className="brand">gastapp.</span>
+    <div
+      className="startup min-h-svh grid place-content-center text-muted text-center gap-5.5"
+      role="status"
+    >
+      <span className="brand inline-flex items-center text-[26px] font-[760] tracking-[-1.3px] leading-[1] min-h-11">
+        gastapp.
+      </span>
       <p>Preparando tu espacio…</p>
     </div>
   );
@@ -69,8 +74,11 @@ export function HydrateFallback() {
 export function ErrorBoundary() {
   const error = useRouteError();
   return (
-    <main className="standalone">
-      <a className="brand" href="/">
+    <main className="standalone max-w-[640px] m-auto px-6 py-20 [&_h1]:mt-[65px] [&_h1]:mb-[17px] [&_h1]:mx-0 [&>p]:text-muted [&>p]:mb-6">
+      <a
+        className="brand inline-flex items-center text-[26px] font-[760] tracking-[-1.3px] leading-[1] min-h-11"
+        href="/"
+      >
         gastapp.
       </a>
       <h1>
@@ -79,7 +87,10 @@ export function ErrorBoundary() {
           : "Algo no salió como esperábamos."}
       </h1>
       <p>Volvé al inicio para continuar.</p>
-      <a className="button primary" href="/">
+      <a
+        className="button primary inline-flex items-center justify-center min-h-11 text-[0.875rem] font-semibold whitespace-nowrap text-white [background:var(--color-brand)] shadow-[0_3px_6px_#3458dd18] px-4 py-2.5 border border-solid border-transparent rounded-[9px] gap-[9px] [&:hover:not(:disabled)]:[background:var(--color-brand-hover)]"
+        href="/"
+      >
         Ir al inicio
       </a>
     </main>

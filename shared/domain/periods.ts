@@ -1,3 +1,5 @@
+export const DEFAULT_TIME_ZONE = "America/Argentina/Tucuman";
+
 function parsePeriod(period: string) {
   const match = /^([0-9]{4})-(0[1-9]|1[0-2])$/.exec(period);
   if (!match || Number(match[1]) === 0)

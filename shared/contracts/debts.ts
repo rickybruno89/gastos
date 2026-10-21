@@ -86,7 +86,14 @@ export const debtSchema = z.object({
 });
 export const debtEventSchema = z.object({
   id: z.string(),
-  kind: z.enum(["LENT", "PAYMENT", "INCREASE", "FORGIVE", "CANCELLED"]),
+  kind: z.enum([
+    "LENT",
+    "PAYMENT",
+    "INCREASE",
+    "FORGIVE",
+    "CANCELLED",
+    "REOPENED",
+  ]),
   date: dateSchema,
   amountMinor: z.string().nullable(),
   note: z.string().nullable(),

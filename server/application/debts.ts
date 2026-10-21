@@ -12,7 +12,8 @@ import type {
 import { deriveDebt } from "../../shared/domain/debts";
 import { HttpError } from "../http";
 import { audit, type MutationContext } from "./mutations";
-import { isoDate, toIsoDate, type Tx } from "./common";
+import { todayIn } from "../../shared/domain/periods";
+import { isoDate, toIsoDate, timeZoneOf, type Tx } from "./common";
 
 const notFound = () =>
   new HttpError(404, "NOT_FOUND", "No encontramos esa deuda.");
@@ -99,19 +100,6 @@ function toDetail(row: DebtRow): DebtDetail {
       reverted: false,
       recordedAt: a.createdAt.toISOString(),
     })),
-    ...(row.cancelledAt
-      ? [
-          {
-            id: `cancelled-${row.id}`,
-            kind: "CANCELLED" as const,
-            date: toIsoDate(row.cancelledAt),
-            amountMinor: null,
-            note: row.cancelReason,
-            reverted: false,
-            recordedAt: row.cancelledAt.toISOString(),
-          },
-        ]
-      : []),
   ];
   events.sort(
     (a, b) =>
@@ -198,7 +186,33 @@ export async function listDebts(tx: Tx, ownerId: string) {
 }
 
 export async function getDebt(tx: Tx, ownerId: string, id: string) {
-  return toDetail(await loadRow(tx, ownerId, id));
+  const detail = toDetail(await loadRow(tx, ownerId, id));
+  const lifecycle = await tx.auditLog.findMany({
+    where: {
+      ownerId,
+      entityId: id,
+      action: { in: ["debt.cancelled", "debt.reopened"] },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+  const timeZone = await timeZoneOf(tx, ownerId);
+  for (const entry of lifecycle) {
+    const data = entry.data as Record<string, unknown>;
+    detail.events.push({
+      id: entry.id,
+      kind: entry.action === "debt.cancelled" ? "CANCELLED" : "REOPENED",
+      date: todayIn(timeZone, entry.createdAt),
+      amountMinor: null,
+      note: typeof data.reason === "string" ? data.reason : null,
+      reverted: false,
+      recordedAt: entry.createdAt.toISOString(),
+    });
+  }
+  detail.events.sort(
+    (a, b) =>
+      a.date.localeCompare(b.date) || a.recordedAt.localeCompare(b.recordedAt),
+  );
+  return detail;
 }
 
 export async function createDebt(

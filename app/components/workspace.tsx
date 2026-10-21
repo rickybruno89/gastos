@@ -34,18 +34,21 @@ export function Workspace({
   }
   if (account.isPending)
     return (
-      <main className="standalone">
+      <main className="standalone max-w-[640px] m-auto px-6 py-20 [&_h1]:mt-[65px] [&_h1]:mb-[17px] [&_h1]:mx-0 [&>p]:text-muted [&>p]:mb-6">
         <Brand />
-        <div className="loading-block" role="status">
-          <span className="skeleton" />
-          <span className="skeleton" />
+        <div
+          className="loading-block mt-17.5 [&_p]:text-[12px] [&_p]:text-muted [&_p]:mt-[25px]"
+          role="status"
+        >
+          <span className="skeleton h-6 block [background:linear-gradient(90deg,_#e5eaf4,_#f0f3f9,_#e5eaf4)] bg-size-[200%] animate-loading mb-[15px] rounded-[7px] [&:nth-child(2)]:max-w-[60%]" />
+          <span className="skeleton h-6 block [background:linear-gradient(90deg,_#e5eaf4,_#f0f3f9,_#e5eaf4)] bg-size-[200%] animate-loading mb-[15px] rounded-[7px] [&:nth-child(2)]:max-w-[60%]" />
           <p>Abriendo tu espacio…</p>
         </div>
       </main>
     );
   if (account.isError)
     return (
-      <main className="standalone">
+      <main className="standalone max-w-[640px] m-auto px-6 py-20 [&_h1]:mt-[65px] [&_h1]:mb-[17px] [&_h1]:mx-0 [&>p]:text-muted [&>p]:mb-6">
         <Brand />
         <h1>No pudimos abrir tu cuenta.</h1>
         <p>Comprobá tu conexión e intentá de nuevo.</p>

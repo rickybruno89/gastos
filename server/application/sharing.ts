@@ -267,6 +267,10 @@ export async function inviteContact(
     where: { ownerId, contactId },
     data: { connectionId: connection.id },
   });
+  await tx.cardAllocation.updateMany({
+    where: { ownerId, contactId },
+    data: { connectionId: connection.id },
+  });
   await audit(context, {
     action: "connection.invited",
     entityType: "UserConnection",
@@ -429,6 +433,35 @@ export async function getSharedMonth(
     include: { connection: true },
     orderBy: { createdAt: "asc" },
   });
+  const cardMine = await tx.cardAllocation.findMany({
+    where: { ownerId, period: date, contactId: { not: null } },
+  });
+  const cardTheirs = await tx.cardAllocation.findMany({
+    where: { ownerId: { not: ownerId }, period: date },
+    include: { connection: true },
+  });
+  const forecast = await tx.$queryRaw<
+    {
+      ownerId: string;
+      connectionId: string;
+      expenseName: string;
+      baseAmountMinor: bigint;
+      amountMinor: bigint;
+      shareBps: number;
+      currency: "ARS" | "USD";
+    }[]
+  >`SELECT * FROM public.incoming_shared_forecast(${date}::date)`;
+  const forecastConnections = await tx.userConnection.findMany({
+    where: { id: { in: forecast.map((f) => f.connectionId) } },
+  });
+  const incoming = [
+    ...theirs,
+    ...cardTheirs,
+    ...forecast.map((f) => ({
+      ...f,
+      connection: forecastConnections.find((c) => c.id === f.connectionId)!,
+    })),
+  ];
   const contacts = await tx.contact.findMany({
     where: { ownerId },
     include: contactInclude,
@@ -450,7 +483,13 @@ export async function getSharedMonth(
     }
     return entry;
   }
-  const line = (row: (typeof mine)[number]) => ({
+  const line = (row: {
+    expenseName: string;
+    baseAmountMinor: bigint;
+    shareBps: number;
+    amountMinor: bigint;
+    currency: "ARS" | "USD";
+  }) => ({
     expenseName: row.expenseName,
     totalMinor: row.baseAmountMinor.toString(),
     shareBps: row.shareBps,
@@ -463,13 +502,13 @@ export async function getSharedMonth(
     contactId: contact.id,
     connected: contact.connection?.status === "ACCEPTED",
   });
-  for (const row of mine) {
+  for (const row of [...mine, ...cardMine]) {
     const contact = byContact.get(row.contactId!)!;
     person(`contact:${contact.id}`, fromContact(contact)).theyOwe.push(
       line(row),
     );
   }
-  for (const row of theirs) {
+  for (const row of incoming) {
     const contact = byConnection.get(row.connectionId!);
     const connection = row.connection!;
     const entry = contact

@@ -1,6 +1,8 @@
 # GastApp V2
 
-Base local en la rama `v2`: React Router + Node/Express + Prisma/PostgreSQL, con Better Auth y Google. Incluye acceso, sesiones, cuenta, preferencias y **Mi mes**, **Compartidos** y **Deudas**: gastos mensuales y bimestrales reales (crear, cambiar importe o vencimiento, pagar y deshacer, omitir un mes, dar de baja, pago anual y renombrar; repartos con contactos sin cuenta, saldos por persona e invitaciones entre cuentas; préstamos con pagos parciales, ajustes y cancelación). El resto de los módulos sigue el roadmap del **[plan único de V2](docs/PLAN_V2.md)**.
+Base local en la rama `v2`: React Router + Node/Express + Prisma/PostgreSQL, con Better Auth y Google. Incluye acceso, sesiones, cuenta, preferencias y **Mi mes**, **Tarjetas**, **Compartidos** y **Deudas**: gastos mensuales y bimestrales reales (crear, cambiar importe o vencimiento, pagar y deshacer, omitir un mes, dar de baja, pago anual y renombrar; repartos con contactos sin cuenta, saldos por persona e invitaciones entre cuentas; préstamos con pagos parciales, ajustes y cancelación; tarjetas con compras en cuotas, cargos recurrentes, conciliación manual, arrastre de ausentes y pago/reversión del resumen completo). El resto de los módulos sigue el roadmap del **[plan único de V2](docs/PLAN_V2.md)**.
+
+La interfaz usa **Tailwind CSS 4** con su plugin oficial de Vite, componentes propios, Radix Dialog y Lucide. Los estilos y sus variantes responsive viven en `className`, junto al componente. `app/styles.css` es el único CSS manual y contiene el tema, reset, animaciones y reglas globales. `Button`, `Badge`, `Modal` y `FormField` centralizan los estilos compartidos; `cn` combina clases con `tailwind-merge`. La zona horaria se toma automáticamente del dispositivo, con Argentina como respaldo; no requiere configuración en Cuenta. Las decisiones y convenciones de UI están en el [plan V2](docs/PLAN_V2.md#sistema-visual-v2-y-prototipo-navegable).
 
 ## Empezar en local
 
@@ -29,7 +31,7 @@ npm run test:docker
 
 Integración crea y elimina una base temporal en Postgres.app. El ensayo Docker construye la imagen y comprueba, contra Postgres.app, arranque, base, rutas, assets, API y reinicio.
 
-El build no modifica la base. `db:migrate` solo admite `gastappv2` en localhost. Hasta el primer despliegue hay una única migración `init`: si cambia, `npm run db:reset` recrea la base local (borra sus datos); ver [comandos locales](docs/PLAN_V2.md#comandos-disponibles-para-la-fundación-local). Para staging/producción se prepararán recursos y migraciones controladas según el plan, sin conectar esos entornos durante las pruebas locales.
+El build no modifica la base. `db:migrate` solo admite `gastappv2` en localhost. Las migraciones son incrementales: Fase 5 agrega Tarjetas sin borrar los datos existentes. `npm run db:reset` queda reservado para un reinicio local explícito (borra sus datos); ver [comandos locales](docs/PLAN_V2.md#comandos-disponibles-para-la-fundación-local). Para staging/producción se prepararán recursos y migraciones controladas según el plan, sin conectar esos entornos durante las pruebas locales.
 
 ## Destinos
 

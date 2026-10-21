@@ -235,6 +235,14 @@ test("deudas: principal fijo, pagos parciales, ajustes y cancelación", async (t
         });
         assert.equal(reopened.data.status, "PARTIALLY_PAID");
         assert.equal(reopened.data.balanceMinor, "90000");
+        assert.equal(
+          reopened.data.events.filter((e) => e.kind === "CANCELLED").length,
+          1,
+        );
+        assert.equal(
+          reopened.data.events.filter((e) => e.kind === "REOPENED").length,
+          1,
+        );
         const paid = await send("POST", `/debts/${debt.id}/payments`, {
           version: reopened.data.version,
           amountMinor: "90000",

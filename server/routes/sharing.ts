@@ -1,3 +1,5 @@
+import { getMonth } from "../application/monthly-expenses";
+import { getCardMonth } from "../application/cards";
 import { Router } from "express";
 import { periodSchema } from "../../shared/contracts/expenses";
 import {
@@ -105,9 +107,12 @@ export function sharingRouter(databases: Databases) {
     const period = periodSchema.safeParse(req.params.period);
     if (!period.success)
       throw new HttpError(400, "VALIDATION_ERROR", "El período no es válido.");
-    const shared = await readAs(databases, res, (tx) =>
-      getSharedMonth(tx, identityOf(res).id, period.data),
-    );
+    const shared = await readAs(databases, res, async (tx) => {
+      const ownerId = identityOf(res).id;
+      await getMonth(tx, ownerId, period.data);
+      await getCardMonth(tx, ownerId, period.data);
+      return getSharedMonth(tx, ownerId, period.data);
+    });
     res.json({ data: shared });
   });
 

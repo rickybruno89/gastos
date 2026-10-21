@@ -87,7 +87,14 @@ try {
     healthy,
     "La imagen debe responder al healthcheck con la base local.",
   );
-  for (const route of ["/", "/acceso", "/cuenta", "/compartidos", "/deudas"]) {
+  for (const route of [
+    "/",
+    "/acceso",
+    "/cuenta",
+    "/compartidos",
+    "/deudas",
+    "/tarjetas",
+  ]) {
     const response = await fetch(`${origin}${route}`);
     assert.equal(response.status, 200);
     assert.match(response.headers.get("content-type"), /text\/html/);
@@ -100,6 +107,7 @@ try {
     assert.ok(response.headers.get("content-security-policy"));
   }
   assert.equal((await fetch(`${origin}/api/v2/me`)).status, 401);
+  assert.equal((await fetch(`${origin}/api/v2/cards`)).status, 401);
   assert.equal((await fetch(`${origin}/api/not-found`)).status, 404);
   assert.equal((await fetch(`${origin}/assets/not-found.js`)).status, 404);
   docker(["restart", container], true);

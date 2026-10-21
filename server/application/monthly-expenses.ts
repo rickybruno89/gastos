@@ -353,6 +353,8 @@ export async function getMonth(
   period: string,
 ): Promise<Month> {
   const date = periodDate(period);
+  // Mismo orden de bloqueo que pago anual y cambios de regla.
+  await tx.$queryRaw`SELECT id FROM public."MonthlyExpenseSeries" WHERE "ownerId" = ${ownerId} AND "firstPeriod" <= ${date} ORDER BY id FOR UPDATE`;
   const series = await tx.monthlyExpenseSeries.findMany({
     where: { ownerId, firstPeriod: { lte: date } },
     include: {
@@ -621,6 +623,7 @@ export async function payOccurrence(
   input: z.infer<typeof payOccurrenceSchema>,
 ) {
   const { tx, ownerId } = context;
+  await lockSeries(tx, (await findOccurrence(tx, ownerId, id)).seriesId);
   await transition(tx, ownerId, id, {
     version: input.version,
     from: "PLANNED",
@@ -756,6 +759,7 @@ export async function undoPayment(
   input: { version: number },
 ) {
   const { tx, ownerId } = context;
+  await lockSeries(tx, (await findOccurrence(tx, ownerId, id)).seriesId);
   await transition(tx, ownerId, id, {
     version: input.version,
     from: "PAID",
@@ -805,6 +809,7 @@ export async function skipOccurrence(
   input: z.infer<typeof reasonInputSchema>,
 ) {
   const { tx, ownerId } = context;
+  await lockSeries(tx, (await findOccurrence(tx, ownerId, id)).seriesId);
   await transition(tx, ownerId, id, {
     version: input.version,
     from: "PLANNED",

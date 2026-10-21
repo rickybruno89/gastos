@@ -2,11 +2,15 @@ import { Link } from "react-router";
 import { Layers2 } from "lucide-react";
 export function Brand() {
   return (
-    <Link className="brand" to="/" aria-label="GastApp, inicio">
-      <span className="brand-mark">
+    <Link
+      className="brand inline-flex items-center text-[26px] font-[760] tracking-[-1.3px] leading-[1] min-h-11"
+      to="/"
+      aria-label="GastApp, inicio"
+    >
+      <span className="brand-mark w-[31px] h-[31px] grid place-items-center [background:var(--color-brand)] text-white mr-2.5 rounded-[9px] desktop:w-9 desktop:h-9 desktop:rounded-[11px]">
         <Layers2 size={23} strokeWidth={2.4} aria-hidden="true" />
       </span>
-      gastapp<span className="brand-period">.</span>
+      gastapp<span className="brand-period text-brand">.</span>
     </Link>
   );
 }

@@ -7,7 +7,7 @@ import {
   Repeat,
   Users,
 } from "lucide-react";
-import { Button } from "./ui";
+import { FormField, Button } from "./ui";
 import {
   SharesEditor,
   rowsFromShares,
@@ -38,7 +38,10 @@ const amountError =
 
 function FormError({ message }: { message: string }) {
   return message ? (
-    <p role="alert" className="error-message">
+    <p
+      role="alert"
+      className="error-message text-[12px] text-[#b64f51] leading-[1.7] mx-0 my-3"
+    >
       {message}
     </p>
   ) : null;
@@ -86,7 +89,7 @@ export function CreateExpenseForm({
   }
   return (
     <form onSubmit={submit}>
-      <div className="form-field">
+      <FormField>
         <label htmlFor="expense-name">Nombre del gasto</label>
         <input
           id="expense-name"
@@ -97,9 +100,9 @@ export function CreateExpenseForm({
           pattern=".*\S.*"
           autoComplete="off"
         />
-      </div>
-      <div className="form-grid">
-        <div className="form-field">
+      </FormField>
+      <div className="grid grid-cols-2 gap-3">
+        <FormField>
           <label htmlFor="expense-amount">Importe</label>
           <input
             id="expense-amount"
@@ -110,17 +113,17 @@ export function CreateExpenseForm({
             maxLength={18}
             autoComplete="off"
           />
-        </div>
-        <div className="form-field">
+        </FormField>
+        <FormField>
           <label htmlFor="expense-currency">Moneda</label>
           <select name="currency" id="expense-currency">
             <option value="ARS">Pesos (ARS)</option>
             <option value="USD">Dólares (USD)</option>
           </select>
-        </div>
+        </FormField>
       </div>
-      <div className="form-grid">
-        <div className="form-field">
+      <div className="grid grid-cols-2 gap-3">
+        <FormField>
           <label htmlFor="expense-interval">Frecuencia</label>
           <select
             id="expense-interval"
@@ -132,8 +135,8 @@ export function CreateExpenseForm({
             <option value="1">Cada mes</option>
             <option value="2">Cada dos meses</option>
           </select>
-        </div>
-        <div className="form-field">
+        </FormField>
+        <FormField>
           <label htmlFor="expense-day">Día de vencimiento</label>
           <input
             type="number"
@@ -145,25 +148,25 @@ export function CreateExpenseForm({
             defaultValue={10}
             required
           />
-        </div>
+        </FormField>
       </div>
       {interval === 2 && (
-        <div className="form-field">
+        <FormField>
           <label htmlFor="expense-first">Primer vencimiento</label>
           <select id="expense-first" name="firstPeriod" defaultValue={period}>
             <option value={period}>{periodLabel(period)}</option>
             <option value={next}>{periodLabel(next)}</option>
           </select>
-          <span className="field-help">
+          <span className="field-help text-[0.75rem] text-muted leading-[1.7]">
             Después se repite cada dos meses; en los meses intermedios no suma.
           </span>
-        </div>
+        </FormField>
       )}
-      <span className="field-help">
+      <span className="field-help text-[0.75rem] text-muted leading-[1.7]">
         {interval === 1 ? `Se repite todos los meses desde ${month}. ` : ""}
         Si el mes es más corto, vence el último día.
       </span>
-      <label className="check-field">
+      <label className="check-field flex items-start text-[0.875rem] text-ink min-h-11 mx-0 my-4.5 gap-2.5 desktop:text-[12px] [&_input]:mt-0.5 [&_input]:w-4.5 [&_input]:h-4.5 [&_input]:[accent-color:var(--color-brand)] [&_small]:block [&_small]:text-muted [&_small]:text-[0.75rem] [&_small]:mt-[3px] desktop:[&_small]:text-[11px]">
         <input
           type="checkbox"
           checked={shared}
@@ -180,12 +183,8 @@ export function CreateExpenseForm({
       <FormError
         message={error || (create.isError ? errorMessage(create.error) : "")}
       />
-      <div className="dialog-actions">
-        <Button
-          type="submit"
-          className="full-width"
-          disabled={create.isPending}
-        >
+      <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
+        <Button type="submit" className="w-full" disabled={create.isPending}>
           <Plus size={17} />
           {create.isPending ? "Guardando…" : "Crear gasto"}
         </Button>
@@ -240,7 +239,7 @@ function EditForm({
   }
   return (
     <form onSubmit={submit}>
-      <div className="form-field">
+      <FormField>
         <label htmlFor="edit-name">Nombre</label>
         <input
           id="edit-name"
@@ -251,9 +250,11 @@ function EditForm({
           pattern=".*\S.*"
           autoComplete="off"
         />
-        <span className="field-help">El nombre cambia en todos los meses.</span>
-      </div>
-      <div className="form-field">
+        <span className="field-help text-[0.75rem] text-muted leading-[1.7]">
+          El nombre cambia en todos los meses.
+        </span>
+      </FormField>
+      <FormField>
         <label htmlFor="edit-amount">Importe ({occurrence.currency})</label>
         <input
           id="edit-amount"
@@ -264,8 +265,8 @@ function EditForm({
           maxLength={18}
           autoComplete="off"
         />
-      </div>
-      <fieldset className="choice-group">
+      </FormField>
+      <fieldset className="choice-group mt-0 mb-5.5 grid mx-0 p-0 border-0 border-none border-current gap-2 [&_legend]:text-[0.875rem] [&_legend]:font-[550] [&_legend]:text-[#53637b] [&_legend]:mb-2 desktop:[&_legend]:text-[11px] [&_label]:flex [&_label]:items-start [&_label]:min-h-11 [&_label]:text-[0.875rem] [&_label]:text-ink [&_label]:p-3 [&_label]:border [&_label]:border-solid [&_label]:border-[#dce3ef] [&_label]:rounded-[8px] [&_label]:gap-2.5 desktop:[&_label]:text-[12px] [&_label:has(input:checked)]:[background:#f3f6ff] [&_label:has(input:checked)]:border-brand [&_input]:mt-0.5 [&_input]:[accent-color:var(--color-brand)] [&_small]:block [&_small]:text-muted [&_small]:text-[0.75rem] [&_small]:mt-[3px] desktop:[&_small]:text-[11px]">
         <legend>¿A qué meses aplica el nuevo importe?</legend>
         <label>
           <input type="radio" name="scope" value="THIS_MONTH" defaultChecked />
@@ -282,7 +283,7 @@ function EditForm({
           </span>
         </label>
       </fieldset>
-      <div className="form-field">
+      <FormField>
         <label htmlFor="edit-day">Día de vencimiento</label>
         <input
           type="number"
@@ -294,13 +295,13 @@ function EditForm({
           defaultValue={occurrence.dueDay}
           required
         />
-        <span className="field-help">
+        <span className="field-help text-[0.75rem] text-muted leading-[1.7]">
           Un nuevo vencimiento aplica a {month} y a los meses siguientes.
         </span>
-      </div>
+      </FormField>
       <FormError message={error} />
-      <div className="dialog-actions">
-        <Button type="submit" className="full-width" disabled={pending}>
+      <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
+        <Button type="submit" className="w-full" disabled={pending}>
           {pending ? "Guardando…" : "Guardar cambios"}
         </Button>
       </div>
@@ -350,12 +351,12 @@ function AnnualForm({
   }
   return (
     <form onSubmit={submit}>
-      <p className="notice">
+      <p className="notice text-muted [background:#f2f5fb] text-[11px] leading-[1.7] mx-0 my-4 px-[15px] py-[13px] rounded-[9px]">
         Pagás ahora por adelantado. Este mes queda pagado por el importe total y
         los siguientes aparecen como “Pago anual”, sin importe pendiente.
       </p>
-      <div className="form-grid">
-        <div className="form-field">
+      <div className="grid grid-cols-2 gap-3">
+        <FormField>
           <label htmlFor="annual-months">Meses que cubre</label>
           <input
             id="annual-months"
@@ -371,8 +372,8 @@ function AnnualForm({
             }
             required
           />
-        </div>
-        <div className="form-field">
+        </FormField>
+        <FormField>
           <label htmlFor="annual-amount">
             Total pagado ({occurrence.currency})
           </label>
@@ -388,21 +389,17 @@ function AnnualForm({
             maxLength={18}
             autoComplete="off"
           />
-        </div>
+        </FormField>
       </div>
-      <span className="field-help">
+      <span className="field-help text-[0.75rem] text-muted leading-[1.7]">
         Cubre de {periodLabel(occurrence.period).toLowerCase()}{" "}
         {occurrence.period.slice(0, 4)} a{" "}
         {periodLabel(lastPeriod).toLowerCase()} {lastPeriod.slice(0, 4)}. Ajustá
         el total si tuvo descuento.
       </span>
       <FormError message={error} />
-      <div className="dialog-actions">
-        <Button
-          type="submit"
-          className="full-width"
-          disabled={action.isPending}
-        >
+      <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
+        <Button type="submit" className="w-full" disabled={action.isPending}>
           <CalendarCheck size={17} />
           {action.isPending ? "Guardando…" : "Registrar pago anual"}
         </Button>
@@ -447,12 +444,12 @@ function ReasonForm({
   }
   return (
     <form onSubmit={submit}>
-      <p className="notice">
+      <p className="notice text-muted [background:#f2f5fb] text-[11px] leading-[1.7] mx-0 my-4 px-[15px] py-[13px] rounded-[9px]">
         {kind === "skip"
           ? `${occurrence.name} no se paga en ${month} y no suma al pendiente. Los demás meses siguen igual.`
           : `${occurrence.name} deja de aparecer después de ${month}. Este mes queda registrado como dado de baja. Podés reactivarlo más adelante.`}
       </p>
-      <div className="form-field">
+      <FormField>
         <label htmlFor={`${kind}-reason`}>Motivo</label>
         <input
           id={`${kind}-reason`}
@@ -466,13 +463,13 @@ function ReasonForm({
           maxLength={200}
           autoComplete="off"
         />
-      </div>
+      </FormField>
       <FormError message={error} />
-      <div className="dialog-actions">
+      <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
         <Button
           type="submit"
           variant="secondary"
-          className="full-width"
+          className="w-full"
           disabled={action.isPending}
         >
           {action.isPending
@@ -521,18 +518,14 @@ function SharesForm({
   }
   return (
     <form onSubmit={submit}>
-      <p className="notice">
+      <p className="notice text-muted [background:#f2f5fb] text-[11px] leading-[1.7] mx-0 my-4 px-[15px] py-[13px] rounded-[9px]">
         El reparto aplica a {month} y a los meses siguientes. Los meses ya
         pagados conservan el suyo. Pagar el gasto no salda la parte de nadie.
       </p>
       <SharesEditor userId={userId} rows={rows} onChange={setRows} />
       <FormError message={error} />
-      <div className="dialog-actions">
-        <Button
-          type="submit"
-          className="full-width"
-          disabled={change.isPending}
-        >
+      <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
+        <Button type="submit" className="w-full" disabled={change.isPending}>
           {change.isPending ? "Guardando…" : "Guardar reparto"}
         </Button>
       </div>
@@ -598,7 +591,10 @@ export function OccurrenceSheet({
   if (occurrence.status === "PLANNED")
     return (
       <>
-        <div className="filter-group sheet-tabs" role="tablist">
+        <div
+          className="filter-group sheet-tabs max-desktop:grid-cols-[1fr_1fr] max-desktop:gap-y-[3px] max-desktop:gap-x-[3px] grid [background:#f3f5f9] flex-1 w-full mb-5 overflow-x-auto [scrollbar-width:none] p-[3px] rounded-[8px] desktop:flex desktop:flex-none desktop:w-auto [&_button]:[background:transparent] [&_button]:text-[0.8125rem] [&_button]:font-medium [&_button]:text-muted [&_button]:[flex:1_0_auto] [&_button]:min-h-11 [&_button]:inline-flex [&_button]:items-center [&_button]:whitespace-nowrap [&_button]:justify-center [&_button]:px-2 [&_button]:py-[7px] [&_button]:border-0 [&_button]:border-none [&_button]:border-current [&_button]:rounded-[6px] [&_button]:gap-[5px] desktop:[&_button]:text-[0.6875rem] [&_button[aria-pressed='true']]:[background:white] [&_button[aria-pressed='true']]:text-[#3c4a62] [&_button[aria-pressed='true']]:shadow-[0_1px_4px_#14284a10]"
+          role="tablist"
+        >
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -633,15 +629,15 @@ export function OccurrenceSheet({
   if (occurrence.status === "COVERED")
     return (
       <>
-        <p className="notice">
+        <p className="notice text-muted [background:#f2f5fb] text-[11px] leading-[1.7] mx-0 my-4 px-[15px] py-[13px] rounded-[9px]">
           {statusSummary(occurrence)}. No tiene importe pendiente. Para
           modificarlo, deshacé el pago anual desde el mes en que se pagó.
         </p>
         {occurrence.coverage && (
-          <div className="dialog-actions">
+          <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
             <Button
               variant="secondary"
-              className="full-width"
+              className="w-full"
               onClick={() => onGoTo(occurrence.coverage!.fromPeriod)}
             >
               Ir a {periodLabel(occurrence.coverage.fromPeriod).toLowerCase()}{" "}
@@ -654,7 +650,7 @@ export function OccurrenceSheet({
   if (occurrence.status === "PAID")
     return (
       <>
-        <p className="notice">
+        <p className="notice text-muted [background:#f2f5fb] text-[11px] leading-[1.7] mx-0 my-4 px-[15px] py-[13px] rounded-[9px]">
           {statusSummary(occurrence)}
           {occurrence.payment?.annual
             ? `. Deshacer este pago libera también los meses que cubre.`
@@ -662,10 +658,10 @@ export function OccurrenceSheet({
           Para corregirlo, primero deshacé el pago; después podés editarlo y
           volver a marcarlo como pagado.
         </p>
-        <div className="dialog-actions">
+        <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
           <Button
             variant="secondary"
-            className="full-width"
+            className="w-full"
             onClick={() => onTogglePayment(occurrence)}
           >
             {occurrence.payment?.annual
@@ -677,16 +673,16 @@ export function OccurrenceSheet({
     );
   return (
     <>
-      <p className="notice">
+      <p className="notice text-muted [background:#f2f5fb] text-[11px] leading-[1.7] mx-0 my-4 px-[15px] py-[13px] rounded-[9px]">
         {occurrence.status === "SKIPPED"
           ? `Omitido en ${month}: ${occurrence.statusReason}. No suma al pendiente.`
           : `Dado de baja desde ${month}: ${occurrence.statusReason}. No aparece en los meses siguientes.`}
       </p>
       <FormError message={error} />
-      <div className="dialog-actions">
+      <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
         <Button
           variant="secondary"
-          className="full-width"
+          className="w-full"
           disabled={restore.isPending}
           onClick={() =>
             restore.mutate(

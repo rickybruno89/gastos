@@ -1,6 +1,6 @@
 # GastApp V2: plan de producto, arquitectura y producción
 
-Actualizado: **20/10/2026**. Estado: **fundación V2, Fase 1 (primer recorrido de gasto mensual), Fase 2 (gastos periódicos), Fase 3 (compartidos) y Fase 4 (deudas) implementadas y validadas en local**; tarjetas, notificaciones y despliegue en el VPS pendientes. El login Google completo con una cuenta real requiere configurar las credenciales del cliente OAuth local.
+Actualizado: **20/10/2026**. Estado: **fundación V2, Fase 1 (primer recorrido de gasto mensual), Fase 2 (gastos periódicos), Fase 3 (compartidos), Fase 4 (deudas) y Fase 5 (tarjetas) implementadas y validadas en local**; notificaciones y despliegue en el VPS pendientes. El login Google completo con una cuenta real requiere configurar las credenciales del cliente OAuth local.
 
 Este es el documento único de referencia de GastApp V2. Reúne el assessment funcional, las decisiones de arquitectura y el procedimiento de VPS/Coolify adaptado de Auguri. Sustituye las guías dispersas de V1, Opción B, Vercel y las copias de documentación de Auguri que había en este repositorio.
 
@@ -72,6 +72,8 @@ La aplicación autenticada no requiere SSR en ejecución. React Router organiza 
 Versiones fijadas en el lockfile de la fundación: Node 24, React Router 7.18.4, React 19.2.6, Express 5.3.0, Prisma 7.10.1, PostgreSQL 18, Vite 8.3.4 y Better Auth 1.7.12. Se verificaron tipos, lint, formato, pruebas y build; las dependencias se ajustaron para resolver los avisos de seguridad detectados. Las futuras actualizaciones se revisarán antes de adoptarlas.
 
 Se conserva la propuesta de TypeScript, Vite, TanStack Query, React Hook Form y Zod. Hono, Drizzle y servicios Supabase quedan fuera del stack destino. La futura landing puede elegir su propia tecnología.
+
+**Estilos confirmados antes de Fase 5:** Tailwind CSS **4.3.3** y `@tailwindcss/vite` **4.3.3**, con versiones exactas y lockfile. Se conserva la biblioteca de componentes propios con Radix Dialog y Lucide. Tailwind alcanza para el alcance actual; shadcn/ui no se incorpora porque no hace falta reemplazar los componentes existentes. Una futura necesidad concreta se evalúa contra estas decisiones y el diseño aprobado.
 
 ### Estructura conceptual del código
 
@@ -338,6 +340,17 @@ UNMATCHED_ACTUAL
 IGNORED_WITH_REASON
 ```
 
+**Implementado en Fase 5:**
+
+- Modelo físico: `CreditCard`, `CardPurchase`, `CardRecurringSeries`/`CardRecurringTerms`, `CardStatement`, `CardCharge`, `StatementLine`, `CardAllocation`, `CardChargeTransfer` y `CardPayment`. `CardCharge` es la única fuente de importes por cuota/consumo; `originalTotalMinor` de la compra es contexto y nunca se suma nuevamente. No hay una tabla de cuotas con otro lifecycle de pago.
+- Las cuotas se materializan una sola vez al crear la compra (hasta 120); cada una guarda importe y reparto. El redondeo conserva tanto el total de la compra como el total de cada participante al distribuir centavos. Una posible compra duplicada exige confirmación explícita; Idempotency-Key cubre reintentos del mismo envío.
+- Los recurrentes tienen condiciones con vigencia por período y se materializan bajo bloqueo de tarjeta al consultar el mes. Se pueden cambiar importe/reparto desde un período, finalizar y reactivar. Los cargos ya conciliados o pagados conservan su snapshot; las modificaciones incompatibles se rechazan.
+- `/tarjetas` permite crear/editar/archivar tarjetas, compras y recurrentes; revisar fechas reales; vincular cada consumo 1:1, corregir diferencias antes del match, registrar desconocidos con reparto o excluir líneas con motivo. Los totales bancarios opcionales se guardan por API como metadata, sin sumarlos a gastos.
+- Un ausente mueve el mismo cargo al siguiente statement, con motivo y registro de origen/destino; conserva fecha de compra y período esperado. La unicidad de cuota/recurrente impide recrearlo en el período de origen.
+- Estados del statement: `DRAFT → RECONCILED → PAID`. Solo se concilia cuando no quedan esperados ni líneas sin resolver. Un solo pago activo cubre los consumos completos, con ARS/USD separados. Deshacer vuelve a `RECONCILED`; reabrir es otra acción y habilita la corrección. Los pagos revertidos y los arrastres siguen auditados.
+- Las mutaciones usan transacciones, versión, Idempotency-Key y bloqueo por tarjeta. RLS separa propietarios; constraints y triggers protegen coincidencias, sumas de reparto y snapshots resueltos. La contraparte conectada solo lee su allocation, sin acceso al statement, tarjeta ni participantes privados. La función SQL restringida `incoming_shared_forecast` proyecta exclusivamente la parte autorizada cuando aún no hay snapshot de un mes regular o recurrente: no duplica el origen ni obliga al propietario a abrirlo antes.
+- “Crear gasto” ofrece gasto regular o consumo de tarjeta. “Mi mes” consolida gastos regulares y consumos por statement, separa monedas y enlaza cada resumen; Deudas sigue independiente. Todos los estilos nuevos usan clases Tailwind en componentes; no se agregó CSS manual.
+
 ### 4.6. Statement PDF e IA opcional
 
 La acción “Subir PDF” asiste al flujo manual, pero nunca lo reemplaza:
@@ -397,7 +410,7 @@ currency CHAR(3)
 - DATE se usa para vencimientos, cierres y posted date.
 - TIMESTAMPTZ se usa para eventos y auditoría.
 - El período contable se representa por su primer día, por ejemplo 2026-08-01.
-- El usuario tiene zona horaria.
+- La zona horaria se detecta automáticamente desde el celular o PC mediante `Intl.DateTimeFormat().resolvedOptions().timeZone`. Si no está disponible o es inválida, se usa Argentina (`America/Argentina/Tucuman`). No hay selector manual en Cuenta. Al abrir o volver a enfocar la app, se sincroniza la zona detectada con la cuenta antes de habilitar los recorridos financieros; la API usa ese valor para la fecha de hoy y los procesos de la cuenta. Las fechas de compra/vencimiento ya registradas siguen siendo fechas civiles y no se desplazan al cambiar de dispositivo.
 - Un vencimiento 29, 30 o 31 cae en el último día válido de un mes corto.
 - Nunca se asigna un statement comparando solamente el número de mes de una compra.
 
@@ -544,6 +557,7 @@ La V2 estrena identidad e interfaz desde cero. No se reutilizan el diseño, los 
 | Color         | Fondo `#f5f7fb`, superficie blanca, texto `#1c2536`, acción principal `#3458dd`. Verde para pagos, ámbar para revisión y rojo para vencidos/errores, siempre acompañados de texto.                                                 |
 | Tipografía    | Inter variable servida desde la app, sin peticiones a Google Fonts. Cifras monetarias alineadas y monedas explícitas.                                                                                                              |
 | Componentes   | Componentes propios compartidos: Button, Badge, Modal, AppShell, tarjetas, filtros, formularios, avisos y estados vacíos. Radix Dialog para foco, teclado y semántica de modales; Lucide para iconos consistentes.                 |
+| Estilos       | Tailwind CSS 4 integrado con Vite. Estilos de componentes y layouts directamente en `className`, incluidas variantes responsive, estados y safe areas. Un solo CSS global para tema, reset y animaciones.                          |
 | Navegación    | Mi mes, Tarjetas, Compartidos y Deudas como destinos principales. Cuenta como destino secundario. Sidebar en escritorio y barra inferior en móvil; sin trasladar una tabla ancha al teléfono.                                      |
 | Jerarquía     | Período y creación visibles; primero lo pendiente, después lo resuelto; importes ARS y USD separados. Cada cifra debe indicar si es importe completo, parte propia o saldo compartido.                                             |
 | Interacción   | Acciones claras en cada fila, filtros de estado y búsqueda; confirmación tras guardar, pagar o deshacer. Las acciones con consecuencias reales usan los contratos y reglas transaccionales del backend.                            |
@@ -556,6 +570,21 @@ La V2 estrena identidad e interfaz desde cero. No se reutilizan el diseño, los 
 El prototipo no sustituye los módulos de producto: faltan los flujos completos de recurrencias, reparto, pago anual, creación unificada mensual/tarjeta, conciliación, invitaciones y deudas conectados a la API. La pantalla mensual final debe incorporar las alertas y reglas detalladas abajo. Las cifras del prototipo son importes completos de gastos; los saldos compartidos se presentan aparte.
 
 Las bases de los componentes están documentadas en [Radix Dialog](https://www.radix-ui.com/primitives/docs/components/dialog), [Lucide React](https://lucide.dev/guide/react) y [Fontsource Inter](https://fontsource.org/fonts/inter/use).
+
+**Convenciones de estilos para esta V2 y las próximas fases:**
+
+- **Preferencia confirmada por el usuario:** la mayoría de los estilos debe estar directamente en clases Tailwind de los componentes, con la menor cantidad posible de archivos CSS. No crear hojas de estilos por pantalla ni volver a trasladar los componentes a `@apply`.
+- `app/styles.css` es el único CSS manual: importa el tema y las utilidades, define tokens con `@theme` y conserva reset, tipografía, foco visible, animaciones, movimiento reducido y bloqueo de scroll del modal. Se omite Preflight para conservar los controles ya aprobados. No agregar otro reset global.
+- Usar los tokens `brand`, `canvas`, `ink`, `muted`, `line` y los estados semánticos; Inter se sirve localmente. Las clases de composición, layout, colores, tamaños, safe areas y estados viven en `className`. El breakpoint `desktop:` comienza en 901 px; la base sigue siendo móvil.
+- Mantener las utilidades completas y estáticas para que Tailwind las detecte. Las variantes de `Button` y tonos de `Badge` usan mapas de clases dentro de su propio componente. `cn`, en `app/lib/cn.ts`, utiliza `tailwind-merge` para resolver las clases de variantes y las sobrescrituras del consumidor.
+- Reutilizar `Button`, `Badge`, `Modal` y `FormField` de `app/components/ui.tsx`, además de los formularios/repartos existentes. Extraer componentes cuando se repita un bloque de clases, en lugar de crear un catálogo externo de estilos o CSS por componente. Algunas clases semánticas se conservan como anclas para variantes de descendientes; no dependen de una hoja de estilos de componentes.
+- Las medidas del teclado siguen llegando desde VisualViewport al `Modal` mediante variables CSS; las utilidades del propio modal consumen esas variables. El backend y los contratos no se modifican por esta migración.
+- No copiar los componentes de V1 ni incorporar shadcn/ui u otra biblioteca sin una necesidad concreta.
+- Los nuevos recorridos siguen la prioridad iPhone y los tamaños de verificación indicados abajo. La incorporación de Tailwind conserva las reglas financieras. Fase 5 aplica estas convenciones a todos sus componentes.
+
+Referencias: [integración oficial de Tailwind con Vite](https://tailwindcss.com/docs/installation/using-vite), [tema](https://tailwindcss.com/docs/theme) y [cómo omitir Preflight](https://tailwindcss.com/docs/preflight#disabling-preflight).
+
+La migración a clases en componentes redujo el CSS manual de más de 3.700 líneas a 153, eliminando `app/styles/base.css` y `app/styles/components.css`. Pasaron tipos, lint, formato, las 16 pruebas unitarias, build y ensayo Docker local. La comparación de la vista previa conservó medidas, colores y tipografía en escritorio a 1440 px y en móvil y formulario a 390 px. También se revisaron 375/430 px y las secciones de ejemplo de Tarjetas, Compartidos y Deudas, sin desbordamiento horizontal. Safari en un iPhone físico sigue pendiente.
 
 ### Mobile first: iPhone como dispositivo principal
 
@@ -690,7 +719,7 @@ Abrir `http://localhost:3000`. Vite atiende la web en 3000 y reenvía API/health
 
 `setup:local` crea secretos nuevos una sola vez y respeta una configuración local existente. `db:setup` se conecta con el superusuario de Postgres.app (el usuario de macOS) y crea o actualiza los roles `gastapp_owner` (migraciones, con `CREATEDB` para las bases de prueba), `gastapp_auth` y `gastapp_app` con las contraseñas de `.env.local`, y la base `gastappv2`; puede repetirse. `db:migrate` valida que el destino sea `gastappv2` en localhost y aplica las migraciones versionadas. Para un VPS nuevo deberán prepararse esos roles con sus propios secretos antes de aplicar la migración.
 
-**Migración única mientras no haya despliegue.** Hasta la primera publicación, el schema completo vive en una sola migración `202610200001_init` que se regenera al cambiar el modelo (`prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script`, más el SQL manual de constraints, triggers, grants y RLS al final del archivo). Para aplicarla de nuevo en local, `npm run db:reset` elimina y recrea `gastappv2` y aplica la migración (borra los datos locales). A partir del primer despliegue, cada cambio de schema tendrá su propia migración incremental.
+**Migraciones incrementales.** Se conserva `202610200001_init` y Fase 5 agrega `202610210001_cards`, con tablas, constraints, triggers, grants y RLS. `npm run db:migrate` instala ambos sobre una base vacía o agrega Tarjetas sobre la base existente sin borrar datos. Cada cambio posterior tendrá su migración revisada; no se reescribe una ya aplicada. `npm run db:reset` elimina y recrea `gastappv2` y queda reservado para un reinicio local explícito (borra sus datos).
 
 ```bash
 npm run check
@@ -853,7 +882,7 @@ Sin ambas credenciales el entorno local arranca y muestra claramente que Google 
 
 ### 7.7. Migraciones y primer despliegue
 
-Hasta el primer despliegue se mantiene una única migración `init` (ver comandos locales). Después, para la línea Prisma 7 de referencia, las migraciones se crean en desarrollo con `prisma migrate dev`, se revisa su SQL y se aplican con `prisma migrate deploy` en staging/producción. Políticas RLS, constraints y triggers pueden requerir SQL adicional versionado.
+Se mantienen migraciones incrementales desde Fase 5 (ver comandos locales). Para la línea Prisma 7 de referencia, las migraciones se crean en desarrollo, se revisa su SQL y se aplican con `prisma migrate deploy` en staging/producción. Políticas RLS, constraints y triggers pueden requerir SQL adicional versionado.
 
 Primer despliegue desde cero:
 
@@ -909,7 +938,7 @@ Agregar a Kuma los healthchecks de producción y staging, y activar las alertas 
 | 2. Gastos periódicos          | **Implementada en local:** bimestrales con anclaje, vencimientos cortos, omitir/restaurar, baja/reactivar, pago anual y renombrar.       | Períodos correctos; historial pagado protegido; cobertura anual y reparto sin duplicación.                                            |
 | 3. Compartidos                | **Implementada en local:** contactos sin cuenta, reparto con snapshots, saldos por persona y moneda, invitaciones y conexiones.          | Reparto manual completo sin registro de contraparte; vista conectada solo de lectura y sin filtraciones.                              |
 | 4. Deudas                     | **Implementada en local:** principal fijo, pagos parciales con undo, ajustes auditables, cancelar/reabrir y pantalla propia.             | Estados y saldos exactos, separados del reparto de gastos y tarjetas.                                                                 |
-| 5. Tarjetas                   | Compras, cuotas, recurrentes, statements y conciliación manual.                                                                          | Una fuente de verdad para cuotas; pago/reversión del statement consistente; cargos desconocidos y ausentes resueltos.                 |
+| 5. Tarjetas                   | **Implementada en local:** compras, cuotas, recurrentes, statements y conciliación manual.                                               | Una fuente de verdad para cuotas; pago/reversión del statement consistente; cargos desconocidos y ausentes resueltos.                 |
 | 6. Notificaciones y operación | Preferencias, outbox, reintentos, herramientas de DB y backups.                                                                          | Envíos idempotentes; configuración de recursos y restauración verificadas.                                                            |
 | 7. Publicación inicial        | Alcance completo probado en local, imagen Docker ensayada localmente y despliegue del commit validado con base nueva.                    | Comprobación en staging/producción de HTTPS, auth, permisos, backup/restauración y monitoreo; producción aprobada operativamente.     |
 | 8. PDF/IA opcional            | Archivos privados, parser agnóstico, validaciones y sugerencias.                                                                         | Límites/costos medidos y confirmación humana; no bloquea el primer lanzamiento manual.                                                |
@@ -928,6 +957,8 @@ La landing `ingbruno.ar` y el importador desde V1 son trabajos independientes. L
 - Principal y pagos parciales de Deudas en su moneda, sin crear deudas desde repartos.
 - Roles y RLS con conexiones del pool reutilizadas entre usuarios distintos.
 - Instalación limpia, persistencia tras redeploy, salud y restauración aislada.
+
+La Fase 5 deja **19 pruebas unitarias y 61 resultados de integración** aprobados. Agrega cuotas y matriz de reparto exactas, fechas y contratos, diferencias/monedas, desconocidos y exclusiones, recurrentes con vigencia, arrastre sin duplicados, pago concurrente, undo/reapertura, inmutabilidad en la base, privacidad de contraparte y proyección sin materialización previa. Incluye las tres regresiones de fases anteriores. También se comprueban build, Docker y recorrido con cuenta sintética/base temporal en navegador; Safari en iPhone físico sigue pendiente.
 
 La Fase 4 agrega 2 pruebas unitarias y 9 resultados de integración: estados derivados, validación del préstamo, pagos parciales en su moneda, versión obsoleta, sobrepago, fecha anterior al préstamo, pagos concurrentes que no superan el saldo, undo conservado en el historial, aumento y perdón parcial con motivo, cancelación sin pago inventado y reapertura, resumen por moneda separado del mes y de los compartidos, privacidad entre cuentas y protecciones en la base (saldo negativo, ajustes inmutables, pagos solo revertibles, audit log). El recorrido de navegador cubre préstamo a persona nueva, pago con nota de otra moneda, deshacer, sobrepago, perdón parcial, cancelar/reabrir, saldar, préstamo vencido y móvil 375/390.
 
@@ -949,7 +980,9 @@ Las instrucciones y ejemplos de Opción B/Vercel describían el sistema anterior
 
 ## 10. Pendientes concretos y siguiente entrega
 
-La fundación técnica y las Fases 1 a 4 ya están implementadas. Quedan tareas de configuración, módulos e infraestructura:
+La fundación técnica y las Fases 1 a 5 ya están implementadas. Quedan tareas de configuración, módulos e infraestructura:
+
+Los tres hallazgos de la revisión previa quedaron corregidos: pagos mensuales/anuales y materialización toman el mismo bloqueo de serie; Compartidos proyecta la parte autorizada de meses aún no materializados; Deudas conserva cancelaciones y reaperturas en su historial. Hay regresiones automatizadas para los tres casos.
 
 - Completar las credenciales del cliente OAuth local y validar el ingreso real con Google; la integración y las versiones ya están fijadas y probadas automáticamente.
 - Completar registro/delegación del dominio y DNS; cerrar staging y certificados según el proxy real.
@@ -957,7 +990,7 @@ La fundación técnica y las Fases 1 a 4 ya están implementadas. Quedan tareas 
 - Envío de invitaciones por correo y enlace de un solo uso (Fase 6, con el outbox de notificaciones).
 - Fijar parámetros operativos de sesiones, backups, recuperación, correo y jobs en sus fases.
 
-**Siguiente entrega:** Fase 5, Tarjetas: tarjetas, compras en cuotas con snapshot de reparto por cuota, cargos recurrentes, statements por período con cierre y vencimiento reales, conciliación manual (esperado, coincide, diferencias, desconocidos, ausentes arrastrados al siguiente), pago y reversión del statement completo. Decisiones vigentes: el pago rápido usa la fecha de hoy y un canal opcional; la contraparte conectada ve el historial completo de lo compartido. No se migran datos de V1 ni se despliega al VPS durante esa entrega local.
+**Siguiente entrega:** Fase 6, Notificaciones y operación: preferencias de notificación, outbox, reintentos e invitaciones por correo; herramientas de DB, backups y restauración verificada. Se desarrolla primero en local. El despliegue y la importación de V1 conservan sus fases y alcance independientes.
 
 ## 11. Referencias técnicas
 

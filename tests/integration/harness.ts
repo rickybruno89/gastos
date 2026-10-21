@@ -47,12 +47,15 @@ export async function startTestApp() {
   const databases = createDatabases(config);
   let closeServer: (() => Promise<void>) | undefined;
   const close = async () => {
-    if (closeServer) await closeServer();
-    await databases.close();
-    await admin.query(
-      `DROP DATABASE ${pg.escapeIdentifier(name)} WITH (FORCE)`,
-    );
-    await admin.end();
+    try {
+      if (closeServer) await closeServer();
+      await databases.close();
+      // Los pools ya están cerrados. DROP espera a que PostgreSQL observe sus
+      // desconexiones; FORCE exigiría privilegios para terminar otros roles.
+      await admin.query(`DROP DATABASE ${pg.escapeIdentifier(name)}`);
+    } finally {
+      await admin.end();
+    }
   };
   try {
     const migration = spawnSync(
