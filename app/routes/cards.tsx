@@ -84,6 +84,9 @@ function StatementActionForm({
                 ...(d.get("channel") && {
                   channel: String(d.get("channel")).trim(),
                 }),
+                ...(String(d.get("notes")).trim() && {
+                  notes: String(d.get("notes")).trim(),
+                }),
               }
             : {
                 version: statement.version,
@@ -119,6 +122,17 @@ function StatementActionForm({
               name="channel"
               maxLength={40}
               placeholder="Ej. Transferencia"
+            />
+          </FormField>
+          <FormField>
+            <label htmlFor="card-paid-notes">Notas (opcional)</label>
+            <textarea
+              id="card-paid-notes"
+              name="notes"
+              rows={3}
+              maxLength={500}
+              placeholder="Ej. Juan pagó $50.000 y yo el resto"
+              className="w-full rounded-[8px] border border-solid border-[#dce3ef] px-3 py-2.5 text-[max(16px,1rem)] text-[#3d4c65] placeholder:text-muted"
             />
           </FormField>
         </>
@@ -378,52 +392,54 @@ function CardsView({ user }: { user: CurrentUser }) {
         </Panel>
       ) : (
         <>
-          <div className="mb-5 flex flex-wrap items-end gap-3">
-            <div className="min-w-0 flex-1">
-              <FormField className="mb-0">
-                <label htmlFor="selected-card">Tarjeta</label>
-                <select
-                  id="selected-card"
-                  value={selected.id}
-                  onChange={(e) => navigate(period, e.target.value)}
-                >
-                  {cards.data?.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                      {c.lastFour ? ` · ${c.lastFour}` : ""}
-                      {c.archived ? " · archivada" : ""}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
+          <div className="mb-5 flex flex-wrap items-center gap-2">
+            <label htmlFor="selected-card" className="sr-only">
+              Tarjeta
+            </label>
+            <select
+              id="selected-card"
+              className="min-h-10 max-w-full w-auto rounded-[8px] border border-solid border-[#dce3ef] bg-white py-1.5 pr-8 pl-3 text-sm font-semibold text-[#3d4c65]"
+              value={selected.id}
+              onChange={(e) => navigate(period, e.target.value)}
+            >
+              {cards.data?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.lastFour ? ` · ${c.lastFour}` : ""}
+                  {c.archived ? " · archivada" : ""}
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center rounded-xl border border-line bg-white p-0.5">
+              <Button
+                variant="ghost"
+                className="min-h-9 px-2 py-1"
+                aria-label="Resumen anterior"
+                disabled={period === "2000-01"}
+                onClick={() => navigate(addMonths(period, -1))}
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              <span className="flex items-center gap-1.5 px-1 text-sm font-semibold whitespace-nowrap">
+                <CalendarDays size={14} />
+                {periodLabel(period)} {period.slice(0, 4)}
+              </span>
+              <Button
+                variant="ghost"
+                className="min-h-9 px-2 py-1"
+                aria-label="Resumen siguiente"
+                disabled={period === "2100-12"}
+                onClick={() => navigate(addMonths(period, 1))}
+              >
+                <ChevronRight size={16} />
+              </Button>
             </div>
             <Button
               variant="secondary"
+              className="min-h-10 px-3 py-1.5"
               onClick={() => setDialog({ kind: "edit-card" })}
             >
               Editar
-            </Button>
-          </div>
-          <div className="mb-5 flex items-center justify-between rounded-xl border border-line bg-white p-1">
-            <Button
-              variant="ghost"
-              aria-label="Resumen anterior"
-              disabled={period === "2000-01"}
-              onClick={() => navigate(addMonths(period, -1))}
-            >
-              <ChevronLeft size={18} />
-            </Button>
-            <span className="flex items-center gap-2 text-sm font-semibold">
-              <CalendarDays size={16} />
-              {periodLabel(period)} {period.slice(0, 4)}
-            </span>
-            <Button
-              variant="ghost"
-              aria-label="Resumen siguiente"
-              disabled={period === "2100-12"}
-              onClick={() => navigate(addMonths(period, 1))}
-            >
-              <ChevronRight size={18} />
             </Button>
           </div>
           {statementQuery.isPending ? (
@@ -507,6 +523,11 @@ function CardsView({ user }: { user: CurrentUser }) {
                         ? ` · ${statement.payment.channel}`
                         : ""}
                       .
+                    </p>
+                  )}
+                  {statement.payment?.notes && (
+                    <p className="mt-1 text-sm whitespace-pre-line text-muted">
+                      {statement.payment.notes}
                     </p>
                   )}
                 </Panel>

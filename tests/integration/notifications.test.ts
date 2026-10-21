@@ -487,6 +487,15 @@ test("notificaciones: outbox, permisos, enlaces y recordatorios durables", async
           lentOn: "2027-01-01",
           dueOn: "2027-02-01",
         });
+        await post("/debts", {
+          direction: "PAYABLE",
+          contactId: contact.data.id,
+          description: "Cuota del préstamo recibido",
+          currency: "ARS",
+          principalMinor: "3000",
+          lentOn: "2027-01-01",
+          dueOn: "2027-02-01",
+        });
         const card = await post("/cards", {
           name: "Visa",
           closingDay: 28,
@@ -519,7 +528,8 @@ test("notificaciones: outbox, permisos, enlaces y recordatorios durables", async
         const reminder = sent.find((m) => m.subject.includes("vencimientos"))!;
         assert.match(reminder.text, /Febrero/);
         assert.match(reminder.text, /Visa/);
-        assert.match(reminder.text, /Por cobrar/);
+        assert.match(reminder.text, /Por cobrar: Por cobrar/);
+        assert.match(reminder.text, /Por pagar: Cuota del préstamo recibido/);
         assert.doesNotMatch(reminder.text, /Cubierto anual/);
         assert.equal(
           (await get("/months/2027-02")).occurrences.filter(

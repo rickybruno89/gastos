@@ -15,7 +15,7 @@ Este es el documento único de referencia de GastApp V2. Reúne el assessment fu
 | Alojamiento confirmado | App y PostgreSQL en el VPS existente con Coolify, siguiendo la operación de Auguri.                                                                                                   |
 | Dominio de GastApp     | **`gastapp.ingbruno.ar`**, confirmado por el usuario.                                                                                                                                 |
 | Dominio raíz           | **`ingbruno.ar`**, reservado para una futura landing; contenido y tecnología por definir.                                                                                             |
-| Staging propuesto      | `staging.gastapp.ingbruno.ar`, separado de producción.                                                                                                                                |
+| Staging                | `gastapp.staging.ingbruno.ar`, separado de producción.                                                                                                                                |
 | Registro/delegación    | Pendientes según lo informado por el usuario; disponibilidad y titularidad no verificadas.                                                                                            |
 | DNS propuesto          | Cloudflare en la misma cuenta de Auguri, pendiente de configurar.                                                                                                                     |
 | Presupuesto            | Reutilizar el VPS y servicios gratuitos, sin nuevas suscripciones. Registrar/renovar `ingbruno.ar` tiene un arancel propio de NIC Argentina; ver sección 7.3.                         |
@@ -269,9 +269,9 @@ PersonalDebtPayment
 PersonalDebtAdjustment   # solo para ajustes explícitos
 ```
 
-PersonalDebt registra dinero que otra persona debe al usuario, como un préstamo de USD 1.000 en efectivo.
+PersonalDebt registra tanto dinero que otra persona debe al usuario (**Me deben**, `RECEIVABLE`) como dinero que el usuario debe a otra persona (**Yo debo**, `PAYABLE`). Ambos sentidos usan el mismo cálculo de saldo, pagos parciales, ajustes e historial.
 
-- Guarda principal, moneda, contraparte, fecha, descripción/notas y vencimiento opcional.
+- Guarda sentido, principal, moneda, contraparte, fecha, descripción/notas y vencimiento opcional. El sentido se define al crear y no se cambia después; no altera el signo de los importes.
 - Estados derivados: OPEN sin pagos, PARTIALLY_PAID con pagos parciales, PAID al cubrir el principal y CANCELLED al perdonar saldo.
 - Cada pago tiene importe, fecha y nota.
 - El pago se contabiliza en la moneda de la deuda.
@@ -287,7 +287,9 @@ PersonalDebt registra dinero que otra persona debe al usuario, como un préstamo
 - Saldo = principal + aumentos − perdonado − pagos activos, calculado en `shared/domain/debts.ts`. El estado se deriva: `CANCELLED` si está cancelada; `PAID` con saldo cero; `PARTIALLY_PAID` con algún pago; si no, `OPEN`. Perdonar todo sin pagos deja la deuda saldada, sin registrar un pago.
 - Un pago no puede superar el saldo ni ser anterior al préstamo; deshacer un pago lo marca revertido y queda en el historial. Ajustes `INCREASE` y `FORGIVE` con fecha y motivo obligatorio; son de solo alta. Cancelar guarda motivo y fecha, perdona el saldo restante y se puede reabrir.
 - La base rechaza un saldo negativo (trigger), la edición de ajustes y cualquier cambio en un pago que no sea marcarlo revertido (permisos por columna). Cada movimiento usa bloqueo de fila, versión e Idempotency-Key, y queda en el audit log.
-- La pantalla “Deudas” tiene resumen “Te deben” por moneda (solo deudas activas), filtros Activas/Saldadas/Canceladas/Todas, préstamos vencidos marcados y un detalle con pago, ajuste, cancelar, editar e historial.
+- La pantalla “Deudas” distingue “Me deben” y “Yo debo” al crear y filtrar. Los resúmenes separan por cobrar/por pagar y ARS/USD, sin compensar saldos opuestos. Conserva los filtros Activas/Saldadas/Canceladas/Todas y el mismo detalle de pago, ajuste, cancelar, editar e historial. Los textos indican pago recibido o realizado según el sentido.
+- La migración `init` incluye el enum y la columna `direction` con `RECEIVABLE` por defecto: las deudas existentes conservan su interpretación. Un trigger impide cambiar el sentido de una deuda ya creada. Se mantienen RLS, permisos, bloqueo de fila e idempotencia. Los recordatorios de deuda contemplan ambos sentidos con etiquetas “Por cobrar”/“Por pagar”.
+- Validación de esta ampliación: 22 pruebas unitarias y 84 resultados de integración aprobados; ambos sentidos recorren pagos concurrentes/parciales, undo, ajustes, cancelar/reabrir, aislamiento y totales separados. Los avisos distinguen cobros y pagos. Build y ensayo Docker aprobados. Navegador con datos sintéticos: crear deuda propia, registrar pago, ver historial, filtrar y revisar modales con scroll a 1024 × 700 y 390 × 844.
 
 ### 4.5. Tarjetas y conciliación manual
 
@@ -605,6 +607,7 @@ Las bases de los componentes están documentadas en [Radix Dialog](https://www.r
 - Reutilizar `Button`, `Badge`, `Modal` y `FormField` de `app/components/ui.tsx`, además de los formularios/repartos existentes. Extraer componentes cuando se repita un bloque de clases, en lugar de crear un catálogo externo de estilos o CSS por componente. Algunas clases semánticas se conservan como anclas para variantes de descendientes; no dependen de una hoja de estilos de componentes.
 - Las medidas del teclado siguen llegando desde VisualViewport al `Modal` mediante variables CSS; las utilidades del propio modal consumen esas variables. El backend y los contratos no se modifican por esta migración.
 - No copiar los componentes de V1 ni incorporar shadcn/ui u otra biblioteca sin una necesidad concreta.
+- Los modales separan el marco con `overflow-hidden` del contenedor interno con scroll. La barra queda dentro del borde redondeado, con espacio en sus extremos; conserva el bloqueo de página, el foco y el ajuste al teclado virtual.
 - Los nuevos recorridos siguen la prioridad iPhone y los tamaños de verificación indicados abajo. La incorporación de Tailwind conserva las reglas financieras. Fase 5 aplica estas convenciones a todos sus componentes.
 
 Referencias: [integración oficial de Tailwind con Vite](https://tailwindcss.com/docs/installation/using-vite), [tema](https://tailwindcss.com/docs/theme) y [cómo omitir Preflight](https://tailwindcss.com/docs/preflight#disabling-preflight).
@@ -744,7 +747,7 @@ Abrir `http://localhost:3000`. Vite atiende la web en 3000 y reenvía API/health
 
 `setup:local` crea secretos nuevos una sola vez y respeta una configuración local existente. `db:setup` se conecta con el superusuario de Postgres.app (el usuario de macOS) y crea o actualiza los roles `gastapp_owner` (migraciones, con `CREATEDB` para las bases de prueba), `gastapp_auth` y `gastapp_app` con las contraseñas de `.env.local`, y la base `gastappv2`; puede repetirse. `db:migrate` valida que el destino sea `gastappv2` en localhost y aplica las migraciones versionadas. Para un VPS nuevo deberán prepararse esos roles con sus propios secretos antes de aplicar la migración.
 
-**Migraciones incrementales.** Se conserva `202610200001_init` y Fase 5 agrega `202610210001_cards`, con tablas, constraints, triggers, grants y RLS. Fase 6 agrega `202610210002_notifications`, con preferencias, outbox, token de invitación y permisos del worker. `npm run db:migrate` instala las tres sobre una base vacía o agrega las pendientes sobre la base existente sin borrar datos. Cada cambio posterior tendrá su migración revisada; no se reescribe una ya aplicada. `npm run db:reset` elimina y recrea `gastappv2` y queda reservado para un reinicio local explícito (borra sus datos).
+**Migración única.** Mientras V2 no tenga su primer despliegue, el repositorio conserva una sola migración, `202610200001_init`, con tablas, constraints, triggers, grants, RLS, Tarjetas, notificaciones y dirección de deudas. Los cambios de schema se incorporan editando esa migración y `prisma/schema.prisma`, y se recrea la base local con `npm run db:reset` (elimina y recrea `gastappv2`; borra sus datos y queda reservado para el entorno local). Una vez publicado staging o producción, la migración `init` queda congelada y los cambios posteriores pasan a migraciones incrementales revisadas; no se reescribe una ya aplicada. `npm run db:migrate` aplica las pendientes sobre una base vacía o existente.
 
 ```bash
 npm run check
@@ -774,17 +777,17 @@ La separación por proyectos no aísla CPU, RAM, disco ni necesariamente redes D
 
 ### 7.2. Mapa propuesto de recursos
 
-| Recurso                         | Producción                    | Staging                                           |
-| ------------------------------- | ----------------------------- | ------------------------------------------------- |
-| Proyecto Coolify                | GastApp                       | GastApp                                           |
-| Entorno                         | `production`                  | `staging`                                         |
-| Rama                            | `main`                        | `develop`                                         |
-| Aplicación                      | `gastapp`                     | `gastapp-staging`                                 |
-| PostgreSQL                      | `gastapp-db`                  | `gastapp-db-staging`                              |
-| URL                             | `https://gastapp.ingbruno.ar` | `https://staging.gastapp.ingbruno.ar` (propuesta) |
-| Base y usuarios SQL             | Propios de producción         | Propios de staging                                |
-| Volumen PDF, cuando corresponda | `gastapp-private-files`       | `gastapp-staging-private-files`                   |
-| Secretos Google y sesión        | Propios de producción         | Propios de staging                                |
+| Recurso                         | Producción                    | Staging                               |
+| ------------------------------- | ----------------------------- | ------------------------------------- |
+| Proyecto Coolify                | GastApp                       | GastApp                               |
+| Entorno                         | `production`                  | `staging`                             |
+| Rama                            | `main`                        | `develop`                             |
+| Aplicación                      | `gastapp`                     | `gastapp-staging`                     |
+| PostgreSQL                      | `gastapp-db`                  | `gastapp-db-staging`                  |
+| URL                             | `https://gastapp.ingbruno.ar` | `https://gastapp.staging.ingbruno.ar` |
+| Base y usuarios SQL             | Propios de producción         | Propios de staging                    |
+| Volumen PDF, cuando corresponda | `gastapp-private-files`       | `gastapp-staging-private-files`       |
+| Secretos Google y sesión        | Propios de producción         | Propios de staging                    |
 
 El panel mantiene su dirección documentada `coolify.auguri.ar`. Mudanzas a `coolify.ingbruno.ar` o del panel de Kuma son tareas de plataforma independientes. El dominio raíz queda reservado a la futura landing; el despliegue de GastApp se configura únicamente con sus hosts.
 
@@ -799,7 +802,7 @@ Verificado con fuentes oficiales el **20/10/2026**:
 | Concepto                                  | Costo previsto                                                                      |
 | ----------------------------------------- | ----------------------------------------------------------------------------------- |
 | DNS de `ingbruno.ar` en Cloudflare Free   | Sin cargo; puede coexistir con Auguri en la misma cuenta.                           |
-| Subdominios `gastapp` y `staging.gastapp` | Sin cargo separado por dominio o subdominio en Cloudflare Free.                     |
+| Subdominios `gastapp` y `gastapp.staging` | Sin cargo separado por dominio o subdominio en Cloudflare Free.                     |
 | Delegación en NIC Argentina               | Sin cargo.                                                                          |
 | Certificados Let's Encrypt en Traefik     | Sin cargo.                                                                          |
 | Hosting de app, base y futura landing     | Se reutiliza el VPS contratado; capacidad a verificar antes de asignar recursos.    |
@@ -828,7 +831,7 @@ Comprobaciones de solo lectura desde el Mac:
 ```bash
 dig +short NS ingbruno.ar
 dig +short A gastapp.ingbruno.ar
-dig +short A staging.gastapp.ingbruno.ar
+dig +short A gastapp.staging.ingbruno.ar
 ```
 
 Los NS deben coincidir con los asignados a la zona por Cloudflare; los A deben devolver la IP verificada del VPS. Que DNS resuelva no prueba todavía que la app o HTTPS estén funcionando. Las delegaciones de Auguri y de `ingbruno.ar` son independientes aunque compartan cuenta Cloudflare y servidor.
@@ -838,7 +841,7 @@ Procedimientos oficiales: [Cloudflare: alta de zona y nameservers](https://devel
 | Tipo | Nombre en la zona `ingbruno.ar` | Destino y uso                                                                   |
 | ---- | ------------------------------- | ------------------------------------------------------------------------------- |
 | A    | `gastapp`                       | `IP_DEL_VPS`: GastApp producción.                                               |
-| A    | `staging.gastapp`               | Misma IP: staging propuesto.                                                    |
+| A    | `gastapp.staging`               | Misma IP: staging propuesto.                                                    |
 | A    | `@`                             | Reservado para la futura landing; configurarlo cuando su hosting esté definido. |
 
 Los nombres DNS se muestran completos en la tabla de entornos. Para la preparación inicial se propone DNS only, terminando HTTPS en Traefik. GastApp usa hosts fijos y no necesita copiar los routers wildcard de Auguri. No se requiere un subdominio adicional para la API.
@@ -868,18 +871,35 @@ El Dockerfile V2 seguirá el patrón multietapa de Auguri: dependencias, compila
 - El volumen privado, cuando se implemente PDF, sobrevive al redeploy y permite escritura al usuario del contenedor. No se mezcla con fotos o archivos de Auguri.
 - El healthcheck `/healthz` comprueba acceso a PostgreSQL y al schema requerido mediante una consulta mínima, sin exponer datos personales ni secretos; responde 503 si falla.
 
-Variables conceptuales por entorno:
+Variables por entorno. Los nombres son los de `.env.example`, que es la referencia completa; cada entorno de Coolify necesita al menos estas:
 
-| Variable o grupo       | Valor previsto                                                                               |
-| ---------------------- | -------------------------------------------------------------------------------------------- |
-| URL pública            | `https://gastapp.ingbruno.ar` o la URL de staging; nombre de variable a fijar con auth.      |
-| Conexiones PostgreSQL  | URLs internas con roles de ejecución, autenticación y migración según permisos.              |
-| Google OAuth           | Client ID y secreto específicos del entorno.                                                 |
-| Secreto de sesión/auth | Nuevo y distinto por entorno, con nombre según la librería elegida.                          |
-| `PORT`                 | `3000` como propuesta.                                                                       |
-| Archivos privados      | Ruta interna propuesta `/data/private-files`, cuando se implemente PDF.                      |
-| SMTP                   | Configuración de email de producto y recordatorios, independiente de las alertas de Coolify. |
-| IA opcional            | Clave solo del backend cuando se habilite PDF/IA.                                            |
+| Variable                                   | Valor en Coolify                                                                                                                                        |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                                 | `production` (también en staging).                                                                                                                      |
+| `PORT`                                     | `3000`.                                                                                                                                                 |
+| `APP_ORIGIN`                               | `https://gastapp.ingbruno.ar` o `https://gastapp.staging.ingbruno.ar`; sin ruta ni barra final. Producción exige HTTPS.                                 |
+| `TRUST_PROXY_HOPS`                         | `1` detrás de Traefik (valor a confirmar en staging).                                                                                                   |
+| `DATABASE_URL`                             | URL interna con el rol `gastapp_app`.                                                                                                                   |
+| `AUTH_DATABASE_URL`                        | URL interna con el rol `gastapp_auth` (distinto del anterior).                                                                                          |
+| `WORKER_DATABASE_URL`                      | URL interna con el rol `gastapp_worker`, solo para el proceso worker.                                                                                   |
+| `MIGRATION_DATABASE_URL`                   | Rol `gastapp_owner`; solo para el paso controlado de migración, no para la app.                                                                         |
+| `BETTER_AUTH_SECRET`                       | Mínimo 32 caracteres, nuevo y distinto por entorno.                                                                                                     |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Del cliente OAuth de `gastapp.ingeit@gmail.com`. Producción exige ambos.                                                                                |
+| `MAIL_MODE`, `MAIL_FROM`                   | `smtp` y el Gmail remitente. `capture` está prohibido en producción; sin `MAIL_MODE` queda `disabled` y no se envían avisos.                            |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`    | Gmail: `smtp.gmail.com`, `465`, `true`.                                                                                                                 |
+| `SMTP_USER`, `SMTP_PASSWORD`               | El Gmail y su **contraseña de aplicación** (requiere verificación en 2 pasos): https://myaccount.google.com/apppasswords. Misma cuenta que `MAIL_FROM`. |
+| `BACKUP_ENCRYPTION_KEY`                    | Clave propia de backups, guardada fuera de ellos.                                                                                                       |
+| Archivos privados / IA                     | Ruta `/data/private-files` y clave de IA solo cuando se implemente PDF/IA.                                                                              |
+
+El worker de avisos (vencimientos e invitaciones) es un segundo recurso de Coolify con la misma imagen y comando `npm run worker`, con reinicio automático y sin healthcheck HTTP. El envío también requiere que cada persona active los avisos por email en Cuenta.
+
+#### Checklist de salida a producción
+
+1. **DNS en Cloudflare** (sección 7.3): registros A `gastapp` y `gastapp.staging` hacia la IP del VPS, en **DNS only (nube gris)**. `gastapp.staging.ingbruno.ar` tiene dos niveles bajo la zona, así que el certificado universal gratuito de Cloudflare no lo cubriría con el proxy activado; HTTPS lo emite Traefik con Let's Encrypt.
+2. **Coolify:** proyecto GastApp, entornos `staging` y `production`, PostgreSQL privado con los roles `gastapp_owner`, `gastapp_auth`, `gastapp_app` y `gastapp_worker`, aplicación y worker, dominio del recurso y las variables de la tabla anterior como secretos.
+3. **Migración:** aplicar `202610200001_init` con `prisma migrate deploy` sobre la base vacía, como paso controlado (7.7), antes de habilitar tráfico.
+4. **Google:** los orígenes y callbacks de los tres entornos ya están cargados; publicar la pantalla de consentimiento antes de invitar a otras personas.
+5. **Verificación:** `/healthz`, ingreso con Google, cookies seguras, un correo de aviso real y el worker en ejecución; primero staging y después producción.
 
 Guardar secretos en Coolify y sus copias privadas en un gestor. Los futuros `.env.staging` y `.env.production`, dumps y backups deberán quedar ignorados por Git antes de crearlos. No se reutilizan credenciales de Auguri ni las antiguas de V1.
 
@@ -890,10 +910,12 @@ La librería implementada es Better Auth y el prefijo es `/api/auth`. El inicio 
 | Entorno    | Callback previsto                                              |
 | ---------- | -------------------------------------------------------------- |
 | Local      | `http://localhost:3000/api/auth/callback/google`               |
-| Staging    | `https://staging.gastapp.ingbruno.ar/api/auth/callback/google` |
+| Staging    | `https://gastapp.staging.ingbruno.ar/api/auth/callback/google` |
 | Producción | `https://gastapp.ingbruno.ar/api/auth/callback/google`         |
 
-Las URLs públicas definitivas se verificarán al preparar cada entorno de Google Cloud. Los orígenes confiables y cookies corresponden al host de cada entorno. No se comparten cookies mediante `Domain=ingbruno.ar` o `Domain=gastapp.ingbruno.ar`; producción, staging y la futura landing mantienen su aislamiento de sesión.
+**Estado (21/10/2026).** El cliente OAuth de V2 se creó en el proyecto de Google Cloud de la cuenta `gastapp.ingeit@gmail.com` (cuenta dedicada de la app, la misma que enviará los correos). Ya tiene registrados como orígenes de JavaScript `http://localhost:3000`, `https://gastapp.ingbruno.ar` y `https://gastapp.staging.ingbruno.ar`, y los tres callbacks de la tabla anterior. Mientras la pantalla de consentimiento esté en modo de prueba, solo pueden ingresar las cuentas cargadas como usuarios de prueba. Antes de abrir la app a otras personas hay que publicarla (modo producción) en la pantalla de consentimiento. Si más adelante se separan los clientes de staging y producción, repartir los orígenes y callbacks y usar credenciales distintas por entorno en Coolify.
+
+Los orígenes confiables y cookies corresponden al host de cada entorno. No se comparten cookies mediante `Domain=ingbruno.ar` o `Domain=gastapp.ingbruno.ar`; producción, staging y la futura landing mantienen su aislamiento de sesión.
 
 #### Configurar el ingreso real con Google en local
 
@@ -907,7 +929,7 @@ Sin ambas credenciales el entorno local arranca y muestra claramente que Google 
 
 ### 7.7. Migraciones y primer despliegue
 
-Se mantienen migraciones incrementales desde Fase 5 (ver comandos locales). Para la línea Prisma 7 de referencia, las migraciones se crean en desarrollo, se revisa su SQL y se aplican con `prisma migrate deploy` en staging/producción. Políticas RLS, constraints y triggers pueden requerir SQL adicional versionado.
+Hasta el primer despliegue existe una sola migración `init`; después se agregan incrementales (ver comandos locales). Para la línea Prisma 7 de referencia, las migraciones se crean en desarrollo, se revisa su SQL y se aplican con `prisma migrate deploy` en staging/producción. Políticas RLS, constraints y triggers pueden requerir SQL adicional versionado.
 
 Primer despliegue desde cero:
 

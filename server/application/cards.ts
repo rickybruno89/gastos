@@ -721,6 +721,7 @@ async function detail(
       ? {
           paidOn: toIsoDate(row.payments[0].paidOn),
           channel: row.payments[0].channel,
+          notes: row.payments[0].notes,
         }
       : null,
     recurring: await recurringList(tx, ownerId, row.cardId, row.period),
@@ -834,6 +835,48 @@ export async function changeCardCharge(
       "Desvinculá la línea antes de corregir el cargo.",
     );
   if (input.shares) await validateShares(tx, ownerId, input.shares);
+  if (input.scope === "THIS_AND_FUTURE" && current.recurringId) {
+    // Un cargo recurrente se corrige cambiando la regla desde este mes.
+    const series = await tx.cardRecurringSeries.findFirstOrThrow({
+      where: { id: current.recurringId, ownerId },
+    });
+    if (input.amountMinor || input.shares)
+      await updateRecurring(context, series.id, {
+        version: series.version,
+        fromPeriod: toPeriod(statement.period),
+        ...(input.amountMinor && { amountMinor: input.amountMinor }),
+        ...(input.shares && { shares: input.shares }),
+      });
+    if (input.description) {
+      await tx.cardRecurringSeries.update({
+        where: { id: series.id },
+        data: { description: input.description },
+      });
+      const future = await tx.cardCharge.findMany({
+        where: {
+          recurringId: series.id,
+          expectedPeriod: { gte: statement.period },
+          statement: { status: "DRAFT" },
+        },
+      });
+      for (const c of future) {
+        await tx.cardCharge.update({
+          where: { id: c.id },
+          data: { description: input.description, version: { increment: 1 } },
+        });
+        await tx.cardAllocation.updateMany({
+          where: { chargeId: c.id, ownerId },
+          data: { expenseName: input.description },
+        });
+        await bump(tx, c.statementId);
+      }
+    }
+    await record(context, "charge_changed", statement.id, {
+      chargeId: id,
+      ...input,
+    });
+    return getStatement(tx, ownerId, statement.id);
+  }
   const targets =
     input.scope === "THIS_AND_FUTURE" && current.purchaseId
       ? await tx.cardCharge.findMany({
@@ -1126,6 +1169,7 @@ export async function transitionStatement(
         statementId: id,
         paidOn: isoDate(input.paidOn ?? todayIn(await timeZoneOf(tx, ownerId))),
         channel: input.channel ?? null,
+        notes: input.notes ?? null,
         arsMinor: BigInt(
           amounts.find((a) => a.currency === "ARS")?.amountMinor ?? 0,
         ),

@@ -2,6 +2,7 @@ import { cn } from "../lib/cn";
 import { useState, type FormEvent } from "react";
 import {
   ArrowDownLeft,
+  ArrowUpRight,
   Ban,
   CircleCheck,
   HandCoins,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { Workspace } from "../components/workspace";
 import { FormField, Badge, Button, Modal } from "../components/ui";
+import { MoneyInput } from "../components/money-input";
 import {
   useCreateDebt,
   useDebt,
@@ -21,12 +23,7 @@ import {
 } from "../lib/debts";
 import { useContacts, useCreateContact } from "../lib/sharing";
 import { errorMessage } from "../lib/expenses";
-import {
-  amountInput,
-  formatMoney,
-  parseAmount,
-  shortDate,
-} from "../lib/format";
+import { formatMoney, parseAmount, shortDate } from "../lib/format";
 import type { CurrentUser } from "../../shared/contracts/account";
 import type { Debt, DebtDetail } from "../../shared/contracts/debts";
 import { todayIn } from "../../shared/domain/periods";
@@ -40,7 +37,7 @@ const statusLabel = {
   CANCELLED: { text: "Cancelada", tone: "neutral" },
 } as const;
 const eventLabel = {
-  LENT: "Préstamo",
+  LENT: "Préstamo otorgado",
   PAYMENT: "Pago recibido",
   INCREASE: "Aumento del principal",
   FORGIVE: "Perdonado",
@@ -81,6 +78,7 @@ function CreateDebtForm({
   const createContact = useCreateContact(user.id);
   const create = useCreateDebt(user.id);
   const [person, setPerson] = useState("");
+  const [direction, setDirection] = useState<Debt["direction"]>("RECEIVABLE");
   const [error, setError] = useState("");
   const today = todayIn(user.preferences.timeZone);
   const active = (contacts.data ?? []).filter((c) => !c.archived);
@@ -93,7 +91,7 @@ function CreateDebtForm({
     const nickname = String(data.get("nickname") ?? "").trim();
     if (person === "new" && !nickname)
       return setError("Escribí el apodo de la persona.");
-    if (!person) return setError("Elegí a quién le prestaste.");
+    if (!person) return setError("Elegí la persona de esta deuda.");
     setError("");
     try {
       const contactId =
@@ -104,6 +102,7 @@ function CreateDebtForm({
       const notes = String(data.get("notes")).trim();
       onDone(
         await create.mutateAsync({
+          direction,
           contactId,
           description: String(data.get("description")).trim(),
           currency: data.get("currency") === "USD" ? "USD" : "ARS",
@@ -119,8 +118,38 @@ function CreateDebtForm({
   }
   return (
     <form onSubmit={submit}>
+      <fieldset className="mb-5 min-w-0 border-0 p-0">
+        <legend className="mb-2 text-sm font-medium text-muted">
+          Tipo de deuda
+        </legend>
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              ["RECEIVABLE", "Me deben"],
+              ["PAYABLE", "Yo debo"],
+            ] as const
+          ).map(([value, label]) => (
+            <label
+              key={value}
+              className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line p-3 text-sm font-semibold has-checked:border-brand has-checked:bg-brand-soft has-checked:text-brand"
+            >
+              <input
+                type="radio"
+                name="direction"
+                value={value}
+                checked={direction === value}
+                onChange={() => setDirection(value)}
+                className="accent-brand"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <FormField>
-        <label htmlFor="debt-person">¿Quién te debe?</label>
+        <label htmlFor="debt-person">
+          {direction === "PAYABLE" ? "¿A quién le debés?" : "¿Quién te debe?"}
+        </label>
         <select
           id="debt-person"
           value={person}
@@ -167,16 +196,8 @@ function CreateDebtForm({
       </FormField>
       <div className="grid grid-cols-2 gap-3">
         <FormField>
-          <label htmlFor="debt-amount">Importe prestado</label>
-          <input
-            id="debt-amount"
-            name="amount"
-            inputMode="decimal"
-            placeholder="0,00"
-            required
-            maxLength={18}
-            autoComplete="off"
-          />
+          <label htmlFor="debt-amount">Importe de la deuda</label>
+          <MoneyInput id="debt-amount" />
         </FormField>
         <FormField>
           <label htmlFor="debt-currency">Moneda</label>
@@ -209,7 +230,11 @@ function CreateDebtForm({
           name="notes"
           maxLength={500}
           autoComplete="off"
-          placeholder="Ej. Acordamos que devuelve en cuotas"
+          placeholder={
+            direction === "PAYABLE"
+              ? "Ej. Acordé devolverlo en cuotas"
+              : "Ej. Acordamos que devuelve en cuotas"
+          }
         />
         <span className="field-help text-[0.75rem] text-muted leading-[1.7]">
           Sin intereses automáticos. Si cambia lo adeudado, lo registrás como
@@ -220,7 +245,7 @@ function CreateDebtForm({
       <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
         <Button type="submit" className="w-full" disabled={pending}>
           <Plus size={17} />
-          {pending ? "Guardando…" : "Registrar préstamo"}
+          {pending ? "Guardando…" : "Registrar deuda"}
         </Button>
       </div>
     </form>
@@ -261,7 +286,9 @@ function PaymentForm({
         onSuccess: (updated) =>
           onDone(
             updated.status === "PAID"
-              ? `${updated.contactName} saldó la deuda.`
+              ? updated.direction === "PAYABLE"
+                ? "Saldaste la deuda."
+                : `${updated.contactName} saldó la deuda.`
               : `Pago registrado. Falta ${formatMoney(updated.balanceMinor, updated.currency)}.`,
           ),
         onError: (failure) => setError(errorMessage(failure)),
@@ -273,14 +300,10 @@ function PaymentForm({
       <div className="grid grid-cols-2 gap-3">
         <FormField>
           <label htmlFor="payment-amount">Importe ({debt.currency})</label>
-          <input
+          <MoneyInput
             id="payment-amount"
-            name="amount"
-            inputMode="decimal"
-            defaultValue={amountInput(debt.balanceMinor)}
-            required
-            maxLength={18}
-            autoComplete="off"
+            currency={debt.currency}
+            defaultMinor={debt.balanceMinor}
           />
         </FormField>
         <FormField>
@@ -302,17 +325,26 @@ function PaymentForm({
           name="note"
           maxLength={300}
           autoComplete="off"
-          placeholder="Ej. Me pagó en pesos al cambio del día"
+          placeholder={
+            debt.direction === "PAYABLE"
+              ? "Ej. Pagué en pesos al cambio del día"
+              : "Ej. Me pagó en pesos al cambio del día"
+          }
         />
         <span className="field-help text-[0.75rem] text-muted leading-[1.7]">
-          Se registra en {debt.currency}. Si te pagó en otra moneda, anotalo:
-          GastApp no convierte monedas.
+          Se registra en {debt.currency}. Si{" "}
+          {debt.direction === "PAYABLE" ? "pagaste" : "te pagó"} en otra moneda,
+          anotalo: GastApp no convierte monedas.
         </span>
       </FormField>
       <FormError message={error} />
       <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
         <Button type="submit" className="w-full" disabled={action.isPending}>
-          <ArrowDownLeft size={17} />
+          {debt.direction === "PAYABLE" ? (
+            <ArrowUpRight size={17} />
+          ) : (
+            <ArrowDownLeft size={17} />
+          )}
           {action.isPending ? "Guardando…" : "Registrar pago"}
         </Button>
       </div>
@@ -360,7 +392,9 @@ function AdjustmentForm({
           onDone(
             kind === "INCREASE"
               ? "Aumento registrado."
-              : "Registraste lo que perdonaste.",
+              : debt.direction === "PAYABLE"
+                ? "Reducción acordada registrada."
+                : "Registraste lo que perdonaste.",
           ),
         onError: (failure) => setError(errorMessage(failure)),
       },
@@ -379,7 +413,9 @@ function AdjustmentForm({
             onChange={() => setKind("FORGIVE")}
           />
           <span>
-            Perdonar una parte
+            {debt.direction === "PAYABLE"
+              ? "Registrar una reducción acordada"
+              : "Perdonar una parte"}
             <small>Baja el saldo sin registrar un pago.</small>
           </span>
         </label>
@@ -392,21 +428,18 @@ function AdjustmentForm({
           />
           <span>
             Aumentar lo adeudado
-            <small>Por ejemplo, si le prestaste más.</small>
+            <small>
+              {debt.direction === "PAYABLE"
+                ? "Por ejemplo, si recibiste más dinero."
+                : "Por ejemplo, si le prestaste más."}
+            </small>
           </span>
         </label>
       </fieldset>
       <div className="grid grid-cols-2 gap-3">
         <FormField>
           <label htmlFor="adjust-amount">Importe ({debt.currency})</label>
-          <input
-            id="adjust-amount"
-            name="amount"
-            inputMode="decimal"
-            required
-            maxLength={18}
-            autoComplete="off"
-          />
+          <MoneyInput id="adjust-amount" currency={debt.currency} />
         </FormField>
         <FormField>
           <label htmlFor="adjust-date">Fecha</label>
@@ -475,7 +508,7 @@ function CancelForm({
   return (
     <form onSubmit={submit}>
       <p className="notice text-muted [background:#f2f5fb] text-[11px] leading-[1.7] mx-0 my-4 px-[15px] py-[13px] rounded-[9px]">
-        Cancelar perdona el saldo de{" "}
+        Cancelar deja sin efecto en tu registro el saldo de{" "}
         {formatMoney(debt.balanceMinor, debt.currency)}. No se registra como
         pago y podés reabrirla más adelante.
       </p>
@@ -568,7 +601,7 @@ function EditDebtForm({
           autoComplete="off"
         />
         <span className="field-help text-[0.75rem] text-muted leading-[1.7]">
-          El importe prestado no se edita: usá un ajuste para que quede en el
+          El importe inicial no se edita: usá un ajuste para que quede en el
           historial.
         </span>
       </FormField>
@@ -619,25 +652,31 @@ function DebtSheet({
           <dd>{money(debt.owedMinor)}</dd>
         </div>
         <div>
-          <dt>Cobrado</dt>
+          <dt>{debt.direction === "PAYABLE" ? "Pagado" : "Cobrado"}</dt>
           <dd>{money(debt.paidMinor)}</dd>
         </div>
         {debt.forgivenMinor !== "0" && (
           <div>
-            <dt>Perdonado</dt>
+            <dt>{debt.direction === "PAYABLE" ? "Reducido" : "Perdonado"}</dt>
             <dd>{money(debt.forgivenMinor)}</dd>
           </div>
         )}
         <div className="debt-balance">
-          <dt>{debt.status === "CANCELLED" ? "Saldo perdonado" : "Falta"}</dt>
+          <dt>
+            {debt.status === "CANCELLED"
+              ? "Saldo cancelado"
+              : debt.direction === "PAYABLE"
+                ? "Falta pagar"
+                : "Falta cobrar"}
+          </dt>
           <dd>{money(debt.balanceMinor)}</dd>
         </div>
       </dl>
       {debt.status === "CANCELLED" ? (
         <>
           <p className="notice text-muted [background:#f2f5fb] text-[11px] leading-[1.7] mx-0 my-4 px-[15px] py-[13px] rounded-[9px]">
-            Cancelada: {debt.cancelReason}. El saldo quedó perdonado, sin
-            registrarse como pago.
+            Cancelada: {debt.cancelReason}. El saldo quedó sin efecto en tu
+            registro, sin registrarse como pago.
           </p>
           <FormError message={error} />
           <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
@@ -713,7 +752,13 @@ function DebtSheet({
           >
             <div>
               <strong>
-                {eventLabel[event.kind]}
+                {event.kind === "PAYMENT" && debt.direction === "PAYABLE"
+                  ? "Pago realizado"
+                  : event.kind === "LENT" && debt.direction === "PAYABLE"
+                    ? "Préstamo recibido"
+                    : event.kind === "FORGIVE" && debt.direction === "PAYABLE"
+                      ? "Reducción acordada"
+                      : eventLabel[event.kind]}
                 {event.reverted && " · deshecho"}
               </strong>
               <small>
@@ -786,7 +831,10 @@ function DebtRow({
           <strong>{debt.contactName}</strong>
           <small>{debt.description}</small>
           <small className={cn(overdue ? "overdue" : "")}>
-            Prestado el {shortDate(debt.lentOn)}
+            {debt.direction === "PAYABLE"
+              ? "Yo debo · recibido el"
+              : "Me deben · prestado el"}{" "}
+            {shortDate(debt.lentOn)}
             {debt.dueOn &&
               ` · ${overdue ? "venció" : "vence"} el ${shortDate(debt.dueOn)}`}
           </small>
@@ -818,19 +866,24 @@ function DebtsView({ user }: { user: CurrentUser }) {
   const debts = useDebts(user.id);
   const [filter, setFilter] =
     useState<(typeof filters)[number]["id"]>("active");
+  const [directionFilter, setDirectionFilter] = useState<
+    "ALL" | Debt["direction"]
+  >("ALL");
   const [creating, setCreating] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const detail = useDebt(user.id, openId);
   const [notice, setNotice] = useState("");
   const today = todayIn(user.preferences.timeZone);
-  const rows = (debts.data?.debts ?? []).filter((d) =>
-    filter === "all"
-      ? true
-      : filter === "active"
-        ? d.status === "OPEN" || d.status === "PARTIALLY_PAID"
-        : filter === "paid"
-          ? d.status === "PAID"
-          : d.status === "CANCELLED",
+  const rows = (debts.data?.debts ?? []).filter(
+    (d) =>
+      (directionFilter === "ALL" || d.direction === directionFilter) &&
+      (filter === "all"
+        ? true
+        : filter === "active"
+          ? d.status === "OPEN" || d.status === "PARTIALLY_PAID"
+          : filter === "paid"
+            ? d.status === "PAID"
+            : d.status === "CANCELLED"),
   );
   const done = (text: string) => {
     setNotice(text);
@@ -840,13 +893,13 @@ function DebtsView({ user }: { user: CurrentUser }) {
       <div className="page-heading month-heading flex items-center justify-between mb-4.5 flex-wrap gap-3.5 desktop:mb-[25px] [&_h1]:text-[1.875rem] desktop:[&_h1]:text-[2rem] [&_.eyebrow]:hidden desktop:[&_.eyebrow]:block [&_.page-description]:hidden desktop:[&_.page-description]:block">
         <div>
           <p className="eyebrow text-muted tracking-[1.45px] text-[11px] font-[650] mb-[11px]">
-            LO QUE TE DEBEN
+            LO QUE TE DEBEN Y LO QUE DEBÉS
           </p>
           <h1>
-            Deudas<span className="title-dot text-brand">.</span>
+            Deudas con personas<span className="title-dot text-brand">.</span>
           </h1>
           <p className="page-description text-muted text-[0.8125rem] leading-[1.7] mt-2.5">
-            Préstamos y pagos parciales, con su propio seguimiento.
+            Dinero por cobrar y por pagar, con pagos parciales e historial.
           </p>
         </div>
         <div className="heading-actions flex items-center w-full justify-between gap-2 min-[701px]:gap-3 min-[1251px]:w-auto max-[701px]:[&>.button]:text-[11px] max-[701px]:[&>.button]:pl-2.5 max-[701px]:[&>.button]:pr-2.5">
@@ -855,7 +908,7 @@ function DebtsView({ user }: { user: CurrentUser }) {
             onClick={() => setCreating(true)}
           >
             <Plus size={18} />
-            Registrar préstamo
+            Registrar deuda
           </Button>
         </div>
       </div>
@@ -882,32 +935,35 @@ function DebtsView({ user }: { user: CurrentUser }) {
       ) : debts.data.debts.length === 0 ? (
         <section className="card empty-state [background:white] shadow-[0_3px_10px_#1b2d4f02] text-center text-muted px-5.5 py-[35px] border border-solid border-line rounded-card [&_h3]:mt-3 [&_h3]:mb-[7px] [&_h3]:text-[#586987] [&_h3]:mx-0 [&_p]:text-[11px] [&_p]:mb-[17px]">
           <HandCoins size={27} />
-          <h3>No registraste préstamos</h3>
+          <h3>No registraste deudas</h3>
           <p>
-            Anotá lo que le prestaste a alguien y registrá sus pagos parciales.
+            Anotá lo que te deben o lo que debés y registrá cada pago parcial.
             Es independiente de tus gastos compartidos.
           </p>
           <Button onClick={() => setCreating(true)}>
             <Plus size={17} />
-            Registrar préstamo
+            Registrar deuda
           </Button>
         </section>
       ) : (
         <>
           {debts.data.totals.length > 0 && (
             <section
-              className="metrics grid grid-cols-2 mb-5 gap-2.5 desktop:grid-cols-[1.14fr_1fr_1fr] desktop:mb-6.5 desktop:gap-4.5"
-              aria-label="Lo que te deben"
+              className="metrics grid grid-cols-2 mb-5 gap-2.5 desktop:grid-cols-2 desktop:mb-6.5 desktop:gap-4.5"
+              aria-label="Saldos por cobrar y por pagar"
             >
               {debts.data.totals.map((total, index) => (
                 <article
-                  key={total.currency}
+                  key={`${total.direction}-${total.currency}`}
                   className={cn(
                     `metric-card [background:white] min-w-0 px-4 py-3.5 border border-solid border-line rounded-card [&>p]:text-[11px] [&>p]:text-muted [&>p]:mt-[7px] [&>p]:mb-4.5 [&>p]:mx-0 [&>.badge]:mt-[7px] max-desktop:[&_.badge]:text-[11px] [&:not(.metric-featured)_.metric-icon]:hidden desktop:[&:not(.metric-featured)_.metric-icon]:grid [&:not(.metric-featured)]:p-3.5 desktop:[&:not(.metric-featured)]:px-[23px] desktop:[&:not(.metric-featured)]:py-5 [&:not(.metric-featured)_.metric-label]:text-[0.75rem] [&:not(.metric-featured)_.metric-label]:mb-[5px] desktop:[&:not(.metric-featured)_.metric-label]:mb-[13px] [&:not(.metric-featured)_.metric-value]:text-[clamp(19px,_5.3vw,_25px)] desktop:[&:not(.metric-featured)_.metric-value]:text-[clamp(23px,_2.15vw,_33px)] max-[701px]:[&:not(.metric-featured)>p]:text-[11px] desktop:[&:not(.metric-featured)>p]:text-[0.6875rem] max-[701px]:[&:not(.metric-featured)>p]:leading-[1.8] max-[701px]:[&:not(.metric-featured)>p]:min-h-10 desktop:[&:not(.metric-featured)>p]:min-h-0 max-[701px]:[&:not(.metric-featured)>p]:mt-2 max-[701px]:[&:not(.metric-featured)>p]:mr-0 max-[701px]:[&:not(.metric-featured)>p]:mb-2 max-[701px]:[&:not(.metric-featured)>p]:ml-0 [&:not(.metric-featured)>p]:hidden desktop:[&:not(.metric-featured)>p]:block max-[701px]:[&:not(.metric-featured)_.badge]:text-[11px] max-[701px]:[&:not(.metric-featured)_.badge]:pt-[5px] max-[701px]:[&:not(.metric-featured)_.badge]:pr-[5px] max-[701px]:[&:not(.metric-featured)_.badge]:pb-[5px] max-[701px]:[&:not(.metric-featured)_.badge]:pl-[5px] max-[701px]:[&:not(.metric-featured)_.badge]:mt-1.5 [&:not(.metric-featured)>.badge]:hidden desktop:[&:not(.metric-featured)>.badge]:inline-flex ${index === 0 ? 'metric-featured [background:linear-gradient(115deg,_#3156d1,_#4569e5)] text-white shadow-[0_8px_18px_#3358d219] relative overflow-hidden col-span-full px-4.5 py-4 border-transparent desktop:[grid-column:auto] desktop:px-[23px] desktop:py-5 after:[content:""] after:absolute after:w-[180px] after:h-[180px] after:-right-20 after:top-[-75px] after:pointer-events-none after:border-[25px] after:border-solid after:border-[#ffffff05] after:rounded-full [&_.metric-label]:text-[#e0e8ff] [&_.metric-label]:mb-0.5 [&_.metric-label]:text-[0.8125rem] desktop:[&_.metric-label]:mb-[13px] desktop:[&_.metric-label]:text-[0.75rem] max-[701px]:[&>p]:text-[11px] desktop:[&>p]:text-[0.6875rem] desktop:[&>p]:min-h-0 [&>p]:text-[#e5ecff] [&>p]:hidden desktop:[&>p]:block [&_.metric-value]:text-[2rem] desktop:[&_.metric-value]:text-[clamp(23px,_2.15vw,_33px)] [&_.metric-icon]:grid' : ""} `,
                   )}
                 >
                   <div className="metric-label flex justify-between items-center text-[11px] text-muted mb-[13px]">
-                    <span>Te deben · {total.currency}</span>
+                    <span>
+                      {total.direction === "PAYABLE" ? "Debés" : "Te deben"} ·{" "}
+                      {total.currency}
+                    </span>
                     <span className="metric-icon h-[29px] w-[29px] grid place-content-center [background:#ffffff1c] rounded-[9px] min-[701px]:hidden desktop:grid">
                       <HandCoins size={18} />
                     </span>
@@ -928,7 +984,7 @@ function DebtsView({ user }: { user: CurrentUser }) {
             <header className="panel-heading flex justify-between items-center p-4 gap-3.5 desktop:pt-[23px] desktop:pb-4.5 desktop:px-5.5 [&_h2]:text-[1rem] [&_h2]:flex [&_h2]:items-center [&_h2]:gap-[9px] desktop:[&_h2]:text-[0.875rem] [&_p]:text-muted [&_p]:text-[0.75rem] [&_p]:mt-[5px] [&>svg]:text-muted">
               <div>
                 <h2>
-                  Préstamos{" "}
+                  Deudas{" "}
                   <span className="count inline-flex items-center justify-center min-w-5 h-5 [background:#f2f4f9] text-[11px] text-muted rounded-[6px]">
                     {debts.data.debts.length}
                   </span>
@@ -937,6 +993,23 @@ function DebtsView({ user }: { user: CurrentUser }) {
               </div>
             </header>
             <div className="expense-toolbar flex justify-between items-center pt-0 pb-3.5 flex-wrap px-3 gap-3 desktop:pr-5.5 desktop:pb-5 desktop:pl-5.5 desktop:flex-nowrap">
+              <label className="flex min-h-11 items-center gap-2 text-sm text-muted">
+                <span>Tipo</span>
+                <select
+                  aria-label="Filtrar por tipo de deuda"
+                  value={directionFilter}
+                  onChange={(event) =>
+                    setDirectionFilter(
+                      event.target.value as typeof directionFilter,
+                    )
+                  }
+                  className="min-h-11 rounded-lg border border-line bg-white px-3 text-sm text-ink"
+                >
+                  <option value="ALL">Me deben y yo debo</option>
+                  <option value="RECEIVABLE">Me deben</option>
+                  <option value="PAYABLE">Yo debo</option>
+                </select>
+              </label>
               <div
                 className="filter-group flex [background:#f3f5f9] flex-1 w-full p-[3px] rounded-[8px] desktop:flex-none desktop:w-auto [&_button]:[background:transparent] [&_button]:text-[0.8125rem] [&_button]:font-medium [&_button]:text-muted [&_button]:flex-1 [&_button]:min-h-11 [&_button]:px-2 [&_button]:py-[7px] [&_button]:border-0 [&_button]:border-none [&_button]:border-current [&_button]:rounded-[6px] desktop:[&_button]:text-[0.6875rem] [&_button[aria-pressed='true']]:[background:white] [&_button[aria-pressed='true']]:text-[#3c4a62] [&_button[aria-pressed='true']]:shadow-[0_1px_4px_#14284a10]"
                 role="group"
@@ -968,7 +1041,13 @@ function DebtsView({ user }: { user: CurrentUser }) {
               <div className="empty-state text-center text-muted px-5.5 py-[35px] [&_h3]:mt-3 [&_h3]:mb-[7px] [&_h3]:text-[#586987] [&_h3]:mx-0 [&_p]:text-[11px] [&_p]:mb-[17px]">
                 <CircleCheck size={27} />
                 <h3>No hay deudas en este filtro</h3>
-                <Button variant="secondary" onClick={() => setFilter("all")}>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setFilter("all");
+                    setDirectionFilter("ALL");
+                  }}
+                >
                   Ver todas
                 </Button>
               </div>
@@ -1006,20 +1085,20 @@ function DebtsView({ user }: { user: CurrentUser }) {
         onClick={() => setCreating(true)}
       >
         <Plus size={20} />
-        Registrar préstamo
+        Registrar deuda
       </Button>
       <Modal
         open={creating}
         onOpenChange={setCreating}
-        title="Registrar préstamo"
-        description="Lo que le prestaste a alguien, en su moneda."
+        title="Registrar deuda"
+        description="Elegí si te deben dinero o si vos le debés a alguien."
       >
         <CreateDebtForm
           user={user}
           onDone={(debt) => {
             setCreating(false);
             setFilter("active");
-            done(`Registraste el préstamo a ${debt.contactName}.`);
+            done(`Registraste la deuda con ${debt.contactName}.`);
           }}
         />
       </Modal>
@@ -1030,12 +1109,12 @@ function DebtsView({ user }: { user: CurrentUser }) {
         }}
         title={
           detail.data
-            ? `${detail.data.contactName} · ${detail.data.description}`
+            ? `${detail.data.direction === "PAYABLE" ? "Debo a" : "Me debe"} ${detail.data.contactName} · ${detail.data.description}`
             : "Deuda"
         }
         description={
           detail.data
-            ? `${statusLabel[detail.data.status].text} · prestado el ${longDate(detail.data.lentOn)}`
+            ? `${statusLabel[detail.data.status].text} · ${detail.data.direction === "PAYABLE" ? "recibido" : "prestado"} el ${longDate(detail.data.lentOn)}`
             : "Cargando…"
         }
       >

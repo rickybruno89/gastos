@@ -177,7 +177,7 @@ export async function deliverBatch(
                 .slice(0, 100)
                 .map(
                   (item) =>
-                    `${item.kind === "DEBT" ? "Por cobrar" : "Por pagar"}: ${item.title} · ${item.dueOn}`,
+                    `${item.kind === "DEBT" && item.debtDirection === "RECEIVABLE" ? "Por cobrar" : "Por pagar"}: ${item.title} · ${item.dueOn}`,
                 )
                 .join(
                   "\n",

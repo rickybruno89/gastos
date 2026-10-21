@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { FormField, Button } from "./ui";
+import { MoneyInput } from "./money-input";
 import {
   SharesEditor,
   rowsFromShares,
@@ -23,7 +24,6 @@ import {
   useRenameExpense,
 } from "../lib/expenses";
 import {
-  amountInput,
   parseAmount,
   periodLabel,
   shortDate,
@@ -104,15 +104,7 @@ export function CreateExpenseForm({
       <div className="grid grid-cols-2 gap-3">
         <FormField>
           <label htmlFor="expense-amount">Importe</label>
-          <input
-            id="expense-amount"
-            name="amount"
-            inputMode="decimal"
-            placeholder="0,00"
-            required
-            maxLength={18}
-            autoComplete="off"
-          />
+          <MoneyInput id="expense-amount" />
         </FormField>
         <FormField>
           <label htmlFor="expense-currency">Moneda</label>
@@ -256,14 +248,10 @@ function EditForm({
       </FormField>
       <FormField>
         <label htmlFor="edit-amount">Importe ({occurrence.currency})</label>
-        <input
+        <MoneyInput
           id="edit-amount"
-          name="amount"
-          inputMode="decimal"
-          defaultValue={amountInput(occurrence.amountMinor)}
-          required
-          maxLength={18}
-          autoComplete="off"
+          currency={occurrence.currency}
+          defaultMinor={occurrence.amountMinor}
         />
       </FormField>
       <fieldset className="choice-group mt-0 mb-5.5 grid mx-0 p-0 border-0 border-none border-current gap-2 [&_legend]:text-[0.875rem] [&_legend]:font-[550] [&_legend]:text-[#53637b] [&_legend]:mb-2 desktop:[&_legend]:text-[11px] [&_label]:flex [&_label]:items-start [&_label]:min-h-11 [&_label]:text-[0.875rem] [&_label]:text-ink [&_label]:p-3 [&_label]:border [&_label]:border-solid [&_label]:border-[#dce3ef] [&_label]:rounded-[8px] [&_label]:gap-2.5 desktop:[&_label]:text-[12px] [&_label:has(input:checked)]:[background:#f3f6ff] [&_label:has(input:checked)]:border-brand [&_input]:mt-0.5 [&_input]:[accent-color:var(--color-brand)] [&_small]:block [&_small]:text-muted [&_small]:text-[0.75rem] [&_small]:mt-[3px] desktop:[&_small]:text-[11px]">
@@ -377,17 +365,13 @@ function AnnualForm({
           <label htmlFor="annual-amount">
             Total pagado ({occurrence.currency})
           </label>
-          <input
+          <MoneyInput
             id="annual-amount"
-            name="amount"
-            inputMode="decimal"
             key={months}
-            defaultValue={amountInput(
-              (BigInt(occurrence.amountMinor) * BigInt(covered)).toString(),
-            )}
-            required
-            maxLength={18}
-            autoComplete="off"
+            currency={occurrence.currency}
+            defaultMinor={(
+              BigInt(occurrence.amountMinor) * BigInt(covered)
+            ).toString()}
           />
         </FormField>
       </div>

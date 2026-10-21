@@ -114,7 +114,7 @@ export function Modal({
           aria-hidden="true"
         />
         <Dialog.Content
-          className="dialog-content fixed z-[51] left-0 top-auto [transform:none] w-full max-w-none max-h-[calc(_var(--visible-height,_100dvh)_-_max(12px,_env(safe-area-inset-top))_)] overflow-y-auto [background:white] pt-[25px] pr-[max(20px,_env(safe-area-inset-right))] pb-[calc(20px_+_env(safe-area-inset-bottom))] pl-[max(20px,_env(safe-area-inset-left))] rounded-tl-[24px] rounded-tr-[24px] rounded-br-none rounded-bl-none shadow-[0_25px_80px_#101e4a33] animate-fade-in overscroll-contain right-0 bottom-[var(--keyboard-offset,_0px)] [scroll-padding-block:80px] desktop:left-1/2 desktop:top-1/2 desktop:[transform:translate(-50%,_-50%)] desktop:w-[480px] desktop:max-w-[calc(100vw_-_32px)] desktop:max-h-[calc(100dvh_-_32px)] desktop:right-auto desktop:bottom-auto desktop:p-[31px] desktop:rounded-[20px] [&>h2]:text-[1.3125rem] [&>h2]:pr-9.5 [&>p]:text-[0.8125rem] [&>p]:text-muted [&>p]:mt-2.5 [&>p]:mb-5.5 [&>p]:leading-[1.7] [&>p]:mx-0"
+          className="dialog-content fixed z-[51] left-0 top-auto [transform:none] w-full max-w-none max-h-[calc(_var(--visible-height,_100dvh)_-_max(12px,_env(safe-area-inset-top))_)] overflow-hidden flex flex-col py-2 [background:white] rounded-tl-[24px] rounded-tr-[24px] rounded-br-none rounded-bl-none shadow-[0_25px_80px_#101e4a33] animate-fade-in right-0 bottom-[var(--keyboard-offset,_0px)] desktop:left-1/2 desktop:top-1/2 desktop:[transform:translate(-50%,_-50%)] desktop:w-[480px] desktop:max-w-[calc(100vw_-_32px)] desktop:max-h-[calc(100dvh_-_32px)] desktop:right-auto desktop:bottom-auto desktop:rounded-[20px]"
           ref={(node) => {
             content.current = node;
             if (node) syncViewport();
@@ -131,8 +131,11 @@ export function Modal({
             opener.current?.focus();
           }}
         >
-          <Dialog.Title>{title}</Dialog.Title>
-          <Dialog.Description>{description}</Dialog.Description>
+          <div className="dialog-scroll min-h-0 overflow-y-auto overscroll-contain [scrollbar-gutter:stable] [scroll-padding-block:80px] pt-[17px] pr-[max(20px,_env(safe-area-inset-right))] pb-[calc(12px_+_env(safe-area-inset-bottom))] pl-[max(20px,_env(safe-area-inset-left))] desktop:px-[31px] desktop:py-[23px] [&>h2]:text-[1.3125rem] [&>h2]:pr-9.5 [&>p]:text-[0.8125rem] [&>p]:text-muted [&>p]:mt-2.5 [&>p]:mb-5.5 [&>p]:leading-[1.7] [&>p]:mx-0">
+            <Dialog.Title>{title}</Dialog.Title>
+            <Dialog.Description>{description}</Dialog.Description>
+            {children}
+          </div>
           <Dialog.Close asChild>
             <button
               className="icon-button dialog-close [background:transparent] w-11 min-h-11 inline-flex justify-center items-center absolute top-3 right-[max(12px,_env(safe-area-inset-right))] text-muted p-1.5 border-0 border-none border-current rounded-[7px] [&:hover:not(:disabled)]:[background:#eaf0fb]"
@@ -141,7 +144,6 @@ export function Modal({
               <X size={20} />
             </button>
           </Dialog.Close>
-          {children}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

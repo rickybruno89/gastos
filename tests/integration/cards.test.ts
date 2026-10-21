@@ -321,12 +321,14 @@ test("tarjetas: cuotas, recurrentes, conciliación y pago completo", async (t) =
               version: s.version,
               paidOn: "2026-11-10",
               channel: "Transferencia",
+              notes: "Juan pagó la mitad",
             }),
           ),
         );
         assert.deepEqual(attempts.map((a) => a.status).sort(), [200, 409, 409]);
         s = attempts.find((a) => a.status === 200)!.data;
         assert.equal(s.status, "PAID");
+        assert.equal(s.payment?.notes, "Juan pagó la mitad");
         assert.ok(s.charges.every((c) => c.status === "MATCHED"));
         assert.equal(
           await withUser(h.databases.app, h.userA.id, (tx) =>
@@ -513,7 +515,32 @@ test("tarjetas: cuotas, recurrentes, conciliación y pago completo", async (t) =
           march.charges.find((c) => c.recurringId === recurringId)!.amountMinor,
           "2000",
         );
-        const currentSeries = march.recurring.find(
+        december = await statement("2026-12");
+        const decemberCharge = december.charges.find(
+          (c) => c.recurringId === recurringId,
+        )!;
+        assert.equal(
+          (
+            await send(
+              `/card-charges/${decemberCharge.id}`,
+              {
+                version: decemberCharge.version,
+                statementVersion: december.version,
+                amountMinor: "2500",
+                scope: "THIS_AND_FUTURE",
+              },
+              "PATCH",
+            )
+          ).status,
+          200,
+        );
+        assert.equal(
+          (await statement("2027-03")).charges.find(
+            (c) => c.recurringId === recurringId,
+          )!.amountMinor,
+          "2500",
+        );
+        const currentSeries = (await statement("2027-03")).recurring.find(
           (r) => r.id === recurringId,
         )!;
         assert.equal(

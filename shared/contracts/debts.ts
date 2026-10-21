@@ -8,12 +8,15 @@ import {
 
 z.config({ jitless: true });
 
+export const debtDirectionSchema = z.enum(["RECEIVABLE", "PAYABLE"]);
+
 const descriptionSchema = z.string().trim().min(1).max(120);
 const notesSchema = z.string().trim().max(500);
 const reasonSchema = z.string().trim().min(1).max(200);
 
 export const createDebtSchema = z
   .object({
+    direction: debtDirectionSchema.default("RECEIVABLE"),
     contactId: z.uuid(),
     description: descriptionSchema,
     currency: currencySchema,
@@ -66,6 +69,7 @@ export const debtStatusSchema = z.enum([
 ]);
 const minorSchema = z.string().regex(/^-?\d+$/);
 export const debtSchema = z.object({
+  direction: debtDirectionSchema,
   id: z.string(),
   contactId: z.string(),
   contactName: z.string(),
@@ -105,10 +109,11 @@ export const debtDetailSchema = debtSchema.extend({
 });
 export const debtListSchema = z.object({
   debts: z.array(debtSchema),
-  // Lo que falta cobrar, por moneda, de deudas abiertas o con pagos parciales.
+  // Saldos separados por sentido y moneda; nunca se compensan entre sí.
   totals: z.array(
     z.object({
       currency: currencySchema,
+      direction: debtDirectionSchema,
       outstandingMinor: z.string(),
       count: z.number().int(),
     }),

@@ -342,8 +342,16 @@ model OccurrenceAllocation {
   @@schema("public")
 }
 
-// Dinero que otra persona le debe al usuario. Independiente de gastos y repartos.
+enum DebtDirection {
+  RECEIVABLE
+  PAYABLE
+
+  @@schema("public")
+}
+
+// Dinero que deben al usuario o que él debe. Independiente de gastos y repartos.
 model PersonalDebt {
+  direction      DebtDirection            @default(RECEIVABLE)
   id             String                   @id @default(uuid(7)) @db.Uuid
   ownerId        String
   contactId      String                   @db.Uuid
@@ -604,6 +612,7 @@ model CardPayment {
   statementId String        @db.Uuid
   paidOn      DateTime      @db.Date
   channel     String?       @db.VarChar(40)
+  notes       String?       @db.VarChar(500)
   arsMinor    BigInt
   usdMinor    BigInt
   createdAt   DateTime      @default(now()) @db.Timestamptz(3)

@@ -52,6 +52,7 @@ function toDebt(row: DebtRow): Debt {
   const derived = summarize(row);
   return {
     id: row.id,
+    direction: row.direction,
     contactId: row.contactId,
     contactName: row.contact.nickname,
     description: row.description,
@@ -166,22 +167,28 @@ export async function listDebts(tx: Tx, ownerId: string) {
       rank[a.status] - rank[b.status] ||
       (a.dueOn ?? "9999").localeCompare(b.dueOn ?? "9999"),
   );
-  const totals = (["ARS", "USD"] as const)
-    .map((currency) => {
+  const totals = (["RECEIVABLE", "PAYABLE"] as const).flatMap((direction) =>
+    (["ARS", "USD"] as const).flatMap((currency) => {
       const active = debts.filter(
-        (d) => d.currency === currency && rank[d.status] === 0,
+        (d) =>
+          d.direction === direction &&
+          d.currency === currency &&
+          rank[d.status] === 0,
       );
       return active.length
-        ? {
-            currency,
-            outstandingMinor: active
-              .reduce((sum, d) => sum + BigInt(d.balanceMinor), 0n)
-              .toString(),
-            count: active.length,
-          }
-        : null;
-    })
-    .filter((total) => total !== null);
+        ? [
+            {
+              direction,
+              currency,
+              outstandingMinor: active
+                .reduce((sum, d) => sum + BigInt(d.balanceMinor), 0n)
+                .toString(),
+              count: active.length,
+            },
+          ]
+        : [];
+    }),
+  );
   return { debts, totals };
 }
 
@@ -233,6 +240,7 @@ export async function createDebt(
   const row = await tx.personalDebt.create({
     data: {
       ownerId,
+      direction: input.direction,
       contactId: input.contactId,
       description: input.description,
       notes: input.notes || null,
@@ -362,7 +370,7 @@ export async function addDebtAdjustment(
   if (input.kind === "FORGIVE" && amountMinor > summarize(row).balanceMinor)
     throw conflict(
       "FORGIVE_EXCEEDS_BALANCE",
-      "No podés perdonar más que el saldo pendiente.",
+      "La reducción no puede superar el saldo pendiente.",
     );
   const adjustment = await tx.personalDebtAdjustment.create({
     data: {

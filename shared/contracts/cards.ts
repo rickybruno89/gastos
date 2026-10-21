@@ -90,6 +90,7 @@ export const statementPaymentSchema = z
     version: versionSchema,
     paidOn: dateSchema.optional(),
     channel: z.string().trim().min(1).max(40).optional(),
+    notes: z.string().trim().min(1).max(500).optional(),
   })
   .strict();
 export const updateCardChargeSchema = z
@@ -220,7 +221,11 @@ export const statementSchema = z.object({
     }),
   ),
   payment: z
-    .object({ paidOn: dateSchema, channel: z.string().nullable() })
+    .object({
+      paidOn: dateSchema,
+      channel: z.string().nullable(),
+      notes: z.string().nullable(),
+    })
     .nullable(),
   recurring: z.array(recurringSchema),
 });

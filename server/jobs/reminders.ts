@@ -20,6 +20,7 @@ export type ReminderItem = {
   kind: "MONTHLY" | "CARD" | "DEBT";
   title: string;
   dueOn: string;
+  debtDirection?: "RECEIVABLE" | "PAYABLE";
 };
 export function reminderWindow(
   timeZone: string,
@@ -102,7 +103,12 @@ export async function reminderItems(
           inRange(d.dueOn) &&
           (d.status === "OPEN" || d.status === "PARTIALLY_PAID")
         )
-          result.push({ kind: "DEBT", title: d.description, dueOn: d.dueOn });
+          result.push({
+            kind: "DEBT",
+            title: d.description,
+            dueOn: d.dueOn,
+            debtDirection: d.direction,
+          });
     }
     return result.sort((a, b) => a.dueOn.localeCompare(b.dueOn));
   });

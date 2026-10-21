@@ -25,6 +25,14 @@ export function amountInput(amountMinor: string) {
     ? `${minor / 100n},${cents.toString().padStart(2, "0")}`
     : `${minor / 100n}`;
 }
+// Número crudo ("1234.56") para alimentar un input con máscara.
+export function amountRaw(amountMinor: string) {
+  const minor = BigInt(amountMinor);
+  const cents = minor % 100n;
+  return cents
+    ? `${minor / 100n}.${cents.toString().padStart(2, "0")}`
+    : `${minor / 100n}`;
+}
 export function periodLabel(period: string) {
   const label = new Intl.DateTimeFormat("es-AR", {
     month: "long",

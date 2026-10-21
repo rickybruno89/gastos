@@ -90,7 +90,7 @@ export function NotificationSettings({ userId }: { userId: string }) {
             {[
               ["monthly", "Gastos mensuales y bimestrales"],
               ["cards", "Resúmenes de tarjeta"],
-              ["debts", "Préstamos por cobrar"],
+              ["debts", "Deudas por cobrar y por pagar"],
             ].map(([name, label]) => (
               <label
                 key={name}

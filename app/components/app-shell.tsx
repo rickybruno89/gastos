@@ -56,7 +56,8 @@ export function AppShell({
         to="/deudas"
       >
         <HandCoins size={19} />
-        <span>Deudas</span>
+        <span className="desktop:hidden">Deudas</span>
+        <span className="hidden desktop:inline">Deudas con personas</span>
       </NavLink>
       <NavLink
         className="nav-item [background:transparent] text-left flex items-center text-[12px] font-medium text-muted px-3 py-[13px] border-0 border-none border-current rounded-[9px] gap-3 hover:[background:#f6f8fc] [&.active]:[background:#edf2ff] [&.active]:text-brand [&.active]:font-[650]"

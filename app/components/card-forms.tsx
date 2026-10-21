@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { z } from "zod";
 import { Button, FormField } from "./ui";
+import { MoneyInput } from "./money-input";
 import {
   SharesEditor,
   sharesFromRows,
@@ -12,7 +13,7 @@ import {
 import { CreateExpenseForm } from "./expense-forms";
 import { useCards, useCardWrite } from "../lib/cards";
 import { errorMessage } from "../lib/expenses";
-import { amountInput, parseAmount } from "../lib/format";
+import { parseAmount } from "../lib/format";
 import {
   cardSchema,
   statementSchema,
@@ -238,14 +239,7 @@ export function PurchaseForm({
               ? "Importe total de la compra"
               : "Importe por mes"}
           </label>
-          <input
-            id="purchase-amount"
-            name="amount"
-            inputMode="decimal"
-            required
-            placeholder="0,00"
-            maxLength={18}
-          />
+          <MoneyInput id="purchase-amount" />
         </FormField>
         <FormField>
           <label htmlFor="purchase-currency">Moneda</label>
@@ -407,7 +401,8 @@ export function ChargeForm({
           description: String(d.get("description")).trim(),
           amountMinor,
           shares: shares.shares,
-          scope: d.get("scope"),
+          scope:
+            charge.recurringId || charge.purchaseId ? d.get("scope") : "THIS",
         },
       },
       { onSuccess: onDone, onError: (e) => setError(errorMessage(e)) },
@@ -429,30 +424,60 @@ export function ChargeForm({
         <label htmlFor="charge-amount">
           Importe de este cargo ({charge.currency})
         </label>
-        <input
+        <MoneyInput
           id="charge-amount"
-          name="amount"
-          inputMode="decimal"
-          defaultValue={amountInput(charge.amountMinor)}
-          required
+          currency={charge.currency}
+          defaultMinor={charge.amountMinor}
         />
       </FormField>
-      <FormField>
-        <label htmlFor="charge-scope">Aplicar a</label>
-        <select id="charge-scope" name="scope">
-          <option value="THIS">Solo este cargo</option>
-          {charge.purchaseId && (
-            <option value="THIS_AND_FUTURE">
-              Esta cuota y las siguientes pendientes
-            </option>
-          )}
-        </select>
-        <small className="text-xs text-muted">
-          Las cuotas pagadas conservan su importe y reparto. El importe
-          ingresado es por cuota.
-        </small>
-      </FormField>
-      <SharesEditor userId={userId} rows={rows} onChange={setRows} />
+      {(charge.recurringId || charge.purchaseId) && (
+        <fieldset className="mb-5.5 grid gap-2 border-0 p-0">
+          <legend className="mb-2 text-sm font-[550] text-[#53637b]">
+            ¿A qué cargos aplica?
+          </legend>
+          {[
+            {
+              value: "THIS_AND_FUTURE",
+              label: charge.recurringId
+                ? "Este mes y meses futuros"
+                : "Esta cuota y las siguientes pendientes",
+              help: charge.recurringId
+                ? "Los resúmenes pagados o conciliados no cambian."
+                : "Las cuotas pagadas conservan su importe y reparto. El importe ingresado es por cuota.",
+            },
+            {
+              value: "THIS",
+              label: "Solo este cargo",
+              help: "Los demás cargos conservan su importe.",
+            },
+          ].map((option) => (
+            <label
+              key={option.value}
+              className="flex min-h-11 items-start gap-2.5 rounded-[8px] border border-solid border-[#dce3ef] p-3 text-sm has-[input:checked]:border-brand has-[input:checked]:[background:#f3f6ff]"
+            >
+              <input
+                className="mt-0.5 accent-brand"
+                type="radio"
+                name="scope"
+                value={option.value}
+                defaultChecked={option.value === "THIS_AND_FUTURE"}
+              />
+              <span>
+                {option.label}
+                <small className="mt-[3px] block text-xs text-muted">
+                  {option.help}
+                </small>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+      <details className="mb-5" open={rows.length > 0}>
+        <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-brand">
+          Repartir este gasto con alguien
+        </summary>
+        <SharesEditor userId={userId} rows={rows} onChange={setRows} />
+      </details>
       <CardFormError message={error} />
       <Button type="submit" className="w-full" disabled={write.isPending}>
         Guardar corrección
@@ -564,7 +589,7 @@ export function UnknownLineForm({
       <div className="grid grid-cols-2 gap-3">
         <FormField>
           <label htmlFor="line-amount">Importe informado</label>
-          <input id="line-amount" name="amount" inputMode="decimal" required />
+          <MoneyInput id="line-amount" allowNegative />
         </FormField>
         <FormField>
           <label htmlFor="line-currency">Moneda</label>
@@ -654,12 +679,10 @@ export function RecurringForm({
         <label htmlFor="recurring-amount">
           Importe por mes ({series.currency})
         </label>
-        <input
+        <MoneyInput
           id="recurring-amount"
-          name="amount"
-          inputMode="decimal"
-          defaultValue={amountInput(series.amountMinor)}
-          required
+          currency={series.currency}
+          defaultMinor={series.amountMinor}
         />
       </FormField>
       <FormField>
@@ -676,7 +699,12 @@ export function RecurringForm({
           pagados y conciliados se conservan.
         </small>
       </FormField>
-      <SharesEditor userId={userId} rows={rows} onChange={setRows} />
+      <details className="mb-5" open={rows.length > 0}>
+        <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-brand">
+          Repartir este gasto con alguien
+        </summary>
+        <SharesEditor userId={userId} rows={rows} onChange={setRows} />
+      </details>
       <CardFormError message={error} />
       <Button type="submit" disabled={write.isPending} className="w-full">
         Guardar regla

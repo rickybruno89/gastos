@@ -47,8 +47,13 @@ test("una deuda exige importe exacto y vencimiento posterior al préstamo", () =
     principalMinor: "100000",
     lentOn: "2026-10-01",
   };
-  assert.equal(createDebtSchema.safeParse(valid).success, true);
+  assert.equal(createDebtSchema.parse(valid).direction, "RECEIVABLE");
+  assert.equal(
+    createDebtSchema.parse({ ...valid, direction: "PAYABLE" }).direction,
+    "PAYABLE",
+  );
   for (const invalid of [
+    { ...valid, direction: "OTHER" },
     { ...valid, principalMinor: "0" },
     { ...valid, principalMinor: "10.5" },
     { ...valid, dueOn: "2026-09-30" },
