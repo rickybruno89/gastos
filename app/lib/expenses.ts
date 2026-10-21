@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSafeMutation } from "./mutation";
 import { z } from "zod";
 import {
   monthSchema,
@@ -9,25 +10,46 @@ import {
   type Occurrence,
 } from "../../shared/contracts/expenses";
 import { ApiError, request, send } from "../../shared/api-client";
+import { usePrefetchNeighbors } from "./prefetch";
 
 const monthKey = (userId: string, period: string) => ["months", userId, period];
 
+const monthQuery = (userId: string, period: string) => ({
+  queryKey: monthKey(userId, period),
+  queryFn: () => request(`/months/${period}`, monthSchema),
+});
+
 export function useMonth(userId: string, period: string) {
-  return useQuery({
-    queryKey: monthKey(userId, period),
-    queryFn: () => request(`/months/${period}`, monthSchema),
-    staleTime: 10_000,
-  });
+  const month = useQuery({ ...monthQuery(userId, period), staleTime: 10_000 });
+  usePrefetchNeighbors(period, month.isSuccess, (p) => monthQuery(userId, p));
+  return month;
 }
 
-// Cada llamada a mutate() representa una intención: genera su propia clave.
-function useExpenseMutation<V, T>(
+type Month = z.infer<typeof monthSchema>;
+
+// Cada intención tiene su clave de idempotencia (reusada solo al reintentar lo mismo).
+function useExpenseMutation<V, T, C = unknown>(
   userId: string,
   operation: (variables: V, idempotencyKey: string) => Promise<T>,
+  extra: {
+    lockKey?: (variables: V) => string;
+    onMutate?: (variables: V) => Promise<C> | C;
+    onSuccess?: (data: T, variables: V) => void;
+    onError?: (error: Error, variables: V, context: C | undefined) => void;
+  } = {},
 ) {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: (variables: V) => operation(variables, crypto.randomUUID()),
+  return useSafeMutation<T, V>({
+    idempotent: operation,
+    lockKey: extra.lockKey,
+    onMutate: extra.onMutate,
+    onSuccess:
+      extra.onSuccess &&
+      ((data, variables) => extra.onSuccess!(data, variables)),
+    onError:
+      extra.onError &&
+      ((error, variables, context) =>
+        extra.onError!(error, variables, context as C | undefined)),
     onSettled: (_data, error) => {
       // Un conflicto o un cambio de regla puede afectar otros meses ya cargados.
       void client.invalidateQueries({ queryKey: ["months", userId] });
@@ -71,20 +93,95 @@ export function useChangeOccurrence(userId: string) {
   );
 }
 
+// Pagar o deshacer se ve al instante; si el servidor rechaza, se restaura el mes.
+// El bloqueo es por gasto: no se puede deshacer antes de que llegue la nueva
+// versión, pero sí pagar otro gasto en paralelo. Un pago anual no se simula
+// porque deshacerlo afecta otros meses.
 export function useTogglePayment(userId: string) {
-  return useExpenseMutation(userId, (occurrence: Occurrence, idempotencyKey) =>
-    send(
-      occurrence.status === "PAID"
-        ? `/occurrences/${occurrence.id}/undo-payment`
-        : `/occurrences/${occurrence.id}/payments`,
-      occurrenceSchema,
-      {
-        method: "POST",
-        body: { version: occurrence.version },
-        idempotencyKey,
+  const client = useQueryClient();
+  return useExpenseMutation(
+    userId,
+    (occurrence: Occurrence, idempotencyKey) =>
+      send(
+        occurrence.status === "PAID"
+          ? `/occurrences/${occurrence.id}/undo-payment`
+          : `/occurrences/${occurrence.id}/payments`,
+        occurrenceSchema,
+        {
+          method: "POST",
+          body: { version: occurrence.version },
+          idempotencyKey,
+        },
+      ),
+    {
+      lockKey: (occurrence) => occurrence.id,
+      onMutate: async (occurrence) => {
+        if (occurrence.payment?.annual) return undefined;
+        const key = monthKey(userId, occurrence.period);
+        await client.cancelQueries({ queryKey: key });
+        const previous = client.getQueryData<Month>(key);
+        if (previous)
+          client.setQueryData<Month>(key, togglePaid(previous, occurrence));
+        return { key, previous };
       },
-    ),
+      onSuccess: (updated) =>
+        client.setQueryData<Month>(
+          monthKey(userId, updated.period),
+          (month) =>
+            month && {
+              ...month,
+              occurrences: month.occurrences.map((o) =>
+                o.id === updated.id ? updated : o,
+              ),
+            },
+        ),
+      onError: (_error, _occurrence, context) => {
+        if (context?.previous)
+          client.setQueryData(context.key, context.previous);
+      },
+    },
   );
+}
+
+export function togglePaid(month: Month, occurrence: Occurrence): Month {
+  const paying = occurrence.status !== "PAID";
+  const amount = BigInt(
+    paying
+      ? occurrence.amountMinor
+      : (occurrence.payment?.amountMinor ?? occurrence.amountMinor),
+  );
+  return {
+    ...month,
+    occurrences: month.occurrences.map((o) =>
+      o.id !== occurrence.id
+        ? o
+        : {
+            ...o,
+            status: paying ? "PAID" : "PLANNED",
+            payment: paying
+              ? {
+                  paidOn: month.today,
+                  channel: null,
+                  amountMinor: occurrence.amountMinor,
+                  annual: false,
+                }
+              : null,
+          },
+    ),
+    totals: month.totals.map((t) =>
+      t.currency !== occurrence.currency
+        ? t
+        : {
+            ...t,
+            pendingMinor: (
+              BigInt(t.pendingMinor) + (paying ? -amount : amount)
+            ).toString(),
+            paidMinor: (
+              BigInt(t.paidMinor) + (paying ? amount : -amount)
+            ).toString(),
+          },
+    ),
+  };
 }
 
 export function errorMessage(error: unknown) {

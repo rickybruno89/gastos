@@ -19,9 +19,10 @@ import {
   Repeat,
   Search,
   ShieldCheck,
+  LoaderCircle,
 } from "lucide-react";
 import { Workspace } from "../components/workspace";
-import { Button, Modal } from "../components/ui";
+import { Button, Modal, SkeletonList } from "../components/ui";
 import { OccurrenceSheet, statusSummary } from "../components/expense-forms";
 import { errorMessage, useMonth, useTogglePayment } from "../lib/expenses";
 import { formatMoney, periodLabel, shortDate } from "../lib/format";
@@ -63,7 +64,7 @@ function RowAction({
             ? "paid-action [background:#edf8f2] flex items-center justify-center min-h-11 w-auto text-[#267354] text-[0.75rem] min-w-[108px] px-3 py-2 border border-solid border-transparent rounded-[7px] gap-1.5 desktop:text-[0.6875rem] desktop:min-w-22 desktop:px-2 desktop:py-[5px] [&:hover>span:not(.undo-label)]:hidden [&:focus-visible>span:not(.undo-label)]:hidden [&:hover_.undo-label]:inline [&:focus-visible_.undo-label]:inline [&>span:not(.undo-label)]:hidden desktop:[&>span:not(.undo-label)]:inline [&_.undo-label]:inline desktop:[&_.undo-label]:hidden"
             : "pay-action [background:transparent] flex items-center justify-center min-h-11 w-auto text-muted text-[0.75rem] min-w-[108px] px-3 py-2 border border-solid border-[#e2e8f4] rounded-[7px] gap-1.5 desktop:text-[0.6875rem] desktop:min-w-22 desktop:px-2 desktop:py-[5px] hover:[background:#edf2ff] hover:text-brand hover:border-muted",
         )}
-        disabled={pending}
+        aria-busy={pending || undefined}
         onClick={onToggle}
         aria-label={
           status === "PAID"
@@ -73,14 +74,30 @@ function RowAction({
       >
         {status === "PAID" ? (
           <>
-            <Check size={14} />
+            {pending ? (
+              <LoaderCircle
+                size={14}
+                className="animate-spin"
+                aria-hidden="true"
+              />
+            ) : (
+              <Check size={14} />
+            )}
             <span>{occurrence.payment?.annual ? "Pago anual" : "Pagado"}</span>
             <span className="undo-label hidden">Deshacer</span>
           </>
         ) : (
           <>
-            <span className="empty-check w-3 h-3 border border-solid border-[#c3cede] rounded-full" />
-            {pending ? "Guardando…" : "Marcar pago"}
+            {pending ? (
+              <LoaderCircle
+                size={14}
+                className="animate-spin"
+                aria-hidden="true"
+              />
+            ) : (
+              <span className="empty-check w-3 h-3 border border-solid border-[#c3cede] rounded-full" />
+            )}
+            Marcar pago
           </>
         )}
       </button>
@@ -123,7 +140,10 @@ function MonthView({ user }: { user: CurrentUser }) {
   } | null>(null);
   const [creating, setCreating] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [pendingId, setPendingId] = useState<string | null>(null);
+  // Gastos con un pago o deshacer en curso (pueden ser varios a la vez).
+  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
 
   function goTo(next: string) {
     setParams({ periodo: next });
@@ -131,9 +151,12 @@ function MonthView({ user }: { user: CurrentUser }) {
     setOpenId(null);
   }
   function togglePayment(occurrence: Occurrence) {
-    setPendingId(occurrence.id);
-    toggle.mutate(occurrence, {
-      onSuccess: (updated) =>
+    // Segundo click sobre el mismo gasto mientras se guarda: se ignora.
+    if (toggle.isLocked(occurrence)) return;
+    setPendingIds((ids) => new Set(ids).add(occurrence.id));
+    toggle
+      .mutateAsync(occurrence)
+      .then((updated) =>
         setNotice(
           updated.status === "PAID"
             ? {
@@ -143,10 +166,17 @@ function MonthView({ user }: { user: CurrentUser }) {
               }
             : { text: `Se deshizo el pago de ${updated.name}.`, tone: "ok" },
         ),
-      onError: (error) =>
+      )
+      .catch((error: unknown) =>
         setNotice({ text: errorMessage(error), tone: "error" }),
-      onSettled: () => setPendingId(null),
-    });
+      )
+      .finally(() =>
+        setPendingIds((ids) => {
+          const next = new Set(ids);
+          next.delete(occurrence.id);
+          return next;
+        }),
+      );
   }
 
   const data = month.data;
@@ -272,14 +302,11 @@ function MonthView({ user }: { user: CurrentUser }) {
         </section>
       )}
       {month.isPending ? (
-        <div
-          className="loading-block mt-17.5 [&_p]:text-[12px] [&_p]:text-muted [&_p]:mt-[25px]"
-          role="status"
-        >
-          <span className="skeleton h-6 block [background:linear-gradient(90deg,_#e5eaf4,_#f0f3f9,_#e5eaf4)] bg-size-[200%] animate-loading mb-[15px] rounded-[7px] [&:nth-child(2)]:max-w-[60%]" />
-          <span className="skeleton h-6 block [background:linear-gradient(90deg,_#e5eaf4,_#f0f3f9,_#e5eaf4)] bg-size-[200%] animate-loading mb-[15px] rounded-[7px] [&:nth-child(2)]:max-w-[60%]" />
-          <p>Cargando {label.toLowerCase()}…</p>
-        </div>
+        <SkeletonList
+          label={`Cargando ${label.toLowerCase()}…`}
+          rows={4}
+          className="mt-2"
+        />
       ) : month.isError ? (
         <section
           className="card empty-state [background:white] shadow-[0_3px_10px_#1b2d4f02] text-center text-muted px-5.5 py-[35px] border border-solid border-line rounded-card [&_h3]:mt-3 [&_h3]:mb-[7px] [&_h3]:text-[#586987] [&_h3]:mx-0 [&_p]:text-[11px] [&_p]:mb-[17px]"
@@ -446,7 +473,7 @@ function MonthView({ user }: { user: CurrentUser }) {
                       >
                         <RowAction
                           occurrence={row}
-                          pending={pendingId === row.id}
+                          pending={pendingIds.has(row.id)}
                           onToggle={() => togglePayment(row)}
                           onOpen={() => setOpenId(row.id)}
                         />
@@ -548,7 +575,7 @@ function MonthView({ user }: { user: CurrentUser }) {
               <Button
                 variant="ghost"
                 className="toast-undo"
-                disabled={toggle.isPending}
+                disabled={pendingIds.has(notice.undo.id)}
                 onClick={() => togglePayment(notice.undo!)}
               >
                 Deshacer

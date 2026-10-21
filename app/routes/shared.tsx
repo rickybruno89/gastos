@@ -14,7 +14,13 @@ import {
   Users,
 } from "lucide-react";
 import { Workspace } from "../components/workspace";
-import { FormField, Badge, Button, Modal } from "../components/ui";
+import {
+  FormField,
+  Badge,
+  Button,
+  Modal,
+  SkeletonList,
+} from "../components/ui";
 import {
   useConnectionAction,
   useContacts,
@@ -199,7 +205,7 @@ function ContactForm({
         </p>
       )}
       <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button type="submit" className="w-full" loading={pending}>
           {pending ? "Guardando…" : contact ? "Guardar" : "Agregar persona"}
         </Button>
       </div>
@@ -262,6 +268,7 @@ function ContactRow({
           <Button
             variant="secondary"
             disabled={action.isPending}
+            loading={action.isPending && action.variables?.action === "invite"}
             onClick={() =>
               run(
                 "invite",
@@ -278,6 +285,9 @@ function ContactRow({
           <Button
             variant="ghost"
             disabled={action.isPending}
+            loading={
+              action.isPending && action.variables?.action === "disconnect"
+            }
             onClick={() =>
               run(
                 "disconnect",
@@ -295,7 +305,7 @@ function ContactRow({
         )}
         <Button
           variant="ghost"
-          disabled={update.isPending}
+          loading={update.isPending}
           onClick={() =>
             update.mutate(
               {
@@ -396,6 +406,9 @@ function SharedView({ user }: { user: CurrentUser }) {
           <div className="invitation-actions max-desktop:w-full flex ml-0 gap-2 desktop:ml-auto max-desktop:[&_.button]:flex-1">
             <Button
               disabled={respond.isPending}
+              loading={
+                respond.isPending && respond.variables?.action === "accept"
+              }
               onClick={() =>
                 respond.mutate(
                   { action: "accept", id: invitation.id },
@@ -414,6 +427,9 @@ function SharedView({ user }: { user: CurrentUser }) {
             <Button
               variant="ghost"
               disabled={respond.isPending}
+              loading={
+                respond.isPending && respond.variables?.action === "reject"
+              }
               onClick={() =>
                 respond.mutate(
                   { action: "reject", id: invitation.id },
@@ -431,14 +447,11 @@ function SharedView({ user }: { user: CurrentUser }) {
       ))}
 
       {shared.isPending ? (
-        <div
-          className="loading-block mt-17.5 [&_p]:text-[12px] [&_p]:text-muted [&_p]:mt-[25px]"
-          role="status"
-        >
-          <span className="skeleton h-6 block [background:linear-gradient(90deg,_#e5eaf4,_#f0f3f9,_#e5eaf4)] bg-size-[200%] animate-loading mb-[15px] rounded-[7px] [&:nth-child(2)]:max-w-[60%]" />
-          <span className="skeleton h-6 block [background:linear-gradient(90deg,_#e5eaf4,_#f0f3f9,_#e5eaf4)] bg-size-[200%] animate-loading mb-[15px] rounded-[7px] [&:nth-child(2)]:max-w-[60%]" />
-          <p>Cargando {label.toLowerCase()}…</p>
-        </div>
+        <SkeletonList
+          label={`Cargando ${label.toLowerCase()}…`}
+          rows={3}
+          className="mt-2"
+        />
       ) : shared.isError ? (
         <section
           className="card empty-state [background:white] shadow-[0_3px_10px_#1b2d4f02] text-center text-muted px-5.5 py-[35px] border border-solid border-line rounded-card [&_h3]:mt-3 [&_h3]:mb-[7px] [&_h3]:text-[#586987] [&_h3]:mx-0 [&_p]:text-[11px] [&_p]:mb-[17px]"

@@ -216,7 +216,8 @@ export function SharesEditor({
           <Button
             variant="secondary"
             onClick={createContact}
-            disabled={create.isPending}
+            disabled={create.isPending || invite.isPending}
+            loading={create.isPending && !create.variables?.email}
           >
             <UserPlus size={16} />
             Agregar
@@ -249,6 +250,10 @@ export function SharesEditor({
             variant="secondary"
             onClick={() => void inviteByEmail()}
             disabled={create.isPending || invite.isPending}
+            loading={
+              invite.isPending ||
+              (create.isPending && !!create.variables?.email)
+            }
           >
             <Mail size={16} />
             Invitar

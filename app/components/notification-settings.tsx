@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSafeMutation } from "../lib/mutation";
 import { Bell } from "lucide-react";
 import { request, send } from "../../shared/api-client";
 import {
@@ -7,7 +8,7 @@ import {
   type notificationPreferenceInput,
 } from "../../shared/contracts/notifications";
 import type { z } from "zod";
-import { Button, FormField } from "./ui";
+import { Button, FormField, Skeleton } from "./ui";
 export function NotificationSettings({ userId }: { userId: string }) {
   const prefs = useQuery({
     queryKey: ["notification-preferences", userId],
@@ -15,12 +16,15 @@ export function NotificationSettings({ userId }: { userId: string }) {
   });
   const client = useQueryClient(),
     [error, setError] = useState("");
-  const save = useMutation({
-    mutationFn: (body: z.infer<typeof notificationPreferenceInput>) =>
+  const save = useSafeMutation({
+    idempotent: (
+      body: z.infer<typeof notificationPreferenceInput>,
+      idempotencyKey: string,
+    ) =>
       send("/me/notifications", notificationPreferenceSchema, {
         method: "PUT",
         body,
-        idempotencyKey: crypto.randomUUID(),
+        idempotencyKey,
       }),
     onSuccess: (data) => {
       client.setQueryData(["notification-preferences", userId], data);
@@ -56,9 +60,15 @@ export function NotificationSettings({ userId }: { userId: string }) {
         </div>
       </header>
       {prefs.isPending ? (
-        <p role="status" className="text-sm text-muted">
-          Cargando avisos…
-        </p>
+        <div role="status" className="grid gap-3">
+          <span className="sr-only">Cargando avisos…</span>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Skeleton className="size-5 shrink-0 rounded-[5px]" />
+              <Skeleton className="h-3.5 w-1/2" />
+            </div>
+          ))}
+        </div>
       ) : prefs.isError ? (
         <div role="alert">
           <p>No pudimos cargar tus preferencias.</p>
@@ -129,7 +139,7 @@ export function NotificationSettings({ userId }: { userId: string }) {
             el día del vencimiento. Solo incluye lo que siga pendiente. Podés
             desactivarlo cuando quieras.
           </p>
-          <Button type="submit" disabled={save.isPending}>
+          <Button type="submit" loading={save.isPending}>
             {save.isPending ? "Guardando…" : "Guardar avisos"}
           </Button>
           {save.isSuccess && !error && (

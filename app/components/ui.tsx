@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { LoaderCircle, X } from "lucide-react";
 
 const buttonVariants = {
   primary:
@@ -29,20 +29,78 @@ const badgeTones = {
 export function Button({
   variant = "primary",
   className = "",
+  loading = false,
+  disabled,
+  children,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "ghost";
+  // Mientras la operación sigue en curso: spinner y bloqueo de nuevos clicks.
+  loading?: boolean;
 }) {
   return (
     <button
       type="button"
       className={cn(
-        "button inline-flex items-center justify-center min-h-11 text-[0.875rem] font-semibold whitespace-nowrap px-4 py-2.5 border border-solid border-transparent rounded-[9px] gap-[9px]",
+        "button inline-flex items-center justify-center min-h-11 text-[0.875rem] font-semibold whitespace-nowrap px-4 py-2.5 border border-solid border-transparent rounded-[9px] gap-[9px] aria-busy:cursor-progress aria-busy:opacity-85",
         buttonVariants[variant],
         className,
       )}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
+    >
+      {loading && (
+        <LoaderCircle
+          size={16}
+          className="shrink-0 animate-spin"
+          aria-hidden="true"
+        />
+      )}
+      {children}
+    </button>
+  );
+}
+// Bloque de carga con el brillo animado de la app. Usar dentro de un contenedor
+// con role="status" y un texto para lectores de pantalla.
+export function Skeleton({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "skeleton block h-4 rounded-[7px] [background:linear-gradient(90deg,_#e5eaf4,_#f0f3f9,_#e5eaf4)] bg-size-[200%] animate-loading",
+        className,
+      )}
     />
+  );
+}
+// Lista de filas de carga, para listas y tarjetas que todavía no llegaron.
+export function SkeletonList({
+  label,
+  rows = 3,
+  className,
+}: {
+  label: string;
+  rows?: number;
+  className?: string;
+}) {
+  return (
+    <div role="status" className={cn("grid gap-3", className)}>
+      <span className="sr-only">{label}</span>
+      {Array.from({ length: rows }, (_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 rounded-card border border-solid border-line bg-white p-4"
+        >
+          <Skeleton className="size-9 shrink-0 rounded-[10px]" />
+          <div className="grid flex-1 gap-2">
+            <Skeleton className="h-3.5 w-2/5" />
+            <Skeleton className="h-3 w-1/4" />
+          </div>
+          <Skeleton className="h-6 w-20" />
+        </div>
+      ))}
+    </div>
   );
 }
 export function Badge({

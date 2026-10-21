@@ -1,6 +1,7 @@
 import { useLocation, Link, useNavigate } from "react-router";
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useSafeMutation } from "../lib/mutation";
 import { z } from "zod";
 import { useCurrentUser } from "../lib/account";
 import { Workspace } from "../components/workspace";
@@ -33,7 +34,7 @@ export default function Invitation() {
       }),
     retry: false,
   });
-  const accept = useMutation({
+  const accept = useSafeMutation({
     mutationFn: () =>
       send(`/invitations/${id}/accept-link`, z.unknown(), {
         method: "POST",
@@ -95,7 +96,7 @@ export default function Invitation() {
             Verán exclusivamente los gastos que compartan, incluido su
             historial. Aceptar no crea deudas ni marca pagos.
           </p>
-          <Button onClick={() => accept.mutate()} disabled={accept.isPending}>
+          <Button onClick={() => accept.mutate()} loading={accept.isPending}>
             {accept.isPending ? "Conectando…" : "Aceptar invitación"}
           </Button>
           {accept.isError && (

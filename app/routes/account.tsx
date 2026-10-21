@@ -61,7 +61,7 @@ function AccountDetails({ user }: { user: CurrentUser }) {
                 Cerrá la sesión en este dispositivo.
               </p>
             </header>
-            <Button variant="secondary" disabled={signingOut} onClick={signOut}>
+            <Button variant="secondary" loading={signingOut} onClick={signOut}>
               <LogOut size={16} aria-hidden="true" />
               {signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
             </Button>

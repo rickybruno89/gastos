@@ -1,5 +1,6 @@
 import { Navigate, useSearchParams } from "react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useSafeMutation } from "../lib/mutation";
 import {
   ArrowRight,
   Check,
@@ -28,7 +29,7 @@ export default function Login() {
     destination === "/"
       ? "/acceso"
       : `/acceso?volver=${encodeURIComponent(destination)}`;
-  const login = useMutation({
+  const login = useSafeMutation({
     mutationFn: async () => {
       const result = await authClient.signIn.social({
         provider: "google",

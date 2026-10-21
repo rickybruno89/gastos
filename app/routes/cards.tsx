@@ -10,7 +10,13 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Workspace } from "../components/workspace";
-import { Badge, Button, FormField, Modal } from "../components/ui";
+import {
+  Badge,
+  Button,
+  FormField,
+  Modal,
+  SkeletonList,
+} from "../components/ui";
 import {
   CardForm,
   CardFormError,
@@ -156,7 +162,7 @@ function StatementActionForm({
         </>
       )}
       <CardFormError message={error} />
-      <Button className="w-full" type="submit" disabled={write.isPending}>
+      <Button className="w-full" type="submit" loading={write.isPending}>
         {kind === "pay"
           ? "Confirmar pago del resumen"
           : "Arrastrar al siguiente resumen"}
@@ -273,7 +279,7 @@ function LineForm({
         </>
       )}
       <CardFormError message={error} />
-      <Button className="w-full" type="submit" disabled={write.isPending}>
+      <Button className="w-full" type="submit" loading={write.isPending}>
         Confirmar resolución
       </Button>
     </form>
@@ -319,6 +325,10 @@ function CardsView({ user }: { user: CurrentUser }) {
     setNotice(message);
     setError("");
   };
+  // Todas las acciones comparten la mutación: se bloquean juntas y el spinner
+  // aparece solo en el botón que se tocó.
+  const busy = (path: string) =>
+    write.isPending && write.variables?.path === path;
   function action(path: string, body: unknown) {
     setError("");
     write.mutate(
@@ -375,7 +385,7 @@ function CardsView({ user }: { user: CurrentUser }) {
         </Button>
       </header>
       {cards.isPending ? (
-        <p role="status">Cargando tarjetas…</p>
+        <SkeletonList label="Cargando tarjetas…" rows={2} />
       ) : cards.isError ? (
         <CardFormError message={errorMessage(cards.error)} />
       ) : !selected ? (
@@ -443,7 +453,7 @@ function CardsView({ user }: { user: CurrentUser }) {
             </Button>
           </div>
           {statementQuery.isPending ? (
-            <p role="status">Cargando resumen…</p>
+            <SkeletonList label="Cargando resumen…" rows={4} />
           ) : statementQuery.isError ? (
             <Panel>
               <CardFormError message={errorMessage(statementQuery.error)} />
@@ -627,6 +637,9 @@ function CardsView({ user }: { user: CurrentUser }) {
                             <div className="mt-3 flex flex-wrap gap-2">
                               <Button
                                 disabled={write.isPending}
+                                loading={busy(
+                                  `/statements/${statement.id}/matches`,
+                                )}
                                 onClick={() =>
                                   action(
                                     `/statements/${statement.id}/matches`,
@@ -663,6 +676,9 @@ function CardsView({ user }: { user: CurrentUser }) {
                               className="mt-2"
                               variant="ghost"
                               disabled={write.isPending}
+                              loading={busy(
+                                `/statements/${statement.id}/lines/${charge.lineId}/resolve`,
+                              )}
                               onClick={() =>
                                 action(
                                   `/statements/${statement.id}/lines/${charge.lineId}/resolve`,
@@ -719,6 +735,9 @@ function CardsView({ user }: { user: CurrentUser }) {
                                 variant="ghost"
                                 className="mt-2"
                                 disabled={write.isPending}
+                                loading={busy(
+                                  `/statements/${statement.id}/lines/${line.id}/resolve`,
+                                )}
                                 onClick={() =>
                                   action(
                                     `/statements/${statement.id}/lines/${line.id}/resolve`,
@@ -764,6 +783,7 @@ function CardsView({ user }: { user: CurrentUser }) {
                     {status === "DRAFT" ? (
                       <Button
                         disabled={write.isPending || totalUnresolved > 0}
+                        loading={busy(`/statements/${statement.id}/reconcile`)}
                         onClick={() =>
                           action(`/statements/${statement.id}/reconcile`, {
                             version: statement.version,
@@ -783,6 +803,7 @@ function CardsView({ user }: { user: CurrentUser }) {
                         <Button
                           variant="secondary"
                           disabled={write.isPending}
+                          loading={busy(`/statements/${statement.id}/reopen`)}
                           onClick={() =>
                             action(`/statements/${statement.id}/reopen`, {
                               version: statement.version,
@@ -796,6 +817,9 @@ function CardsView({ user }: { user: CurrentUser }) {
                       <Button
                         variant="secondary"
                         disabled={write.isPending}
+                        loading={busy(
+                          `/statements/${statement.id}/undo-payment`,
+                        )}
                         onClick={() =>
                           action(`/statements/${statement.id}/undo-payment`, {
                             version: statement.version,
@@ -843,7 +867,7 @@ function CardsView({ user }: { user: CurrentUser }) {
                 <div className="mb-5">
                   <Button
                     variant="ghost"
-                    disabled={cardWrite.isPending}
+                    loading={cardWrite.isPending}
                     onClick={() =>
                       cardWrite.mutate(
                         {

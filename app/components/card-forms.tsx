@@ -2,7 +2,7 @@ import { ApiError } from "../../shared/api-client";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { z } from "zod";
-import { Button, FormField } from "./ui";
+import { Button, FormField, Skeleton } from "./ui";
 import { MoneyInput } from "./money-input";
 import {
   SharesEditor,
@@ -123,7 +123,7 @@ export function CardForm({
         vencimiento reales.
       </p>
       <CardFormError message={error} />
-      <Button className="w-full" type="submit" disabled={write.isPending}>
+      <Button className="w-full" type="submit" loading={write.isPending}>
         {write.isPending ? "Guardando…" : "Guardar tarjeta"}
       </Button>
     </form>
@@ -181,7 +181,18 @@ export function PurchaseForm({
       },
     );
   }
-  if (cards.isPending) return <p role="status">Cargando tarjetas…</p>;
+  if (cards.isPending)
+    return (
+      <div role="status" className="grid gap-5">
+        <span className="sr-only">Cargando tarjetas…</span>
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="grid gap-2">
+            <Skeleton className="h-3.5 w-1/3" />
+            <Skeleton className="h-12" />
+          </div>
+        ))}
+      </div>
+    );
   if (cards.isError)
     return <CardFormError message={errorMessage(cards.error)} />;
   const active = cards.data.filter((c) => !c.archived);
@@ -311,7 +322,7 @@ export function PurchaseForm({
         </label>
       )}
       <CardFormError message={error} />
-      <Button type="submit" className="w-full" disabled={write.isPending}>
+      <Button type="submit" className="w-full" loading={write.isPending}>
         {write.isPending
           ? "Guardando…"
           : kind === "purchase"
@@ -481,7 +492,7 @@ export function ChargeForm({
         <SharesEditor userId={userId} rows={rows} onChange={setRows} />
       </details>
       <CardFormError message={error} />
-      <Button type="submit" className="w-full" disabled={write.isPending}>
+      <Button type="submit" className="w-full" loading={write.isPending}>
         Guardar corrección
       </Button>
     </form>
@@ -538,7 +549,7 @@ export function DatesForm({
         />
       </FormField>
       <CardFormError message={error} />
-      <Button type="submit" disabled={write.isPending} className="w-full">
+      <Button type="submit" loading={write.isPending} className="w-full">
         Guardar fechas
       </Button>
     </form>
@@ -618,7 +629,7 @@ export function UnknownLineForm({
         excluilos.
       </p>
       <CardFormError message={error} />
-      <Button type="submit" disabled={write.isPending} className="w-full">
+      <Button type="submit" loading={write.isPending} className="w-full">
         Agregar línea para revisar
       </Button>
     </form>
@@ -709,7 +720,7 @@ export function RecurringForm({
         <SharesEditor userId={userId} rows={rows} onChange={setRows} />
       </details>
       <CardFormError message={error} />
-      <Button type="submit" disabled={write.isPending} className="w-full">
+      <Button type="submit" loading={write.isPending} className="w-full">
         Guardar regla
       </Button>
     </form>

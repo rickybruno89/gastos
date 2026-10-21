@@ -12,7 +12,13 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { Workspace } from "../components/workspace";
-import { FormField, Badge, Button, Modal } from "../components/ui";
+import {
+  FormField,
+  Badge,
+  Button,
+  Modal,
+  SkeletonList,
+} from "../components/ui";
 import { MoneyInput } from "../components/money-input";
 import {
   useCreateDebt,
@@ -243,7 +249,7 @@ function CreateDebtForm({
       </FormField>
       <FormError message={error} />
       <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button type="submit" className="w-full" loading={pending}>
           <Plus size={17} />
           {pending ? "Guardando…" : "Registrar deuda"}
         </Button>
@@ -339,7 +345,7 @@ function PaymentForm({
       </FormField>
       <FormError message={error} />
       <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
-        <Button type="submit" className="w-full" disabled={action.isPending}>
+        <Button type="submit" className="w-full" loading={action.isPending}>
           {debt.direction === "PAYABLE" ? (
             <ArrowUpRight size={17} />
           ) : (
@@ -470,7 +476,7 @@ function AdjustmentForm({
           type="submit"
           variant="secondary"
           className="w-full"
-          disabled={action.isPending}
+          loading={action.isPending}
         >
           {action.isPending ? "Guardando…" : "Registrar ajuste"}
         </Button>
@@ -529,7 +535,7 @@ function CancelForm({
           type="submit"
           variant="secondary"
           className="w-full"
-          disabled={action.isPending}
+          loading={action.isPending}
         >
           <Ban size={16} />
           {action.isPending ? "Guardando…" : "Cancelar deuda"}
@@ -607,7 +613,7 @@ function EditDebtForm({
       </FormField>
       <FormError message={error} />
       <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
-        <Button type="submit" className="w-full" disabled={update.isPending}>
+        <Button type="submit" className="w-full" loading={update.isPending}>
           {update.isPending ? "Guardando…" : "Guardar"}
         </Button>
       </div>
@@ -683,7 +689,7 @@ function DebtSheet({
             <Button
               variant="secondary"
               className="w-full"
-              disabled={action.isPending}
+              loading={action.isPending}
               onClick={() =>
                 action.mutate(
                   { debt, action: { action: "reopen" } },
@@ -780,6 +786,11 @@ function DebtSheet({
                 <Button
                   variant="ghost"
                   disabled={action.isPending}
+                  loading={
+                    action.isPending &&
+                    action.variables?.action.action === "undo" &&
+                    action.variables.action.paymentId === event.id
+                  }
                   onClick={() =>
                     action.mutate(
                       { debt, action: { action: "undo", paymentId: event.id } },
@@ -913,14 +924,7 @@ function DebtsView({ user }: { user: CurrentUser }) {
         </div>
       </div>
       {debts.isPending ? (
-        <div
-          className="loading-block mt-17.5 [&_p]:text-[12px] [&_p]:text-muted [&_p]:mt-[25px]"
-          role="status"
-        >
-          <span className="skeleton h-6 block [background:linear-gradient(90deg,_#e5eaf4,_#f0f3f9,_#e5eaf4)] bg-size-[200%] animate-loading mb-[15px] rounded-[7px] [&:nth-child(2)]:max-w-[60%]" />
-          <span className="skeleton h-6 block [background:linear-gradient(90deg,_#e5eaf4,_#f0f3f9,_#e5eaf4)] bg-size-[200%] animate-loading mb-[15px] rounded-[7px] [&:nth-child(2)]:max-w-[60%]" />
-          <p>Cargando deudas…</p>
-        </div>
+        <SkeletonList label="Cargando deudas…" rows={3} className="mt-2" />
       ) : debts.isError ? (
         <section
           className="card empty-state [background:white] shadow-[0_3px_10px_#1b2d4f02] text-center text-muted px-5.5 py-[35px] border border-solid border-line rounded-card [&_h3]:mt-3 [&_h3]:mb-[7px] [&_h3]:text-[#586987] [&_h3]:mx-0 [&_p]:text-[11px] [&_p]:mb-[17px]"
@@ -1128,12 +1132,7 @@ function DebtsView({ user }: { user: CurrentUser }) {
         ) : detail.isError ? (
           <FormError message={errorMessage(detail.error)} />
         ) : (
-          <div
-            className="loading-block mt-17.5 [&_p]:text-[12px] [&_p]:text-muted [&_p]:mt-[25px]"
-            role="status"
-          >
-            <span className="skeleton h-6 block [background:linear-gradient(90deg,_#e5eaf4,_#f0f3f9,_#e5eaf4)] bg-size-[200%] animate-loading mb-[15px] rounded-[7px] [&:nth-child(2)]:max-w-[60%]" />
-          </div>
+          <SkeletonList label="Cargando deuda…" rows={3} className="mt-2" />
         )}
       </Modal>
     </>

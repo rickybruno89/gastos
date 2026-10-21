@@ -176,7 +176,7 @@ export function CreateExpenseForm({
         message={error || (create.isError ? errorMessage(create.error) : "")}
       />
       <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
-        <Button type="submit" className="w-full" disabled={create.isPending}>
+        <Button type="submit" className="w-full" loading={create.isPending}>
           <Plus size={17} />
           {create.isPending ? "Guardando…" : "Crear gasto"}
         </Button>
@@ -289,7 +289,7 @@ function EditForm({
       </FormField>
       <FormError message={error} />
       <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button type="submit" className="w-full" loading={pending}>
           {pending ? "Guardando…" : "Guardar cambios"}
         </Button>
       </div>
@@ -383,7 +383,7 @@ function AnnualForm({
       </span>
       <FormError message={error} />
       <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
-        <Button type="submit" className="w-full" disabled={action.isPending}>
+        <Button type="submit" className="w-full" loading={action.isPending}>
           <CalendarCheck size={17} />
           {action.isPending ? "Guardando…" : "Registrar pago anual"}
         </Button>
@@ -454,7 +454,7 @@ function ReasonForm({
           type="submit"
           variant="secondary"
           className="w-full"
-          disabled={action.isPending}
+          loading={action.isPending}
         >
           {action.isPending
             ? "Guardando…"
@@ -509,7 +509,7 @@ function SharesForm({
       <SharesEditor userId={userId} rows={rows} onChange={setRows} />
       <FormError message={error} />
       <div className="dialog-actions sticky bottom-[-1px] pt-3 pb-[1px] [background:white]">
-        <Button type="submit" className="w-full" disabled={change.isPending}>
+        <Button type="submit" className="w-full" loading={change.isPending}>
           {change.isPending ? "Guardando…" : "Guardar reparto"}
         </Button>
       </div>
@@ -667,7 +667,7 @@ export function OccurrenceSheet({
         <Button
           variant="secondary"
           className="w-full"
-          disabled={restore.isPending}
+          loading={restore.isPending}
           onClick={() =>
             restore.mutate(
               { occurrence, action: { action: "restore" } },

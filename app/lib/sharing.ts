@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSafeMutation } from "./mutation";
 import { z } from "zod";
 import {
   contactSchema,
@@ -13,6 +14,7 @@ import {
   type Occurrence,
 } from "../../shared/contracts/expenses";
 import { request, send } from "../../shared/api-client";
+import { usePrefetchNeighbors } from "./prefetch";
 
 export function useContacts(userId: string) {
   return useQuery({
@@ -28,12 +30,17 @@ export function useInvitations(userId: string) {
     refetchInterval: 60_000,
   });
 }
+const sharedQuery = (userId: string, period: string) => ({
+  queryKey: ["shared", userId, period],
+  queryFn: () => request(`/shared/${period}`, sharedMonthSchema),
+});
 export function useSharedMonth(userId: string, period: string) {
-  return useQuery({
-    queryKey: ["shared", userId, period],
-    queryFn: () => request(`/shared/${period}`, sharedMonthSchema),
+  const shared = useQuery({
+    ...sharedQuery(userId, period),
     staleTime: 10_000,
   });
+  usePrefetchNeighbors(period, shared.isSuccess, (p) => sharedQuery(userId, p));
+  return shared;
 }
 
 // Contactos, conexiones y repartos afectan meses, saldos y listas: se invalidan juntos.
@@ -42,8 +49,8 @@ function useSharingMutation<V, T>(
   operation: (variables: V, idempotencyKey: string) => Promise<T>,
 ) {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: (variables: V) => operation(variables, crypto.randomUUID()),
+  return useSafeMutation({
+    idempotent: operation,
     onSettled: () => {
       for (const key of ["contacts", "invitations", "shared", "months"])
         void client.invalidateQueries({ queryKey: [key, userId] });

@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSafeMutation } from "./mutation";
 import type { z } from "zod";
 import {
   debtDetailSchema,
@@ -41,8 +42,8 @@ function useDebtMutation<V>(
   operation: (variables: V, idempotencyKey: string) => Promise<DebtDetail>,
 ) {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: (variables: V) => operation(variables, crypto.randomUUID()),
+  return useSafeMutation({
+    idempotent: operation,
     onSuccess: (debt) => client.setQueryData(["debts", userId, debt.id], debt),
     onSettled: () =>
       void client.invalidateQueries({ queryKey: ["debts", userId] }),
