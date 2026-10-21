@@ -94,6 +94,7 @@ try {
     "/compartidos",
     "/deudas",
     "/tarjetas",
+    "/invitacion",
   ]) {
     const response = await fetch(`${origin}${route}`);
     assert.equal(response.status, 200);

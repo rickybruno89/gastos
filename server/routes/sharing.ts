@@ -7,6 +7,7 @@ import {
   updateContactSchema,
 } from "../../shared/contracts/sharing";
 import {
+  inspectInvitationLink,
   acceptInvitation,
   createContact,
   disconnect,
@@ -21,10 +22,13 @@ import { HttpError, parseBody } from "../http";
 import type { Databases } from "../persistence/database";
 import { createMutate, identityOf, readAs, resourceId } from "./helpers";
 
+import type { AppConfig } from "../config";
+import { invitationTokenInput } from "../../shared/contracts/notifications";
+
 const contactMissing = "No encontramos ese contacto.";
 const invitationMissing = "No encontramos esa invitación.";
 
-export function sharingRouter(databases: Databases) {
+export function sharingRouter(databases: Databases, config: AppConfig) {
   const router = Router();
   const mutate = createMutate(databases);
 
@@ -62,7 +66,8 @@ export function sharingRouter(databases: Databases) {
       req,
       res,
       { scope: `POST /contacts/${id}/invitation`, body: {}, status: 201 },
-      (context) => inviteContact(context, id, identityOf(res)),
+      (context) =>
+        inviteContact(context, id, identityOf(res), config.authSecret),
     );
   });
 
@@ -71,6 +76,36 @@ export function sharingRouter(databases: Databases) {
       listInvitations(tx, identityOf(res)),
     );
     res.json({ data: invitations });
+  });
+
+  router.post("/invitations/:id/inspect", async (req, res) => {
+    const id = resourceId(req, invitationMissing),
+      body = parseBody(invitationTokenInput, req.body);
+    res.json({
+      data: await readAs(databases, res, (tx) =>
+        inspectInvitationLink(tx, id, identityOf(res), body.token),
+      ),
+    });
+  });
+  router.post("/invitations/:id/accept-link", async (req, res) => {
+    const id = resourceId(req, invitationMissing),
+      body = parseBody(invitationTokenInput, req.body);
+    await mutate(
+      req,
+      res,
+      { scope: `POST /invitations/${id}/accept-link`, body, status: 200 },
+      async (context) => {
+        await context.tx
+          .$queryRaw`SELECT id FROM public."UserConnection" WHERE id=${id}::uuid FOR UPDATE`;
+        await inspectInvitationLink(
+          context.tx,
+          id,
+          identityOf(res),
+          body.token,
+        );
+        return acceptInvitation(context, id, identityOf(res));
+      },
+    );
   });
 
   router.post("/invitations/:id/accept", async (req, res) => {

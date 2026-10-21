@@ -9,23 +9,25 @@ datasource db {
 }
 
 model User {
-  id            String                 @id
-  name          String
-  email         String                 @unique
-  emailVerified Boolean                @default(false)
-  image         String?
-  createdAt     DateTime               @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime               @updatedAt @db.Timestamptz(3)
-  sessions      Session[]
-  accounts      Account[]
-  preferences   UserPreferences?
-  expenseSeries MonthlyExpenseSeries[]
-  auditEntries  AuditLog[]
-  idempotency   IdempotencyKey[]
-  cards         CreditCard[]
-  contacts      Contact[]
-  invitesSent   UserConnection[]       @relation("ConnectionInviter")
-  invitesTaken  UserConnection[]       @relation("ConnectionInvitee")
+  id               String                  @id
+  name             String
+  email            String                  @unique
+  emailVerified    Boolean                 @default(false)
+  image            String?
+  createdAt        DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                @updatedAt @db.Timestamptz(3)
+  sessions         Session[]
+  accounts         Account[]
+  preferences      UserPreferences?
+  notifications    NotificationPreference?
+  notificationJobs NotificationJob[]
+  expenseSeries    MonthlyExpenseSeries[]
+  auditEntries     AuditLog[]
+  idempotency      IdempotencyKey[]
+  cards            CreditCard[]
+  contacts         Contact[]
+  invitesSent      UserConnection[]        @relation("ConnectionInviter")
+  invitesTaken     UserConnection[]        @relation("ConnectionInvitee")
 
   @@map("user")
   @@schema("auth")
@@ -277,23 +279,24 @@ enum ConnectionStatus {
 
 // Invitación (PENDING) y conexión aceptada entre dos cuentas de GastApp.
 model UserConnection {
-  id              String                 @id @default(uuid(7)) @db.Uuid
-  inviterId       String
-  inviterName     String                 @db.VarChar(120)
-  inviteeEmail    String                 @db.VarChar(254)
-  inviteeId       String?
-  inviteeName     String?                @db.VarChar(120)
-  status          ConnectionStatus       @default(PENDING)
+  id                  String                 @id @default(uuid(7)) @db.Uuid
+  inviterId           String
+  invitationTokenHash String?                @db.Char(64)
+  inviterName         String                 @db.VarChar(120)
+  inviteeEmail        String                 @db.VarChar(254)
+  inviteeId           String?
+  inviteeName         String?                @db.VarChar(120)
+  status              ConnectionStatus       @default(PENDING)
   // Período en que se aceptó (informativo): la contraparte ve todo el historial compartido.
-  acceptedPeriod  DateTime?              @db.Date
-  expiresAt       DateTime               @db.Timestamptz(3)
-  createdAt       DateTime               @default(now()) @db.Timestamptz(3)
-  respondedAt     DateTime?              @db.Timestamptz(3)
-  inviter         User                   @relation("ConnectionInviter", fields: [inviterId], references: [id], onDelete: Cascade)
-  invitee         User?                  @relation("ConnectionInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
-  contacts        Contact[]
-  cardAllocations CardAllocation[]
-  allocations     OccurrenceAllocation[]
+  acceptedPeriod      DateTime?              @db.Date
+  expiresAt           DateTime               @db.Timestamptz(3)
+  createdAt           DateTime               @default(now()) @db.Timestamptz(3)
+  respondedAt         DateTime?              @db.Timestamptz(3)
+  inviter             User                   @relation("ConnectionInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee             User?                  @relation("ConnectionInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+  contacts            Contact[]
+  cardAllocations     CardAllocation[]
+  allocations         OccurrenceAllocation[]
 
   @@index([inviteeEmail, status])
   @@index([inviterId])
@@ -608,5 +611,40 @@ model CardPayment {
   statement   CardStatement @relation(fields: [statementId, ownerId], references: [id, ownerId], onDelete: Cascade)
 
   @@index([statementId])
+  @@schema("public")
+}
+
+model NotificationPreference {
+  userId       String   @id
+  emailEnabled Boolean  @default(false)
+  monthly      Boolean  @default(true)
+  cards        Boolean  @default(true)
+  debts        Boolean  @default(true)
+  daysBefore   Int      @default(3) @db.SmallInt
+  version      Int      @default(1)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model NotificationJob {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  ownerId       String
+  kind          String    @db.VarChar(20)
+  dedupeKey     String    @unique @db.VarChar(160)
+  payload       Json
+  status        String    @default("PENDING") @db.VarChar(12)
+  attempts      Int       @default(0) @db.SmallInt
+  nextAttemptAt DateTime  @default(now()) @db.Timestamptz(3)
+  leaseToken    String?   @db.Uuid
+  leaseUntil    DateTime? @db.Timestamptz(3)
+  lastError     String?   @db.VarChar(80)
+  sentAt        DateTime? @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  owner         User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([ownerId, createdAt])
   @@schema("public")
 }

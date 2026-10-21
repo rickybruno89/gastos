@@ -41,6 +41,8 @@ export async function startTestApp() {
     APP_ORIGIN: "http://localhost:3000",
     DATABASE_URL: forDatabase(process.env.DATABASE_URL!),
     AUTH_DATABASE_URL: forDatabase(process.env.AUTH_DATABASE_URL!),
+    WORKER_DATABASE_URL: forDatabase(process.env.WORKER_DATABASE_URL!),
+    MAIL_MODE: "capture",
     GOOGLE_CLIENT_ID: "local-integration-client",
     GOOGLE_CLIENT_SECRET: "local-integration-secret",
   });

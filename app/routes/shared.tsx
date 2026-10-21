@@ -42,7 +42,7 @@ function connectionBadge(contact: Contact) {
       </Badge>
     );
   if (status === "PENDING" && contact.connection?.direction === "SENT")
-    return <Badge tone="amber">Invitación enviada</Badge>;
+    return <Badge tone="amber">Invitación pendiente</Badge>;
   return <Badge>Solo vos lo ves</Badge>;
 }
 

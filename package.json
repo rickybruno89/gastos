@@ -24,7 +24,14 @@
     "db:migrate": "node scripts/migrate-local.mjs",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
-    "test:docker": "docker build -t gastapp:v2-local . && node scripts/smoke-docker.mjs"
+    "test:docker": "docker build -t gastapp:v2-local . && node scripts/smoke-docker.mjs",
+    "worker:dev": "prisma generate && node --import tsx server/jobs/index.ts",
+    "worker": "node build/server/jobs/index.js",
+    "worker:once": "node build/server/jobs/index.js --once",
+    "worker:retry": "node build/server/jobs/index.js --retry-failed",
+    "db:backup": "node scripts/backup-local.mjs",
+    "db:restore:verify": "node scripts/restore-local.mjs",
+    "db:restore:clean": "node scripts/clean-restore-local.mjs"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "1.7.12",
@@ -39,6 +46,7 @@
     "express": "5.3.0",
     "isbot": "5.1.40",
     "lucide-react": "^1.60.0",
+    "nodemailer": "10.1.7",
     "pg": "8.22.0",
     "prisma": "7.10.1",
     "react": "19.2.6",
@@ -53,6 +61,7 @@
     "@tailwindcss/vite": "4.3.3",
     "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
+    "@types/nodemailer": "8.0.2",
     "@types/pg": "^8.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

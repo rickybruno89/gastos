@@ -1,5 +1,6 @@
 import { LockKeyhole, UserRound } from "lucide-react";
 import { Workspace } from "../components/workspace";
+import { NotificationSettings } from "../components/notification-settings";
 import { Badge } from "../components/ui";
 import { GoogleMark } from "../components/brand";
 import type { CurrentUser } from "../../shared/contracts/account";
@@ -48,6 +49,7 @@ function AccountDetails({ user }: { user: CurrentUser }) {
               </div>
             </dl>
           </section>
+          <NotificationSettings userId={user.id} />
         </div>
         <aside className="account-aside max-[1251px]:max-w-[400px] px-1 py-0 [&_h3]:text-[12px] [&_h3]:mt-4.5 [&_h3]:mb-2.5 [&_h3]:text-muted [&_h3]:mx-0 [&_p]:text-muted [&_p]:text-[0.8125rem] [&_p]:leading-[1.9] max-[1251px]:[&_.tile-icon]:hidden">
           <span className="tile-icon green inline-flex items-center justify-center h-[39px] w-[39px] shrink-0 [background:#eaf8f1] text-[#2e9278] rounded-[11px]">

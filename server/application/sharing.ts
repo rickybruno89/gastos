@@ -20,6 +20,12 @@ export type Identity = {
   emailVerified: boolean;
 };
 
+import {
+  invitationToken,
+  tokenHash,
+  validToken,
+} from "../jobs/invitation-token";
+
 const INVITATION_DAYS = 30;
 const conflict = (code: string, message: string) =>
   new HttpError(409, code, message);
@@ -229,8 +235,10 @@ export async function inviteContact(
   context: MutationContext,
   contactId: string,
   identity: Identity,
+  tokenSecret: string,
 ) {
   const { tx, ownerId } = context;
+  await tx.$queryRaw`SELECT id FROM public."Contact" WHERE id=${contactId}::uuid AND "ownerId"=${ownerId} FOR UPDATE`;
   const contact = await loadContact(tx, ownerId, contactId);
   if (contact.archivedAt)
     throw conflict("CONTACT_ARCHIVED", "Restaurá el contacto para invitarlo.");
@@ -243,7 +251,9 @@ export async function inviteContact(
     throw conflict("SELF_INVITE", "No podés invitarte a vos mismo.");
   if (
     contact.connection &&
-    ["PENDING", "ACCEPTED"].includes(contact.connection.status)
+    (contact.connection.status === "ACCEPTED" ||
+      (contact.connection.status === "PENDING" &&
+        contact.connection.expiresAt > new Date()))
   )
     throw conflict(
       "ALREADY_CONNECTED",
@@ -255,6 +265,25 @@ export async function inviteContact(
       inviterName: identity.name.slice(0, 120),
       inviteeEmail: contact.email,
       expiresAt: new Date(Date.now() + INVITATION_DAYS * 86_400_000),
+    },
+  });
+  await tx.userConnection.update({
+    where: { id: connection.id },
+    data: {
+      invitationTokenHash: tokenHash(
+        invitationToken(connection.id, tokenSecret),
+      ),
+    },
+  });
+  await tx.notificationJob.create({
+    data: {
+      ownerId,
+      kind: "INVITATION",
+      dedupeKey: `invitation:${connection.id}`,
+      payload: {
+        connectionId: connection.id,
+        inviterName: identity.name.slice(0, 120),
+      },
     },
   });
   await tx.contact.update({
@@ -338,6 +367,7 @@ export async function acceptInvitation(
       inviteeName: identity.name.slice(0, 120),
       acceptedPeriod: periodDate(acceptedPeriod),
       respondedAt: new Date(),
+      invitationTokenHash: null,
     },
   });
   if (!updated.count) throw connectionNotFound();
@@ -374,6 +404,7 @@ export async function rejectInvitation(
       inviteeId: context.ownerId,
       inviteeName: identity.name.slice(0, 120),
       respondedAt: new Date(),
+      invitationTokenHash: null,
     },
   });
   await audit(context, {
@@ -402,7 +433,7 @@ export async function disconnect(context: MutationContext, id: string) {
     throw conflict("NOT_CONNECTED", "Esta conexión ya no está activa.");
   await tx.userConnection.update({
     where: { id },
-    data: { status, respondedAt: new Date() },
+    data: { status, respondedAt: new Date(), invitationTokenHash: null },
   });
   await audit(context, {
     action:
@@ -547,5 +578,21 @@ export async function getSharedMonth(
     people: [...people.values()].sort((a, b) =>
       a.name.localeCompare(b.name, "es"),
     ),
+  };
+}
+
+export async function inspectInvitationLink(
+  tx: Tx,
+  id: string,
+  identity: Identity,
+  token: string,
+) {
+  const row = await pendingFor(tx, id, identity);
+  if (!identity.emailVerified || !validToken(token, row.invitationTokenHash))
+    throw connectionNotFound();
+  return {
+    id: row.id,
+    inviterName: row.inviterName,
+    expiresAt: row.expiresAt.toISOString(),
   };
 }

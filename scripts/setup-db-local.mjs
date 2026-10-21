@@ -14,6 +14,7 @@ if (!["127.0.0.1", "localhost", "[::1]"].includes(admin.hostname))
 const roles = [
   [process.env.POSTGRES_USER, process.env.POSTGRES_PASSWORD, "CREATEDB"],
   ["gastapp_auth", process.env.AUTH_DB_PASSWORD, "NOCREATEDB NOINHERIT"],
+  ["gastapp_worker", process.env.WORKER_DB_PASSWORD, "NOCREATEDB NOINHERIT"],
   ["gastapp_app", process.env.APP_DB_PASSWORD, "NOCREATEDB NOINHERIT"],
 ];
 if (roles.some(([name, password]) => !name || !password))

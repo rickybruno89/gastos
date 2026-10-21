@@ -1,4 +1,4 @@
-import { Link, Navigate } from "react-router";
+import { Link, Navigate, useSearchParams } from "react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -16,6 +16,9 @@ import { publicConfigSchema } from "../../shared/contracts/account";
 
 export default function Login() {
   const account = useCurrentUser();
+  const [params] = useSearchParams();
+  const back = params.get("volver");
+  const destination = back?.startsWith("/invitacion#") ? back : "/";
   const config = useQuery({
     queryKey: ["public-config"],
     queryFn: () => request("/config", publicConfigSchema),
@@ -24,7 +27,7 @@ export default function Login() {
     mutationFn: async () => {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: destination,
       });
       if (result.error)
         throw new Error(
@@ -32,7 +35,7 @@ export default function Login() {
         );
     },
   });
-  if (account.data) return <Navigate to="/" replace />;
+  if (account.data) return <Navigate to={destination} replace />;
   return (
     <div className="login-page block grid-cols-[1.08fr_1fr] min-h-svh [background:white] desktop:grid">
       <section

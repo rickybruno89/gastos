@@ -1,6 +1,6 @@
 # GastApp V2: plan de producto, arquitectura y producción
 
-Actualizado: **20/10/2026**. Estado: **fundación V2, Fase 1 (primer recorrido de gasto mensual), Fase 2 (gastos periódicos), Fase 3 (compartidos), Fase 4 (deudas) y Fase 5 (tarjetas) implementadas y validadas en local**; notificaciones y despliegue en el VPS pendientes. El login Google completo con una cuenta real requiere configurar las credenciales del cliente OAuth local.
+Actualizado: **21/10/2026**. Estado: **fundación V2, Fase 1 (primer recorrido de gasto mensual), Fase 2 (gastos periódicos), Fase 3 (compartidos), Fase 4 (deudas), Fase 5 (tarjetas) y Fase 6 (notificaciones y operación) implementadas y validadas en local**; configuración y validación del despliegue en el VPS pendientes. El login Google completo con una cuenta real requiere configurar las credenciales del cliente OAuth local.
 
 Este es el documento único de referencia de GastApp V2. Reúne el assessment funcional, las decisiones de arquitectura y el procedimiento de VPS/Coolify adaptado de Auguri. Sustituye las guías dispersas de V1, Opción B, Vercel y las copias de documentación de Auguri que había en este repositorio.
 
@@ -253,7 +253,7 @@ Las conexiones forman parte del alcance V2, no son una mejora opcional posterior
 - El reparto vive en la versión de condiciones (`MonthlyExpenseTermsShare` por `MonthlyExpenseTerms`), con la misma vigencia por período que importe y vencimiento. “Cambiar reparto” aplica a este mes y a los siguientes no pagados.
 - Cada ocurrencia pendiente o pagada que reparte tiene su snapshot `OccurrenceAllocation`: fila del propietario (`contactId` nulo) y una por contacto, con porcentaje, importe calculado con `allocateMoney`, base, moneda, nombre del gasto y período. Un trigger por sentencia exige que sumen 10.000 bps; otro impide modificar el snapshot de un mes pagado. Omitidos, de baja y cubiertos no tienen snapshot; el pago anual lo calcula una sola vez sobre el total.
 - La allocation siempre referencia al contacto del propietario (su apodo privado); si el contacto está vinculado, guarda además la conexión. Así una sola fila sirve al propietario y, en lectura, a la contraparte. Esto sustituye la regla conceptual “contacto o conexión, nunca ambos”.
-- Invitación: desde el reparto se puede sumar a alguien por email (crea o reutiliza el contacto e invita en un paso), o agregar el email a un contacto existente e invitar. No se informa si el email ya tiene cuenta, para no permitir enumerar usuarios. El destinatario ve la invitación al ingresar con ese email verificado por Google (sin envío de correo hasta la Fase 6 ni enlace con token todavía). Vence a los 30 días. Al aceptar, el destinatario obtiene su propio contacto con el nombre del invitador, y ambos pueden compartir en las dos direcciones.
+- Invitación: desde el reparto se puede sumar a alguien por email (crea o reutiliza el contacto e invita en un paso), o agregar el email a un contacto existente e invitar. No se informa si el email ya tiene cuenta, para no permitir enumerar usuarios. El destinatario ve la invitación al ingresar con ese email verificado por Google (Fase 6 agrega correo encolado y enlace de un solo uso; en desarrollo se captura localmente). Vence a los 30 días. Al aceptar, el destinatario obtiene su propio contacto con el nombre del invitador, y ambos pueden compartir en las dos direcciones.
 - Desconectar (cualquiera de los dos) deja la conexión `BLOCKED`: la contraparte deja de ver; los snapshots y saldos propios se conservan. Se puede volver a invitar.
 - RLS: la contraparte solo lee sus propias filas de allocation, mientras la conexión siga aceptada, con todo el historial. No accede a ocurrencias, series, contactos ni a otros participantes. La invitación pendiente es visible para el email invitado mediante `gastapp.user_email`, fijado solo con email verificado.
 
@@ -540,7 +540,32 @@ El backend deberá cubrir, cuando se habiliten los módulos correspondientes:
 - reintento controlado de análisis PDF;
 - mantenimiento de proyecciones solo si una query derivada deja de ser suficiente.
 
-La materialización normal sigue siendo on-demand. Se propone un worker Node con la misma imagen de código, trabajos persistidos en PostgreSQL, exclusión de ejecuciones, reintentos e idempotencia. Frecuencia, concurrencia y permisos del worker se concretarán al implementar el primer módulo que lo necesite.
+La materialización normal sigue siendo on-demand. **Implementado en Fase 6:**
+
+- `NotificationPreference` protege por usuario el opt-in de email (desactivado inicialmente), gastos mensuales/bimestrales, tarjetas y préstamos por cobrar. Se eligen de 0 a 14 días de anticipación en Cuenta, sin selector de zona horaria.
+- Un resumen diario por usuario desde las 09:00 de su zona, solo con vencimientos entre hoy y la anticipación configurada. No se suman monedas ni se envían importes o datos bancarios por correo; el enlace lleva al detalle privado. Los vencidos, pagos, omitidos, cubiertos y cancelados quedan fuera. Antes de entregar se vuelven a leer las preferencias y el estado financiero; un aviso que ya no corresponde se cancela.
+- Las ocurrencias se preparan únicamente para los períodos de esa ventana. En tarjetas se preparan únicamente los períodos cuyo vencimiento sugerido cae en la ventana, normalmente del mes anterior, y se consultan además las fechas reales de los statements existentes. La preparación financiera usa el rol ordinario con identidad y RLS; no corre como administrador.
+- `NotificationJob` es una outbox transaccional: crear la invitación y encolar su correo se confirman juntos. Un contacto se bloquea al invitar para evitar dobles invitaciones concurrentes. Dedupe por invitación y por usuario/día; estados `PENDING`, `SENT`, `CANCELLED` y `DEAD`.
+- Worker Node compilado en la misma imagen, con rol `gastapp_worker` sin superusuario ni BYPASSRLS. Solo lee identidad/email verificado, zona/preferencias, los campos necesarios de la invitación y la cola; no puede leer sesiones, credenciales Google ni tablas financieras directamente. Reclama mediante `FOR UPDATE SKIP LOCKED`, con lease de 120 segundos, lotes de hasta 20 y un ciclo cada 60 segundos después del anterior. Hasta cinco intentos, con esperas de 1, 2, 4 y 8 minutos; un lease agotado queda `DEAD`. `worker:retry` reencola fallidos explícitamente.
+- La generación de recordatorios y la entrega son independientes: un fallo al preparar un usuario no impide intentar la cola existente. Limpieza limitada a 1.000 claves de idempotencia de más de 30 días por ciclo; el replay de las mutaciones se conserva durante esos 30 días. No se limpia el audit log financiero.
+- SMTP configurable con Nodemailer 10.1.7; en producción exige TLS y configuración explícita. Desarrollo/pruebas usan captura `.eml` privada en `.data/mail`, con archivos 0600 y Message-ID estable. `MAIL_MODE=disabled` no entrega correos ni prepara nuevos recordatorios. No se contrató ningún servicio externo.
+- El dedupe y la exclusión evitan envíos concurrentes/reintentos de un job ya confirmado. SMTP tiene una ventana ambigua si el proveedor acepta el mensaje y el proceso cae antes de guardar `SENT`: un reintento puede repetirlo. Se conserva el mismo Message-ID para seguimiento; no se promete entrega exactamente una vez ante esa caída. La captura local sí evita duplicar el archivo.
+- Invitación con enlace en fragmento (`/invitacion#...`), token derivado con HMAC y únicamente su hash persistido en la conexión. Requiere Google con el mismo email verificado, vence en 30 días y aceptar/rechazar/cancelar invalida el enlace. No se acepta por abrirlo. El login conserva el destino y los reintentos de aceptación reutilizan la clave de idempotencia. Rotar el secreto de auth invalida también los enlaces pendientes.
+- Conexiones de app/auth/worker configuradas en UTC para conservar instantes `TIMESTAMPTZ` sin el desfase de la zona del servidor. La zona automática del dispositivo define días y horarios; las fechas civiles existentes no se desplazan ni se reescriben.
+
+Comandos locales:
+
+```bash
+npm run setup:local
+npm run db:setup
+npm run db:migrate
+npm run build
+npm run worker:once       # preparar/entregar un lote y terminar
+npm run worker            # proceso continuo separado de la web
+npm run worker:retry      # reencolar DEAD; no envía hasta ejecutar el worker
+```
+
+`worker:dev -- --once` permite ejecutar el código TypeScript sin build. Se inspeccionan los `.eml` en `.data/mail`; las pruebas también ejercitan SMTP contra un servidor de captura en localhost. Para SMTP real: `MAIL_MODE=smtp`, `MAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, y credenciales completas si el servidor requiere autenticación. Las variables de `.env.example` no contienen credenciales reales. En producción el modo predeterminado es `disabled`; el SMTP real y su entrega se verifican en Fase 7. El worker debe configurarse como proceso separado con reinicio; no usa el healthcheck HTTP de la web (en Docker, deshabilitar ese healthcheck para el proceso worker).
 
 PDF tendrá límites explícitos de tamaño, páginas, tiempo, concurrencia y costo. Se medirán con archivos representativos en el VPS compartido antes de fijar sus parámetros operativos.
 
@@ -719,7 +744,7 @@ Abrir `http://localhost:3000`. Vite atiende la web en 3000 y reenvía API/health
 
 `setup:local` crea secretos nuevos una sola vez y respeta una configuración local existente. `db:setup` se conecta con el superusuario de Postgres.app (el usuario de macOS) y crea o actualiza los roles `gastapp_owner` (migraciones, con `CREATEDB` para las bases de prueba), `gastapp_auth` y `gastapp_app` con las contraseñas de `.env.local`, y la base `gastappv2`; puede repetirse. `db:migrate` valida que el destino sea `gastappv2` en localhost y aplica las migraciones versionadas. Para un VPS nuevo deberán prepararse esos roles con sus propios secretos antes de aplicar la migración.
 
-**Migraciones incrementales.** Se conserva `202610200001_init` y Fase 5 agrega `202610210001_cards`, con tablas, constraints, triggers, grants y RLS. `npm run db:migrate` instala ambos sobre una base vacía o agrega Tarjetas sobre la base existente sin borrar datos. Cada cambio posterior tendrá su migración revisada; no se reescribe una ya aplicada. `npm run db:reset` elimina y recrea `gastappv2` y queda reservado para un reinicio local explícito (borra sus datos).
+**Migraciones incrementales.** Se conserva `202610200001_init` y Fase 5 agrega `202610210001_cards`, con tablas, constraints, triggers, grants y RLS. Fase 6 agrega `202610210002_notifications`, con preferencias, outbox, token de invitación y permisos del worker. `npm run db:migrate` instala las tres sobre una base vacía o agrega las pendientes sobre la base existente sin borrar datos. Cada cambio posterior tendrá su migración revisada; no se reescribe una ya aplicada. `npm run db:reset` elimina y recrea `gastappv2` y queda reservado para un reinicio local explícito (borra sus datos).
 
 ```bash
 npm run check
@@ -913,7 +938,19 @@ Los scripts antiguos de V1 se retiraron de la rama `v2`. El build actual genera 
 
 ### 7.9. Backups, restauración y monitoreo
 
-Propuesta inicial heredada de la operación de Auguri: backup diario local de cada base con retención 14, más copia periódica fuera del VPS y copia antes de cambios relevantes. Frecuencia externa, retención definitiva y pérdida/tiempo de recuperación tolerables se concretarán antes de producción.
+**Implementado y verificado en local en Fase 6:** `db:backup` respalda `gastappv2` sin modificarla, con snapshot PostgreSQL consistente, dump custom, manifiesto y archivos privados. Todo el contenido del backup (incluido manifiesto, sesiones y archivos) se cifra con AES-256-GCM; se guardan checksums de integridad y permisos privados. Retención local de las 14 copias completas más recientes. No se admiten bases remotas ni destinos arbitrarios de restauración.
+
+```bash
+npm run db:backup
+npm run db:restore:verify -- .data/backups/backup-...
+npm run db:restore:clean -- gastapp_restore_<id>
+```
+
+`db:restore:verify` crea una base nueva `gastapp_restore_*` y un directorio propio bajo `.data/restores`; conserva propietarios, grants, RLS, triggers y constraints. Verifica conteos y hashes del contenido de todas las tablas, monedas/importes incluidos, además de archivos y permisos. Clave incorrecta o corrupción abortan la restauración. Nunca sobrescribe `gastappv2`; no inicia el worker ni envía correo. `db:restore:clean` solo admite nombres de esas copias aisladas y elimina la base y sus archivos de prueba.
+
+Requiere clientes PostgreSQL 18 (`POSTGRES_BIN` si no están en PATH/Postgres.app), administrador del PostgreSQL local y `BACKUP_ENCRYPTION_KEY` generada por `setup:local`. Esa clave y los secretos/configuración se conservan por separado; perder la clave impide restaurar. Las herramientas de esta fase son locales y no se ejecutan contra el VPS. Los scripts de mantenimiento requieren el cliente PostgreSQL en la máquina que los ejecute; no se incluyen herramientas administrativas en el runtime web.
+
+La automatización diaria, la copia periódica fuera del VPS y la copia antes de cambios relevantes se instalarán en Fase 7 con los recursos del entorno. Frecuencia externa, retención definitiva y pérdida/tiempo de recuperación tolerables se concretarán antes de producción.
 
 El respaldo de GastApp cubrirá base y archivos privados cuando existan, con manifiesto y checksums. Conservar una copia externa cifrada; secretos de auth/Google/SMTP y configuración de plataforma se respaldan por separado. Si base y archivos se copian secuencialmente, coordinar escrituras para que la copia sea consistente.
 
@@ -939,7 +976,7 @@ Agregar a Kuma los healthchecks de producción y staging, y activar las alertas 
 | 3. Compartidos                | **Implementada en local:** contactos sin cuenta, reparto con snapshots, saldos por persona y moneda, invitaciones y conexiones.          | Reparto manual completo sin registro de contraparte; vista conectada solo de lectura y sin filtraciones.                              |
 | 4. Deudas                     | **Implementada en local:** principal fijo, pagos parciales con undo, ajustes auditables, cancelar/reabrir y pantalla propia.             | Estados y saldos exactos, separados del reparto de gastos y tarjetas.                                                                 |
 | 5. Tarjetas                   | **Implementada en local:** compras, cuotas, recurrentes, statements y conciliación manual.                                               | Una fuente de verdad para cuotas; pago/reversión del statement consistente; cargos desconocidos y ausentes resueltos.                 |
-| 6. Notificaciones y operación | Preferencias, outbox, reintentos, herramientas de DB y backups.                                                                          | Envíos idempotentes; configuración de recursos y restauración verificadas.                                                            |
+| 6. Notificaciones y operación | **Implementada en local:** preferencias, outbox, invitaciones con enlace, reintentos, worker y backup/restauración cifrada.              | Envíos idempotentes; configuración de recursos y restauración verificadas.                                                            |
 | 7. Publicación inicial        | Alcance completo probado en local, imagen Docker ensayada localmente y despliegue del commit validado con base nueva.                    | Comprobación en staging/producción de HTTPS, auth, permisos, backup/restauración y monitoreo; producción aprobada operativamente.     |
 | 8. PDF/IA opcional            | Archivos privados, parser agnóstico, validaciones y sugerencias.                                                                         | Límites/costos medidos y confirmación humana; no bloquea el primer lanzamiento manual.                                                |
 | 9. Expo                       | UI React Native, misma API, sesión segura, lectura offline y push.                                                                       | Web/API estabilizadas; contratos reutilizados y reintentos seguros.                                                                   |
@@ -957,6 +994,8 @@ La landing `ingbruno.ar` y el importador desde V1 son trabajos independientes. L
 - Principal y pagos parciales de Deudas en su moneda, sin crear deudas desde repartos.
 - Roles y RLS con conexiones del pool reutilizadas entre usuarios distintos.
 - Instalación limpia, persistencia tras redeploy, salud y restauración aislada.
+
+La Fase 6 deja **22 pruebas unitarias y 73 resultados de integración** aprobados: preferencias/versiones y privacidad, invitación+correo atómicos, doble invitación concurrente, rollback sin correo, SMTP contra localhost, reintentos, leases y agotamiento, enlace con token/email y consumo único, día/hora local y cruce de mes, pagos y coberturas excluidos, cancelación por opt-out, permisos del worker y limpieza limitada. El backup se prueba cifrado, con clave incorrecta/corrupción rechazadas, restauración aislada, igualdad del contenido completo, archivos, sesión real, API y RLS. También se ensayó el backup/restauración de la base de trabajo local; la copia aislada se eliminó después. Build y Docker incluyen el worker y `/invitacion`; navegador con usuarios sintéticos cubre preferencias y aceptar el enlace en móvil. SMTP/Google reales y Safari en iPhone físico siguen pendientes.
 
 La Fase 5 deja **19 pruebas unitarias y 61 resultados de integración** aprobados. Agrega cuotas y matriz de reparto exactas, fechas y contratos, diferencias/monedas, desconocidos y exclusiones, recurrentes con vigencia, arrastre sin duplicados, pago concurrente, undo/reapertura, inmutabilidad en la base, privacidad de contraparte y proyección sin materialización previa. Incluye las tres regresiones de fases anteriores. También se comprueban build, Docker y recorrido con cuenta sintética/base temporal en navegador; Safari en iPhone físico sigue pendiente.
 
@@ -980,17 +1019,17 @@ Las instrucciones y ejemplos de Opción B/Vercel describían el sistema anterior
 
 ## 10. Pendientes concretos y siguiente entrega
 
-La fundación técnica y las Fases 1 a 5 ya están implementadas. Quedan tareas de configuración, módulos e infraestructura:
+La fundación técnica y las Fases 1 a 6 ya están implementadas. Quedan tareas de configuración, módulos e infraestructura:
 
 Los tres hallazgos de la revisión previa quedaron corregidos: pagos mensuales/anuales y materialización toman el mismo bloqueo de serie; Compartidos proyecta la parte autorizada de meses aún no materializados; Deudas conserva cancelaciones y reaperturas en su historial. Hay regresiones automatizadas para los tres casos.
 
 - Completar las credenciales del cliente OAuth local y validar el ingreso real con Google; la integración y las versiones ya están fijadas y probadas automáticamente.
 - Completar registro/delegación del dominio y DNS; cerrar staging y certificados según el proxy real.
 - Medir recursos y preparar el proyecto GastApp con sus credenciales, bases y volúmenes.
-- Envío de invitaciones por correo y enlace de un solo uso (Fase 6, con el outbox de notificaciones).
-- Fijar parámetros operativos de sesiones, backups, recuperación, correo y jobs en sus fases.
+- Configurar SMTP real y verificar entrega, identidad del remitente y límites del proveedor en destino; captura y transporte local ya probados.
+- Instalar el worker separado, backup diario, copia externa cifrada y monitoreo en el VPS. Validar recursos, retención y recuperación reales; las herramientas y restauración local ya están verificadas.
 
-**Siguiente entrega:** Fase 6, Notificaciones y operación: preferencias de notificación, outbox, reintentos e invitaciones por correo; herramientas de DB, backups y restauración verificada. Se desarrolla primero en local. El despliegue y la importación de V1 conservan sus fases y alcance independientes.
+**Siguiente entrega:** Fase 7, Publicación inicial: configurar y verificar recursos, HTTPS, Google, SMTP real, worker, backups/recuperación y monitores en staging; después publicar el commit validado sobre una base vacía de producción. Esta fase requiere concretar credenciales y recursos del entorno. La importación de V1 sigue siendo independiente.
 
 ## 11. Referencias técnicas
 
@@ -1010,3 +1049,6 @@ Los procedimientos de Auguri se consolidaron en la sección de VPS, con nombres 
 - [Coolify: Dockerfile y comandos de despliegue](https://coolify.io/docs/applications/builds/dockerfile).
 - [Coolify: proxy Traefik](https://coolify.io/docs/core/networking/proxy/traefik/overview), [DNS challenge](https://coolify.io/docs/core/networking/proxy/traefik/dns-challenge) y [backup de instancia](https://coolify.io/docs/core/backup-and-recovery/instance-backup).
 - [Traefik: resolvers de certificados](https://doc.traefik.io/traefik/reference/install-configuration/tls/certificate-resolvers/overview/).
+
+- [Nodemailer: transporte SMTP y timeouts](https://nodemailer.com/smtp).
+- [PostgreSQL 18: pg_dump](https://www.postgresql.org/docs/18/app-pgdump.html) y [pg_restore](https://www.postgresql.org/docs/18/app-pgrestore.html).

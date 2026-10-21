@@ -16,6 +16,15 @@ const schema = z.object({
   DATABASE_URL: databaseUrl,
   AUTH_DATABASE_URL: databaseUrl,
   BETTER_AUTH_SECRET: z.string().min(32),
+  WORKER_DATABASE_URL: databaseUrl.optional(),
+  MAIL_MODE: z.enum(["disabled", "capture", "smtp"]).optional(),
+  MAIL_FROM: z.email().default("noreply@example.test"),
+  MAIL_CAPTURE_DIR: z.string().min(1).default(".data/mail"),
+  SMTP_HOST: z.string().default(""),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
+  SMTP_SECURE: z.enum(["true", "false"]).default("false"),
+  SMTP_USER: z.string().default(""),
+  SMTP_PASSWORD: z.string().default(""),
   GOOGLE_CLIENT_ID: z.string().default(""),
   GOOGLE_CLIENT_SECRET: z.string().default(""),
 });
@@ -56,7 +65,42 @@ export function parseConfig(env: Record<string, string | undefined>) {
     throw new Error(
       "Autenticación y datos de la app requieren roles PostgreSQL distintos.",
     );
+  const mailMode =
+    value.MAIL_MODE ??
+    (value.NODE_ENV === "production" ? "disabled" : "capture");
+  if (
+    mailMode === "smtp" &&
+    (!value.SMTP_HOST ||
+      !env.MAIL_FROM ||
+      Boolean(value.SMTP_USER) !== Boolean(value.SMTP_PASSWORD))
+  )
+    throw new Error(
+      "SMTP requiere host, remitente y credenciales completas si se usa autenticación.",
+    );
+  if (value.NODE_ENV === "production" && mailMode === "capture")
+    throw new Error(
+      "La captura de correos es exclusiva de desarrollo/pruebas.",
+    );
+  if (
+    value.WORKER_DATABASE_URL &&
+    [
+      new URL(value.DATABASE_URL).username,
+      new URL(value.AUTH_DATABASE_URL).username,
+    ].includes(new URL(value.WORKER_DATABASE_URL).username)
+  )
+    throw new Error("El worker requiere un rol PostgreSQL separado.");
   return {
+    workerDatabaseUrl: value.WORKER_DATABASE_URL,
+    mail: {
+      mode: mailMode,
+      from: value.MAIL_FROM,
+      captureDir: value.MAIL_CAPTURE_DIR,
+      host: value.SMTP_HOST,
+      port: value.SMTP_PORT,
+      secure: value.SMTP_SECURE === "true",
+      user: value.SMTP_USER,
+      password: value.SMTP_PASSWORD,
+    },
     mode: value.NODE_ENV,
     port: value.PORT,
     origin: origin.origin,

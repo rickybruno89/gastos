@@ -1,3 +1,10 @@
+import { notificationPreferenceInput } from "../shared/contracts/notifications";
+import {
+  notificationPreferences,
+  saveNotificationPreferences,
+} from "./application/notifications";
+import { createMutate, readAs } from "./routes/helpers";
+import { parseBody } from "./http";
 import { randomUUID } from "node:crypto";
 import express, { type ErrorRequestHandler, type Request } from "express";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
@@ -117,8 +124,33 @@ export function createApp(config: AppConfig, databases: Databases) {
       data: { timeZone: preferences.timeZone, locale: preferences.locale },
     });
   });
+  app.get("/api/v2/me/notifications", async (_req, res) => {
+    res.json({
+      data: await readAs(databases, res, (tx) =>
+        notificationPreferences(
+          tx,
+          res.locals.user.id,
+          config.mail.mode !== "disabled",
+        ),
+      ),
+    });
+  });
+  app.put("/api/v2/me/notifications", async (req, res) => {
+    const body = parseBody(notificationPreferenceInput, req.body);
+    await createMutate(databases)(
+      req,
+      res,
+      { scope: "PUT /me/notifications", body, status: 200 },
+      (context) =>
+        saveNotificationPreferences(
+          context,
+          body,
+          config.mail.mode !== "disabled",
+        ),
+    );
+  });
   app.use("/api/v2", monthlyExpensesRouter(databases));
-  app.use("/api/v2", sharingRouter(databases));
+  app.use("/api/v2", sharingRouter(databases, config));
   app.use("/api/v2", debtsRouter(databases));
   app.use("/api/v2", cardsRouter(databases));
   app.use("/api", (_req, _res, next) =>

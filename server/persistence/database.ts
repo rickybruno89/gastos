@@ -4,10 +4,18 @@ import type { AppConfig } from "../config";
 
 export function createDatabases(config: AppConfig) {
   const app = new PrismaClient({
-    adapter: new PrismaPg({ connectionString: config.databaseUrl, max: 5 }),
+    adapter: new PrismaPg({
+      connectionString: config.databaseUrl,
+      max: 5,
+      options: "-c timezone=UTC",
+    }),
   });
   const auth = new PrismaClient({
-    adapter: new PrismaPg({ connectionString: config.authDatabaseUrl, max: 3 }),
+    adapter: new PrismaPg({
+      connectionString: config.authDatabaseUrl,
+      max: 3,
+      options: "-c timezone=UTC",
+    }),
   });
   return {
     app,
