@@ -12,6 +12,7 @@ export function authOptions(config: AppConfig, databases: Databases) {
     secret: config.authSecret,
     database: prismaAdapter(databases.auth, { provider: "postgresql" }),
     trustedOrigins: [config.origin],
+    onAPIError: { errorURL: `${config.origin}/acceso` },
     emailAndPassword: { enabled: false },
     socialProviders: config.googleConfigured
       ? {

@@ -7,5 +7,4 @@ export default [
   route("compartidos", "routes/shared.tsx"),
   route("deudas", "routes/debts.tsx"),
   route("cuenta", "routes/account.tsx"),
-  route("vista-previa", "routes/preview.tsx"),
 ] satisfies RouteConfig;

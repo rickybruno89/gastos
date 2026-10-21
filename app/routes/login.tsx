@@ -1,4 +1,4 @@
-import { Link, Navigate, useSearchParams } from "react-router";
+import { Navigate, useSearchParams } from "react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -23,11 +23,17 @@ export default function Login() {
     queryKey: ["public-config"],
     queryFn: () => request("/config", publicConfigSchema),
   });
+  const callbackError = params.has("error");
+  const errorDestination =
+    destination === "/"
+      ? "/acceso"
+      : `/acceso?volver=${encodeURIComponent(destination)}`;
   const login = useMutation({
     mutationFn: async () => {
       const result = await authClient.signIn.social({
         provider: "google",
         callbackURL: destination,
+        errorCallbackURL: errorDestination,
       });
       if (result.error)
         throw new Error(
@@ -151,12 +157,14 @@ export default function Login() {
             {login.isPending ? "Abriendo Google…" : "Continuar con Google"}
             <ArrowRight size={17} />
           </Button>
-          {login.isError && (
+          {(login.isError || callbackError) && (
             <p
               role="alert"
               className="error-message text-[12px] text-[#b64f51] leading-[1.7] mx-0 my-3"
             >
-              {login.error.message}
+              {login.isError
+                ? login.error.message
+                : "No se completó el ingreso con Google. Intentá nuevamente."}
             </p>
           )}
           {config.isError ? (
@@ -179,20 +187,11 @@ export default function Login() {
                 role="status"
                 className="notice text-muted [background:#f2f5fb] text-[11px] leading-[1.7] mx-0 my-4 px-[15px] py-[13px] rounded-[9px]"
               >
-                El ingreso con Google todavía no está habilitado en este
-                entorno.
+                El ingreso no está disponible en este momento. Intentá más
+                tarde.
               </p>
             )
           )}
-          <div className="login-divider border-t [border-top-style:solid] border-t-[#edf0f6] mt-[27px] pt-6 text-center text-[11px] text-muted">
-            <span>¿Querés conocer la nueva experiencia?</span>
-          </div>
-          <Link
-            to="/vista-previa"
-            className="button ghost preview-link inline-flex items-center justify-center min-h-11 text-[0.875rem] font-semibold whitespace-nowrap [background:transparent] text-brand mt-[9px] w-full px-4 py-2.5 border border-solid border-transparent rounded-[9px] gap-[9px] [&:hover:not(:disabled)]:[background:var(--color-brand-soft)]"
-          >
-            Explorar el diseño V2 <ArrowRight size={17} />
-          </Link>
           <div className="privacy-note flex text-[#9aa9c2] justify-center items-start mt-[29px] gap-2.5 [&_p]:text-[11px] [&_p]:text-muted [&_p]:leading-[1.9] [&_p>span]:block [&_p>span]:text-muted">
             <ShieldCheck size={19} />
             <p>

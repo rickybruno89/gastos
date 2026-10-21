@@ -193,6 +193,28 @@ test("fundación V2: migración limpia, sesiones y aislamiento real en PostgreSQ
         );
         assert.ok(authorization.searchParams.get("state"));
         assert.match(response.headers.get("set-cookie")!, /HttpOnly/i);
+        // El retorno fallido debe recuperar el acceso de la app, no la página
+        // genérica del proveedor de autenticación. No intercambia códigos reales.
+        const failed = await call(
+          "/api/auth/callback/google?error=access_denied",
+          undefined,
+          { redirect: "manual" },
+        );
+        assert.equal(failed.status, 302);
+        const destination = new URL(failed.headers.get("location")!);
+        assert.equal(destination.origin, config.origin);
+        assert.equal(destination.pathname, "/acceso");
+        assert.ok(destination.searchParams.has("error"));
+        const unsafe = await call("/api/auth/sign-in/social", undefined, {
+          method: "POST",
+          headers: { origin: config.origin },
+          body: JSON.stringify({
+            provider: "google",
+            callbackURL: "/",
+            errorCallbackURL: "https://untrusted.example/acceso",
+          }),
+        });
+        assert.equal(unsafe.status, 403);
       },
     );
     await t.test(

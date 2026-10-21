@@ -70,8 +70,8 @@ export function NotificationSettings({ userId }: { userId: string }) {
         <form key={prefs.data.version} onSubmit={submit}>
           {!prefs.data.emailAvailable && (
             <p className="mb-4 text-sm text-muted">
-              El envío por correo todavía no está disponible en este entorno.
-              Podés dejar guardadas tus preferencias.
+              Los avisos por correo no están disponibles en este momento. Podés
+              dejar guardadas tus preferencias.
             </p>
           )}
           <label className="mb-4 flex min-h-11 items-center gap-3 text-sm font-semibold">

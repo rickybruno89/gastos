@@ -4,6 +4,14 @@ Base local en la rama `v2`: React Router + Node/Express + Prisma/PostgreSQL, con
 
 La interfaz usa **Tailwind CSS 4** con su plugin oficial de Vite, componentes propios, Radix Dialog y Lucide. Los estilos y sus variantes responsive viven en `className`, junto al componente. `app/styles.css` es el único CSS manual y contiene el tema, reset, animaciones y reglas globales. `Button`, `Badge`, `Modal` y `FormField` centralizan los estilos compartidos; `cn` combina clases con `tailwind-merge`. La zona horaria se toma automáticamente del dispositivo, con Argentina como respaldo; no requiere configuración en Cuenta. Las decisiones y convenciones de UI están en el [plan V2](docs/PLAN_V2.md#sistema-visual-v2-y-prototipo-navegable).
 
+## Estado real
+
+**Todavía no está lista para producción; el ingreso con cuentas reales está pendiente de validación.** Las fases 0–6 tienen su implementación y pruebas locales, pero el login completo con Google y la entrega real de correo siguen sin validarse. Las pruebas con usuarios sintéticos no reemplazan esa validación.
+
+Las credenciales Google locales se recuperaron de la `.env` de V1, copiando únicamente `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` a `.env.local`. Hay que verificar que el cliente autorice el callback de V2 y comprobar ingreso, retorno, sesión y cierre de sesión con cuentas reales. Para probar emails reales hay que configurar SMTP y ejecutar el worker. Antes de publicar también falta validar HTTPS/cookies, permisos entre dos cuentas reales, backups automáticos con restauración y monitoreo en staging. Estos son requisitos de salida de Fase 7, no detalles opcionales del despliegue.
+
+La demo de diseño fue retirada del acceso, de la navegación y de las rutas de la aplicación. Las pantallas de producto usan la API y PostgreSQL.
+
 ## Empezar en local
 
 Requisitos: Node 24 y [Postgres.app](https://postgresapp.com/) con un servidor PostgreSQL 18 en el puerto **5555** (“Gastapp v2”). Docker/OrbStack solo hace falta para `test:docker`.
@@ -61,4 +69,4 @@ Los backups se cifran con `BACKUP_ENCRYPTION_KEY` y retienen 14 copias. Guardá 
 
 La primera publicación usará una base vacía. El importador de V1 es independiente. El registro/delegación del dominio y los recursos de GastApp en Coolify siguen pendientes; [costos y delegación de NIC a Cloudflare](docs/PLAN_V2.md#73-registro-y-dns).
 
-La propuesta visual V2 se puede explorar en [http://localhost:3000/vista-previa](http://localhost:3000/vista-previa), con datos ficticios y cambios temporales. El sistema visual y su alcance están en el [plan V2](docs/PLAN_V2.md#6-experiencia-de-uso).
+El sistema visual y los recorridos de producto están en el [plan V2](docs/PLAN_V2.md#6-experiencia-de-uso).

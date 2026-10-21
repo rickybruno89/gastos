@@ -1,8 +1,6 @@
-import { cn } from "../lib/cn";
 import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router";
 import {
-  ArrowLeft,
   ArrowUpRight,
   CircleHelp,
   CreditCard,
@@ -13,19 +11,9 @@ import {
   Users,
 } from "lucide-react";
 import { Brand } from "./brand";
-import { Badge } from "./ui";
 
-const sections = [
-  { id: "mes", label: "Mi mes", icon: LayoutGrid },
-  { id: "tarjetas", label: "Tarjetas", icon: CreditCard },
-  { id: "compartidos", label: "Compartidos", icon: Users },
-  { id: "deudas", label: "Deudas", icon: HandCoins },
-];
 export function AppShell({
   children,
-  preview = false,
-  section = "mes",
-  onSection,
   name,
   email,
   signingOut,
@@ -33,35 +21,13 @@ export function AppShell({
   error,
 }: {
   children: ReactNode;
-  preview?: boolean;
-  section?: string;
-  onSection?: (id: string) => void;
   name?: string;
   email?: string;
   signingOut?: boolean;
   onSignOut?: () => void;
   error?: string;
 }) {
-  const navigation = preview ? (
-    sections.map(({ id, label, icon: Icon }) => (
-      <button
-        key={id}
-        className={cn(
-          section === id
-            ? "nav-item active [background:transparent] text-left flex items-center text-[12px] font-medium text-muted px-3 py-[13px] border-0 border-none border-current rounded-[9px] gap-3 hover:[background:#f6f8fc] [&.active]:[background:#edf2ff] [&.active]:text-brand [&.active]:font-[650]"
-            : "nav-item [background:transparent] text-left flex items-center text-[12px] font-medium text-muted px-3 py-[13px] border-0 border-none border-current rounded-[9px] gap-3 hover:[background:#f6f8fc] [&.active]:[background:#edf2ff] [&.active]:text-brand [&.active]:font-[650]",
-        )}
-        onClick={() => onSection?.(id)}
-        aria-current={section === id ? "page" : undefined}
-      >
-        <Icon size={19} />
-        <span>{label}</span>
-        {section === id && (
-          <span className="nav-indicator h-[5px] w-[5px] ml-auto [background:var(--color-brand)] rounded-full" />
-        )}
-      </button>
-    ))
-  ) : (
+  const navigation = (
     <>
       <NavLink
         className="nav-item [background:transparent] text-left flex items-center text-[12px] font-medium text-muted px-3 py-[13px] border-0 border-none border-current rounded-[9px] gap-3 hover:[background:#f6f8fc] [&.active]:[background:#edf2ff] [&.active]:text-brand [&.active]:font-[650]"
@@ -113,7 +79,7 @@ export function AppShell({
         <Brand />
         <div className="workspace-label flex items-center mt-[25px] mb-0 border-t [border-top-style:solid] border-t-line text-[11px] text-muted mx-[7px] px-0 py-[11px] gap-2">
           <span className="workspace-dot w-1.5 h-1.5 [background:#6f91e4] rounded-full" />
-          {preview ? "Espacio de ejemplo" : "Espacio personal"}
+          Espacio personal
         </div>
         <p className="nav-label text-[11px] font-semibold text-muted tracking-[1.6px] mt-[31px] mb-[13px] mx-3">
           PRINCIPAL
@@ -121,39 +87,31 @@ export function AppShell({
         <nav aria-label="Navegación principal">{navigation}</nav>
         <div className="sidebar-support [background:#f7f9fd] mt-auto text-muted p-4 border border-solid border-[#edf0f7] rounded-[12px] [&>svg]:mb-2.5 [&_strong]:block [&_strong]:text-[11px] [&_strong]:text-[#4b5d7b] [&_p]:text-[11px] [&_p]:leading-[1.8] [&_p]:mt-1.5 [&_p]:mb-3 [&_p]:mx-0 [&_a]:flex [&_a]:items-center [&_a]:justify-between [&_a]:text-[#4662b8] [&_a]:text-[11px] [&_a]:font-semibold">
           <CircleHelp size={20} />
-          <strong>
-            {preview ? "Probá sin preocupaciones" : "Todo a tu ritmo"}
-          </strong>
-          <p>
-            {preview
-              ? "Los cambios de esta demo se reinician al recargar."
-              : "Creá tus gastos una vez; cada mes aparecen solos."}
-          </p>
-          <Link to={preview ? "/acceso" : "/vista-previa"}>
-            {preview ? "Volver al acceso" : "Conocer el nuevo diseño"}
+          <strong>Todo a tu ritmo</strong>
+          <p>Creá tus gastos una vez; cada mes aparecen solos.</p>
+          <Link to="/cuenta">
+            Tu cuenta
             <ArrowUpRight size={15} />
           </Link>
         </div>
         <div className="sidebar-bottom border-t [border-top-style:solid] border-t-line mt-5.5 pt-[21px]">
           <div className="identity flex items-center min-w-0 gap-2.5 [&>div]:min-w-0 [&_strong]:block [&_strong]:text-[11px] [&_strong]:font-[650] [&_small]:block [&_small]:text-[11px] [&_small]:text-muted [&_small]:mt-[3px] [&_small]:wrap-anywhere">
             <span className="avatar w-[35px] h-[35px] [background:#e9effe] text-[#4f6bbd] inline-grid place-content-center text-[11px] font-semibold shrink-0 border-[3px] border-solid border-[#f4f7ff] rounded-full [&.small]:w-7.5 [&.small]:h-7.5">
-              {preview ? "G" : name?.slice(0, 1).toUpperCase()}
+              {name?.slice(0, 1).toUpperCase()}
             </span>
             <div>
-              <strong>{preview ? "GastApp V2" : name}</strong>
-              <small>{preview ? "Vista previa del diseño" : email}</small>
+              <strong>{name}</strong>
+              <small>{email}</small>
             </div>
           </div>
-          {!preview && (
-            <button
-              className="logout-button [background:transparent] text-muted text-[11px] flex items-center min-h-9 mt-[13px] border-0 border-none border-current rounded-[6px] gap-2 hover:text-brand hover:[background:var(--color-brand-soft)]"
-              disabled={signingOut}
-              onClick={onSignOut}
-            >
-              <LogOut size={16} />
-              {signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
-            </button>
-          )}
+          <button
+            className="logout-button [background:transparent] text-muted text-[11px] flex items-center min-h-9 mt-[13px] border-0 border-none border-current rounded-[6px] gap-2 hover:text-brand hover:[background:var(--color-brand-soft)]"
+            disabled={signingOut}
+            onClick={onSignOut}
+          >
+            <LogOut size={16} />
+            {signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
+          </button>
           {error && (
             <p
               role="alert"
@@ -167,48 +125,29 @@ export function AppShell({
       <div className="workspace-body">
         <header className="topbar min-h-16 [background:white] border-b [border-bottom-style:solid] border-b-line pt-[calc(12px_+_env(safe-area-inset-top))] pr-[max(16px,_env(safe-area-inset-right))] pb-3 pl-[max(16px,_env(safe-area-inset-left))] flex justify-between items-center flex-wrap gap-4 desktop:min-h-[77px] desktop:flex-nowrap desktop:px-6.5 desktop:py-[15px] min-[1251px]:pr-[35px] min-[1251px]:pl-[35px]">
           <div className="desktop-breadcrumb text-[11px] text-muted hidden gap-3.5 desktop:flex [&_strong]:text-[#52627a] [&_strong]:font-medium">
-            Mi espacio <span>/</span>{" "}
-            <strong>
-              {preview
-                ? sections.find((s) => s.id === section)?.label
-                : "GastApp"}
-            </strong>
+            Mi espacio <span>/</span> <strong>GastApp</strong>
           </div>
           <div className="mobile-brand block desktop:hidden [&_.brand]:text-[1.5rem] max-[701px]:[&_.brand-mark]:mr-[7px] [&_.brand-mark]:w-[31px] [&_.brand-mark]:h-[31px]">
             <Brand />
           </div>
           <div className="topbar-right flex items-center gap-2 [&_.badge]:text-[0.6875rem] [&_.badge]:max-w-[145px] [&_.badge]:text-center">
-            {preview ? (
-              <>
-                <Badge tone="blue">Vista previa · datos de ejemplo</Badge>
-                <Link
-                  className="back-link hidden items-center text-[11px] text-muted gap-1.5 desktop:flex"
-                  to="/acceso"
-                >
-                  <ArrowLeft size={15} /> Acceso
-                </Link>
-              </>
-            ) : (
-              <Link
-                className="account-link flex items-center text-[11px] text-[#52627a] min-h-11 gap-[9px]"
-                to="/cuenta"
-              >
-                <span className="avatar small w-[35px] h-[35px] [background:#e9effe] text-[#4f6bbd] inline-grid place-content-center text-[11px] font-semibold shrink-0 border-[3px] border-solid border-[#f4f7ff] rounded-full [&.small]:w-7.5 [&.small]:h-7.5">
-                  {name?.slice(0, 1).toUpperCase()}
-                </span>
-                <span>Mi cuenta</span>
-              </Link>
-            )}
-            {!preview && (
-              <button
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted hover:bg-brand-soft hover:text-brand desktop:hidden"
-                disabled={signingOut}
-                onClick={onSignOut}
-                aria-label={signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
-              >
-                <LogOut size={19} />
-              </button>
-            )}
+            <Link
+              className="account-link flex items-center text-[11px] text-[#52627a] min-h-11 gap-[9px]"
+              to="/cuenta"
+            >
+              <span className="avatar small w-[35px] h-[35px] [background:#e9effe] text-[#4f6bbd] inline-grid place-content-center text-[11px] font-semibold shrink-0 border-[3px] border-solid border-[#f4f7ff] rounded-full [&.small]:w-7.5 [&.small]:h-7.5">
+                {name?.slice(0, 1).toUpperCase()}
+              </span>
+              <span>Mi cuenta</span>
+            </Link>
+            <button
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted hover:bg-brand-soft hover:text-brand desktop:hidden"
+              disabled={signingOut}
+              onClick={onSignOut}
+              aria-label={signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
+            >
+              <LogOut size={19} />
+            </button>
           </div>
         </header>
         <main
@@ -223,7 +162,7 @@ export function AppShell({
           aria-label="Navegación móvil"
         >
           {navigation}
-          {!preview && error && (
+          {error && (
             <p
               className="mobile-session-error w-full text-[#a74849] text-center text-[12px] p-2"
               role="alert"
