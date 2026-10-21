@@ -257,6 +257,7 @@ model Contact {
   connection   UserConnection?            @relation(fields: [connectionId], references: [id], onDelete: SetNull)
   shares       MonthlyExpenseTermsShare[]
   allocations  OccurrenceAllocation[]
+  debts        PersonalDebt[]
 
   @@unique([id, ownerId])
   @@index([ownerId])
@@ -281,7 +282,7 @@ model UserConnection {
   inviteeId      String?
   inviteeName    String?                @db.VarChar(120)
   status         ConnectionStatus       @default(PENDING)
-  // La contraparte ve los repartos desde este período; los anteriores siguen privados.
+  // Período en que se aceptó (informativo): la contraparte ve todo el historial compartido.
   acceptedPeriod DateTime?              @db.Date
   expiresAt      DateTime               @db.Timestamptz(3)
   createdAt      DateTime               @default(now()) @db.Timestamptz(3)
@@ -332,5 +333,69 @@ model OccurrenceAllocation {
   @@index([occurrenceId])
   @@index([ownerId, period])
   @@index([connectionId, period])
+  @@schema("public")
+}
+
+// Dinero que otra persona le debe al usuario. Independiente de gastos y repartos.
+model PersonalDebt {
+  id             String                   @id @default(uuid(7)) @db.Uuid
+  ownerId        String
+  contactId      String                   @db.Uuid
+  description    String                   @db.VarChar(120)
+  notes          String?                  @db.VarChar(500)
+  currency       Currency
+  principalMinor BigInt
+  lentOn         DateTime                 @db.Date
+  dueOn          DateTime?                @db.Date
+  // Cancelar perdona el saldo restante sin registrar un pago.
+  cancelledAt    DateTime?                @db.Timestamptz(3)
+  cancelReason   String?                  @db.VarChar(200)
+  version        Int                      @default(1)
+  createdAt      DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime                 @updatedAt @db.Timestamptz(3)
+  contact        Contact                  @relation(fields: [contactId, ownerId], references: [id, ownerId], onDelete: Cascade, onUpdate: NoAction)
+  payments       PersonalDebtPayment[]
+  adjustments    PersonalDebtAdjustment[]
+
+  @@unique([id, ownerId])
+  @@index([ownerId, createdAt])
+  @@schema("public")
+}
+
+model PersonalDebtPayment {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  ownerId     String
+  debtId      String       @db.Uuid
+  amountMinor BigInt
+  paidOn      DateTime     @db.Date
+  // Puede registrar que se recibió otra moneda y a qué cambio; GastApp no convierte.
+  note        String?      @db.VarChar(300)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  revertedAt  DateTime?    @db.Timestamptz(3)
+  debt        PersonalDebt @relation(fields: [debtId, ownerId], references: [id, ownerId], onDelete: Cascade)
+
+  @@index([debtId])
+  @@schema("public")
+}
+
+enum DebtAdjustmentKind {
+  INCREASE
+  FORGIVE
+
+  @@schema("public")
+}
+
+model PersonalDebtAdjustment {
+  id          String             @id @default(uuid(7)) @db.Uuid
+  ownerId     String
+  debtId      String             @db.Uuid
+  kind        DebtAdjustmentKind
+  amountMinor BigInt
+  effectiveOn DateTime           @db.Date
+  reason      String             @db.VarChar(200)
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+  debt        PersonalDebt       @relation(fields: [debtId, ownerId], references: [id, ownerId], onDelete: Cascade)
+
+  @@index([debtId])
   @@schema("public")
 }

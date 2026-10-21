@@ -370,8 +370,8 @@ function SharedView({ user }: { user: CurrentUser }) {
           <div>
             <h3>{invitation.inviterName} te invitó a conectar</h3>
             <p>
-              Vas a ver tu parte de los gastos que comparta con vos desde este
-              mes. No ve tu mes ni tus otros gastos.
+              Vas a ver tu parte de todo lo que comparte con vos, desde que
+              empezó cada gasto. No ve tu mes ni tus otros gastos.
             </p>
           </div>
           <div className="invitation-actions">

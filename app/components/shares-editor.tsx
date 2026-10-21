@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { Plus, Trash2, UserPlus } from "lucide-react";
+import { Mail, Plus, Trash2, UserPlus } from "lucide-react";
 import { Button } from "./ui";
-import { useContacts, useCreateContact } from "../lib/sharing";
+import {
+  useConnectionAction,
+  useContacts,
+  useCreateContact,
+} from "../lib/sharing";
 import { errorMessage } from "../lib/expenses";
 import { formatShare, parseShare } from "../lib/format";
 import type { ShareInput } from "../../shared/contracts/sharing";
@@ -42,7 +46,9 @@ export function SharesEditor({
 }) {
   const contacts = useContacts(userId);
   const create = useCreateContact(userId);
+  const invite = useConnectionAction(userId);
   const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const active = (contacts.data ?? []).filter((c) => !c.archived);
   const byId = new Map((contacts.data ?? []).map((c) => [c.id, c]));
@@ -82,6 +88,37 @@ export function SharesEditor({
         onError: (failure) => setError(errorMessage(failure)),
       },
     );
+  }
+
+  // Por email: crea (o reutiliza) el contacto e invita en un paso. No revela si
+  // el email ya tiene cuenta; la invitación espera a que ingrese con ese email.
+  async function inviteByEmail() {
+    const address = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address))
+      return setError("Escribí un email válido.");
+    setError("");
+    try {
+      const existing = (contacts.data ?? []).find((c) => c.email === address);
+      const contact =
+        existing ??
+        (await create.mutateAsync({
+          nickname: address.split("@")[0].slice(0, 60),
+          email: address,
+        }));
+      if (contact.archived)
+        return setError(
+          "Ese contacto está archivado. Restauralo en Compartidos.",
+        );
+      const linked =
+        contact.connection &&
+        ["PENDING", "ACCEPTED"].includes(contact.connection.status);
+      if (!linked)
+        await invite.mutateAsync({ action: "invite", id: contact.id });
+      setEmail("");
+      if (!rows.some((row) => row.contactId === contact.id)) add(contact.id);
+    } catch (failure) {
+      setError(errorMessage(failure));
+    }
   }
 
   return (
@@ -181,6 +218,39 @@ export function SharesEditor({
         </div>
         <span className="field-help">
           No necesita tener GastApp. El apodo es privado: solo lo ves vos.
+        </span>
+      </div>
+      <div className="form-field">
+        <label htmlFor="share-email">O invitala por email</label>
+        <div className="inline-field">
+          <input
+            id="share-email"
+            type="email"
+            inputMode="email"
+            placeholder="persona@email.com"
+            value={email}
+            maxLength={254}
+            autoComplete="off"
+            onChange={(event) => setEmail(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void inviteByEmail();
+              }
+            }}
+          />
+          <Button
+            variant="secondary"
+            onClick={() => void inviteByEmail()}
+            disabled={create.isPending || invite.isPending}
+          >
+            <Mail size={16} />
+            Invitar
+          </Button>
+        </div>
+        <span className="field-help">
+          Vos ves su parte desde ya. Cuando ingrese a GastApp con ese email y
+          acepte, va a ver lo que comparten, con todo el historial.
         </span>
       </div>
       {error && (

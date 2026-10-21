@@ -375,7 +375,7 @@ test("compartidos: contactos, reparto, saldos derivados y conexiones", async (t)
           (await send("POST", `/contacts/${me.id}/invitation`, {})).code,
           "SELF_INVITE",
         );
-        // Un gasto anterior a la invitación queda privado aunque luego se conecten.
+        // Un gasto compartido antes de invitar: al aceptar se ve su historial completo.
         juan = (
           await send("PATCH", `/contacts/${juan.id}`, {
             version: juan.version,
@@ -435,7 +435,7 @@ test("compartidos: contactos, reparto, saldos derivados y conexiones", async (t)
     );
 
     await t.test(
-      "al aceptar, la contraparte ve solo su parte desde ese mes y en lectura",
+      "al aceptar, la contraparte ve solo su parte, con historial y en lectura",
       async () => {
         const [invitation] = await get<{ id: string }[]>(
           "/invitations",
@@ -479,8 +479,12 @@ test("compartidos: contactos, reparto, saldos derivados y conexiones", async (t)
         assert.deepEqual(person.balances, [
           { currency: "ARS", theyOweMinor: "0", iOweMinor: "1500000" },
         ]);
-        // Los meses previos a la aceptación siguen privados.
-        assert.deepEqual((await shared(previous, cookieB)).people, []);
+        // El historial previo a la aceptación también es visible.
+        const history = personOf(await shared(previous, cookieB), "Ricky")!;
+        assert.deepEqual(
+          history.iOwe.map((line) => [line.expenseName, line.amountMinor]),
+          [["Internet", "1500000"]],
+        );
         // La contraparte no ve el mes, ni otros gastos, ni otros participantes.
         assert.deepEqual(
           (await get<Month>(`/months/${current}`, cookieB)).occurrences,

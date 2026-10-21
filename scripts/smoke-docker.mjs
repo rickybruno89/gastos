@@ -87,7 +87,7 @@ try {
     healthy,
     "La imagen debe responder al healthcheck con la base local.",
   );
-  for (const route of ["/", "/acceso", "/cuenta", "/compartidos"]) {
+  for (const route of ["/", "/acceso", "/cuenta", "/compartidos", "/deudas"]) {
     const response = await fetch(`${origin}${route}`);
     assert.equal(response.status, 200);
     assert.match(response.headers.get("content-type"), /text\/html/);

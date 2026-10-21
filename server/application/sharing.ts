@@ -261,8 +261,8 @@ export async function inviteContact(
     where: { id: contactId },
     data: { connectionId: connection.id, version: { increment: 1 } },
   });
-  // Los repartos con este contacto quedan asociados; la contraparte solo ve
-  // los del período de aceptación en adelante.
+  // Todos los repartos con este contacto, incluido el historial, quedan
+  // asociados: la contraparte los ve completos cuando acepta.
   await tx.occurrenceAllocation.updateMany({
     where: { ownerId, contactId },
     data: { connectionId: connection.id },

@@ -13,6 +13,9 @@ CREATE TYPE "OccurrenceStatus" AS ENUM ('PLANNED', 'PAID', 'COVERED', 'SKIPPED',
 -- CreateEnum
 CREATE TYPE "ConnectionStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED', 'BLOCKED');
 
+-- CreateEnum
+CREATE TYPE "DebtAdjustmentKind" AS ENUM ('INCREASE', 'FORGIVE');
+
 -- CreateTable
 CREATE TABLE "auth"."user" (
     "id" TEXT NOT NULL,
@@ -246,6 +249,54 @@ CREATE TABLE "OccurrenceAllocation" (
     CONSTRAINT "OccurrenceAllocation_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "PersonalDebt" (
+    "id" UUID NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "contactId" UUID NOT NULL,
+    "description" VARCHAR(120) NOT NULL,
+    "notes" VARCHAR(500),
+    "currency" "Currency" NOT NULL,
+    "principalMinor" BIGINT NOT NULL,
+    "lentOn" DATE NOT NULL,
+    "dueOn" DATE,
+    "cancelledAt" TIMESTAMPTZ(3),
+    "cancelReason" VARCHAR(200),
+    "version" INTEGER NOT NULL DEFAULT 1,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(3) NOT NULL,
+
+    CONSTRAINT "PersonalDebt_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PersonalDebtPayment" (
+    "id" UUID NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "debtId" UUID NOT NULL,
+    "amountMinor" BIGINT NOT NULL,
+    "paidOn" DATE NOT NULL,
+    "note" VARCHAR(300),
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "revertedAt" TIMESTAMPTZ(3),
+
+    CONSTRAINT "PersonalDebtPayment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PersonalDebtAdjustment" (
+    "id" UUID NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "debtId" UUID NOT NULL,
+    "kind" "DebtAdjustmentKind" NOT NULL,
+    "amountMinor" BIGINT NOT NULL,
+    "effectiveOn" DATE NOT NULL,
+    "reason" VARCHAR(200) NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PersonalDebtAdjustment_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "user_email_key" ON "auth"."user"("email");
 
@@ -327,6 +378,18 @@ CREATE INDEX "OccurrenceAllocation_ownerId_period_idx" ON "OccurrenceAllocation"
 -- CreateIndex
 CREATE INDEX "OccurrenceAllocation_connectionId_period_idx" ON "OccurrenceAllocation"("connectionId", "period");
 
+-- CreateIndex
+CREATE INDEX "PersonalDebt_ownerId_createdAt_idx" ON "PersonalDebt"("ownerId", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PersonalDebt_id_ownerId_key" ON "PersonalDebt"("id", "ownerId");
+
+-- CreateIndex
+CREATE INDEX "PersonalDebtPayment_debtId_idx" ON "PersonalDebtPayment"("debtId");
+
+-- CreateIndex
+CREATE INDEX "PersonalDebtAdjustment_debtId_idx" ON "PersonalDebtAdjustment"("debtId");
+
 -- AddForeignKey
 ALTER TABLE "auth"."session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "auth"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -389,6 +452,15 @@ ALTER TABLE "OccurrenceAllocation" ADD CONSTRAINT "OccurrenceAllocation_contactI
 
 -- AddForeignKey
 ALTER TABLE "OccurrenceAllocation" ADD CONSTRAINT "OccurrenceAllocation_connectionId_fkey" FOREIGN KEY ("connectionId") REFERENCES "UserConnection"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PersonalDebt" ADD CONSTRAINT "PersonalDebt_contactId_ownerId_fkey" FOREIGN KEY ("contactId", "ownerId") REFERENCES "Contact"("id", "ownerId") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "PersonalDebtPayment" ADD CONSTRAINT "PersonalDebtPayment_debtId_ownerId_fkey" FOREIGN KEY ("debtId", "ownerId") REFERENCES "PersonalDebt"("id", "ownerId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PersonalDebtAdjustment" ADD CONSTRAINT "PersonalDebtAdjustment_debtId_ownerId_fkey" FOREIGN KEY ("debtId", "ownerId") REFERENCES "PersonalDebt"("id", "ownerId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 
 -- Domain constraints: periods are first-of-month dates and money is positive minor units.
@@ -559,14 +631,15 @@ BEGIN
 END;
 $$;
 
--- A connected counterpart reads only its own allocation rows, from the acceptance period on,
--- while the connection stays accepted. Expense, month and other participants stay private.
+-- A connected counterpart reads only its own allocation rows, including the history before the
+-- invitation was accepted, while the connection stays accepted. Expense, month and other
+-- participants stay private.
 CREATE POLICY "OccurrenceAllocation_counterpart" ON public."OccurrenceAllocation" FOR SELECT TO gastapp_app
   USING (
     "ownerId" <> NULLIF(current_setting('gastapp.user_id', true), '')
     AND EXISTS (
       SELECT 1 FROM public."UserConnection" c
-      WHERE c."id" = "connectionId" AND c."status" = 'ACCEPTED' AND "period" >= c."acceptedPeriod"
+      WHERE c."id" = "connectionId" AND c."status" = 'ACCEPTED'
         AND NULLIF(current_setting('gastapp.user_id', true), '') IN (c."inviterId", c."inviteeId")
     )
   );
@@ -587,3 +660,64 @@ CREATE POLICY "UserConnection_respond" ON public."UserConnection" FOR UPDATE TO 
     OR ("status" = 'PENDING' AND "inviteeEmail" = NULLIF(current_setting('gastapp.user_email', true), ''))
   )
   WITH CHECK (NULLIF(current_setting('gastapp.user_id', true), '') IN ("inviterId", "inviteeId"));
+
+-- Personal debts: receivables with a fixed principal, partial payments and explicit adjustments.
+ALTER TABLE "PersonalDebt"
+  ADD CONSTRAINT "PersonalDebt_principal_check" CHECK ("principalMinor" > 0),
+  ADD CONSTRAINT "PersonalDebt_description_check" CHECK (length(btrim("description")) > 0),
+  ADD CONSTRAINT "PersonalDebt_due_check" CHECK ("dueOn" IS NULL OR "dueOn" >= "lentOn"),
+  ADD CONSTRAINT "PersonalDebt_cancel_check" CHECK (
+    ("cancelledAt" IS NULL) = ("cancelReason" IS NULL) AND ("cancelReason" IS NULL OR length(btrim("cancelReason")) > 0)
+  );
+ALTER TABLE "PersonalDebtPayment"
+  ADD CONSTRAINT "PersonalDebtPayment_amount_check" CHECK ("amountMinor" > 0);
+ALTER TABLE "PersonalDebtAdjustment"
+  ADD CONSTRAINT "PersonalDebtAdjustment_amount_check" CHECK ("amountMinor" > 0),
+  ADD CONSTRAINT "PersonalDebtAdjustment_reason_check" CHECK (length(btrim("reason")) > 0);
+
+-- A debt balance never goes below zero: no overpayment nor forgiving more than is owed.
+CREATE FUNCTION public.check_debt_balance() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+  balance BIGINT;
+BEGIN
+  SELECT d."principalMinor"
+    + COALESCE((SELECT SUM(a."amountMinor") FROM public."PersonalDebtAdjustment" a
+                WHERE a."debtId" = d."id" AND a."kind" = 'INCREASE'), 0)
+    - COALESCE((SELECT SUM(a."amountMinor") FROM public."PersonalDebtAdjustment" a
+                WHERE a."debtId" = d."id" AND a."kind" = 'FORGIVE'), 0)
+    - COALESCE((SELECT SUM(p."amountMinor") FROM public."PersonalDebtPayment" p
+                WHERE p."debtId" = d."id" AND p."revertedAt" IS NULL), 0)
+  INTO balance
+  FROM public."PersonalDebt" d WHERE d."id" = NEW."debtId";
+  IF balance < 0 THEN
+    RAISE EXCEPTION 'debt % balance would be negative', NEW."debtId" USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+CREATE TRIGGER "PersonalDebtPayment_balance" AFTER INSERT OR UPDATE ON "PersonalDebtPayment"
+  FOR EACH ROW EXECUTE FUNCTION public.check_debt_balance();
+CREATE TRIGGER "PersonalDebtAdjustment_balance" AFTER INSERT ON "PersonalDebtAdjustment"
+  FOR EACH ROW EXECUTE FUNCTION public.check_debt_balance();
+
+-- Adjustments are append-only; a payment can only be marked as reverted.
+GRANT SELECT, INSERT, UPDATE ON public."PersonalDebt" TO gastapp_app;
+GRANT SELECT, INSERT ON public."PersonalDebtPayment", public."PersonalDebtAdjustment" TO gastapp_app;
+GRANT UPDATE ("revertedAt") ON public."PersonalDebtPayment" TO gastapp_app;
+
+DO $$
+DECLARE
+  name TEXT;
+BEGIN
+  FOREACH name IN ARRAY ARRAY['PersonalDebt', 'PersonalDebtPayment', 'PersonalDebtAdjustment']
+  LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', name);
+    EXECUTE format('ALTER TABLE public.%I FORCE ROW LEVEL SECURITY', name);
+    EXECUTE format(
+      'CREATE POLICY %I ON public.%I FOR ALL TO gastapp_app
+         USING ("ownerId" = NULLIF(current_setting(''gastapp.user_id'', true), ''''))
+         WITH CHECK ("ownerId" = NULLIF(current_setting(''gastapp.user_id'', true), ''''))',
+      name || '_owner', name);
+  END LOOP;
+END;
+$$;

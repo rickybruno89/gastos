@@ -1,27 +1,27 @@
 # GastApp V2: plan de producto, arquitectura y producción
 
-Actualizado: **20/10/2026**. Estado: **fundación V2, Fase 1 (primer recorrido de gasto mensual), Fase 2 (gastos periódicos) y Fase 3 (compartidos) implementadas y validadas en local**; resto de módulos financieros y despliegue en el VPS pendientes. El login Google completo con una cuenta real requiere configurar las credenciales del cliente OAuth local.
+Actualizado: **20/10/2026**. Estado: **fundación V2, Fase 1 (primer recorrido de gasto mensual), Fase 2 (gastos periódicos), Fase 3 (compartidos) y Fase 4 (deudas) implementadas y validadas en local**; tarjetas, notificaciones y despliegue en el VPS pendientes. El login Google completo con una cuenta real requiere configurar las credenciales del cliente OAuth local.
 
 Este es el documento único de referencia de GastApp V2. Reúne el assessment funcional, las decisiones de arquitectura y el procedimiento de VPS/Coolify adaptado de Auguri. Sustituye las guías dispersas de V1, Opción B, Vercel y las copias de documentación de Auguri que había en este repositorio.
 
 ## 1. Decisiones y estado real
 
-| Tema                   | Decisión o estado                                                                                                                                                            |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Producto               | Obligaciones por período, tarjetas, repartos informativos y Deudas manuales independientes.                                                                                  |
-| Stack confirmado       | React Router + Node/Express + Prisma + PostgreSQL, con autenticación Google.                                                                                                 |
-| Construcción           | V2 desde cero, con schema y contratos propios; primera producción con base vacía.                                                                                            |
-| Forma de trabajo       | Implementar y probar primero todo el alcance de la primera publicación en local; después desplegar el mismo código y migraciones en Coolify.                                 |
-| Alojamiento confirmado | App y PostgreSQL en el VPS existente con Coolify, siguiendo la operación de Auguri.                                                                                          |
-| Dominio de GastApp     | **`gastapp.ingbruno.ar`**, confirmado por el usuario.                                                                                                                        |
-| Dominio raíz           | **`ingbruno.ar`**, reservado para una futura landing; contenido y tecnología por definir.                                                                                    |
-| Staging propuesto      | `staging.gastapp.ingbruno.ar`, separado de producción.                                                                                                                       |
-| Registro/delegación    | Pendientes según lo informado por el usuario; disponibilidad y titularidad no verificadas.                                                                                   |
-| DNS propuesto          | Cloudflare en la misma cuenta de Auguri, pendiente de configurar.                                                                                                            |
-| Presupuesto            | Reutilizar el VPS y servicios gratuitos, sin nuevas suscripciones. Registrar/renovar `ingbruno.ar` tiene un arancel propio de NIC Argentina; ver sección 7.3.                |
-| Login                  | Better Auth 1.7.12 + Google implementados con Prisma. Inicio OAuth, sesiones y permisos probados; login real pendiente de credenciales locales.                              |
-| Importación de V1      | Script posterior e independiente desde Supabase; fuera del camino de lanzamiento.                                                                                            |
-| Estado del código      | Rama `v2`: fundación, auth, preferencias y “Mi mes” y “Compartidos” reales (periódicos, pagos, reparto, contactos y conexiones) sobre Postgres.app; pruebas e imagen Docker. |
+| Tema                   | Decisión o estado                                                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Producto               | Obligaciones por período, tarjetas, repartos informativos y Deudas manuales independientes.                                                                                           |
+| Stack confirmado       | React Router + Node/Express + Prisma + PostgreSQL, con autenticación Google.                                                                                                          |
+| Construcción           | V2 desde cero, con schema y contratos propios; primera producción con base vacía.                                                                                                     |
+| Forma de trabajo       | Implementar y probar primero todo el alcance de la primera publicación en local; después desplegar el mismo código y migraciones en Coolify.                                          |
+| Alojamiento confirmado | App y PostgreSQL en el VPS existente con Coolify, siguiendo la operación de Auguri.                                                                                                   |
+| Dominio de GastApp     | **`gastapp.ingbruno.ar`**, confirmado por el usuario.                                                                                                                                 |
+| Dominio raíz           | **`ingbruno.ar`**, reservado para una futura landing; contenido y tecnología por definir.                                                                                             |
+| Staging propuesto      | `staging.gastapp.ingbruno.ar`, separado de producción.                                                                                                                                |
+| Registro/delegación    | Pendientes según lo informado por el usuario; disponibilidad y titularidad no verificadas.                                                                                            |
+| DNS propuesto          | Cloudflare en la misma cuenta de Auguri, pendiente de configurar.                                                                                                                     |
+| Presupuesto            | Reutilizar el VPS y servicios gratuitos, sin nuevas suscripciones. Registrar/renovar `ingbruno.ar` tiene un arancel propio de NIC Argentina; ver sección 7.3.                         |
+| Login                  | Better Auth 1.7.12 + Google implementados con Prisma. Inicio OAuth, sesiones y permisos probados; login real pendiente de credenciales locales.                                       |
+| Importación de V1      | Script posterior e independiente desde Supabase; fuera del camino de lanzamiento.                                                                                                     |
+| Estado del código      | Rama `v2`: fundación, auth, preferencias y “Mi mes”, “Compartidos” y “Deudas” reales (periódicos, pagos, reparto, conexiones, préstamos) sobre Postgres.app; pruebas e imagen Docker. |
 
 V2 tiene libertad para definir tablas, IDs, API, sesiones y pantallas nuevos. No requiere convivencia, sincronización ni retrocompatibilidad con V1. Los datos del futuro importador se adaptarán al modelo de V2.
 
@@ -251,9 +251,9 @@ Las conexiones forman parte del alcance V2, no son una mejora opcional posterior
 - El reparto vive en la versión de condiciones (`MonthlyExpenseTermsShare` por `MonthlyExpenseTerms`), con la misma vigencia por período que importe y vencimiento. “Cambiar reparto” aplica a este mes y a los siguientes no pagados.
 - Cada ocurrencia pendiente o pagada que reparte tiene su snapshot `OccurrenceAllocation`: fila del propietario (`contactId` nulo) y una por contacto, con porcentaje, importe calculado con `allocateMoney`, base, moneda, nombre del gasto y período. Un trigger por sentencia exige que sumen 10.000 bps; otro impide modificar el snapshot de un mes pagado. Omitidos, de baja y cubiertos no tienen snapshot; el pago anual lo calcula una sola vez sobre el total.
 - La allocation siempre referencia al contacto del propietario (su apodo privado); si el contacto está vinculado, guarda además la conexión. Así una sola fila sirve al propietario y, en lectura, a la contraparte. Esto sustituye la regla conceptual “contacto o conexión, nunca ambos”.
-- Invitación: el propietario agrega el email al contacto e invita. El destinatario ve la invitación al ingresar con ese email verificado por Google (sin envío de correo hasta la Fase 6 ni enlace con token todavía). Vence a los 30 días. Al aceptar, el destinatario obtiene su propio contacto con el nombre del invitador, y ambos pueden compartir en las dos direcciones.
+- Invitación: desde el reparto se puede sumar a alguien por email (crea o reutiliza el contacto e invita en un paso), o agregar el email a un contacto existente e invitar. No se informa si el email ya tiene cuenta, para no permitir enumerar usuarios. El destinatario ve la invitación al ingresar con ese email verificado por Google (sin envío de correo hasta la Fase 6 ni enlace con token todavía). Vence a los 30 días. Al aceptar, el destinatario obtiene su propio contacto con el nombre del invitador, y ambos pueden compartir en las dos direcciones.
 - Desconectar (cualquiera de los dos) deja la conexión `BLOCKED`: la contraparte deja de ver; los snapshots y saldos propios se conservan. Se puede volver a invitar.
-- RLS: la contraparte solo lee sus propias filas de allocation, con conexión aceptada y período desde la aceptación. No accede a ocurrencias, series, contactos ni a otros participantes. La invitación pendiente es visible para el email invitado mediante `gastapp.user_email`, fijado solo con email verificado.
+- RLS: la contraparte solo lee sus propias filas de allocation, mientras la conexión siga aceptada, con todo el historial. No accede a ocurrencias, series, contactos ni a otros participantes. La invitación pendiente es visible para el email invitado mediante `gastapp.user_email`, fijado solo con email verificado.
 
 La identidad Google se asocia a una cuenta `User` propia de GastApp mediante el identificador estable del proveedor; el email no es la clave de las relaciones financieras. Las invitaciones identifican al destinatario y requieren aceptación autenticada antes de conceder visibilidad compartida. Si todavía no tiene cuenta, puede registrarse con Google y luego aceptar; no se crean usuarios ficticios a partir de contactos.
 
@@ -278,6 +278,14 @@ PersonalDebt registra dinero que otra persona debe al usuario, como un préstamo
 - Un aumento de principal o condonación es un ajuste explícito, fechado, motivado y auditable.
 - Cancelar no inventa un pago.
 - No existe sourceType ni automatización desde gastos, allocations, cuotas, statements o saldos compartidos.
+
+**Implementado en Fase 4:**
+
+- La contraparte es un contacto del propietario (el mismo de Compartidos, con o sin cuenta). Las deudas son privadas: una cuenta conectada no las ve.
+- Saldo = principal + aumentos − perdonado − pagos activos, calculado en `shared/domain/debts.ts`. El estado se deriva: `CANCELLED` si está cancelada; `PAID` con saldo cero; `PARTIALLY_PAID` con algún pago; si no, `OPEN`. Perdonar todo sin pagos deja la deuda saldada, sin registrar un pago.
+- Un pago no puede superar el saldo ni ser anterior al préstamo; deshacer un pago lo marca revertido y queda en el historial. Ajustes `INCREASE` y `FORGIVE` con fecha y motivo obligatorio; son de solo alta. Cancelar guarda motivo y fecha, perdona el saldo restante y se puede reabrir.
+- La base rechaza un saldo negativo (trigger), la edición de ajustes y cualquier cambio en un pago que no sea marcarlo revertido (permisos por columna). Cada movimiento usa bloqueo de fila, versión e Idempotency-Key, y queda en el audit log.
+- La pantalla “Deudas” tiene resumen “Te deben” por moneda (solo deudas activas), filtros Activas/Saldadas/Canceladas/Todas, préstamos vencidos marcados y un detalle con pago, ajuste, cancelar, editar e historial.
 
 ### 4.5. Tarjetas y conciliación manual
 
@@ -422,9 +430,14 @@ POST   /api/v2/statements/:id/pdf-analysis
 GET    /api/v2/shared-balances
 
 GET    /api/v2/debts
+GET    /api/v2/debts/:id
 POST   /api/v2/debts
+PATCH  /api/v2/debts/:id
 POST   /api/v2/debts/:id/payments
+POST   /api/v2/debts/:id/payments/:paymentId/undo
+POST   /api/v2/debts/:id/adjustments
 POST   /api/v2/debts/:id/cancel
+POST   /api/v2/debts/:id/reopen
 
 GET    /api/v2/contacts
 POST   /api/v2/contacts
@@ -470,7 +483,7 @@ El email se usa para contacto e invitaciones; la identidad no depende de que per
 
 Para conectar cuentas, el destinatario inicia sesión y acepta. Si todavía no tiene cuenta, puede crearla con Google y aceptar después. Las invitaciones por enlace se validan en servidor, vencen y se consumen una sola vez. Al asignar una conexión a un gasto se comprueba que pertenece al propietario y está aceptada. El creador sigue siendo el único editor.
 
-No se publica automáticamente el historial al vincular un contacto. **Decisión de Fase 3 (a confirmar por el usuario):** la contraparte ve los repartos desde el período en que acepta la invitación; los meses anteriores siguen privados, incluidos los pagados. Es configurable cambiando la condición de período en la política RLS.
+No se publica automáticamente el historial al vincular un contacto. **Decisión confirmada por el usuario (20/10/2026):** el propietario ve siempre la parte de cada persona, mes a mes, haya aceptado o no. Cuando la contraparte acepta la invitación, ve todo el historial compartido con ella desde que empezó cada gasto, incluidos los meses pagados. La invitación es por persona, no por gasto.
 
 ### 5.1. Login, sesiones y permisos
 
@@ -895,7 +908,7 @@ Agregar a Kuma los healthchecks de producción y staging, y activar las alertas 
 | 1. Primer recorrido completo  | **Implementada en local:** crear gasto mensual, consultar período, cambiar importe/vencimiento, pagar y deshacer, en API y “Mi mes”.     | Flujo UI/API/base completo, idempotente y transaccional; 22 pruebas automatizadas, recorrido en navegador y ensayo Docker aprobados.  |
 | 2. Gastos periódicos          | **Implementada en local:** bimestrales con anclaje, vencimientos cortos, omitir/restaurar, baja/reactivar, pago anual y renombrar.       | Períodos correctos; historial pagado protegido; cobertura anual y reparto sin duplicación.                                            |
 | 3. Compartidos                | **Implementada en local:** contactos sin cuenta, reparto con snapshots, saldos por persona y moneda, invitaciones y conexiones.          | Reparto manual completo sin registro de contraparte; vista conectada solo de lectura y sin filtraciones.                              |
-| 4. Deudas                     | Principal, pagos parciales, cancelación y ajustes auditables.                                                                            | Estados y saldos exactos, separados del reparto de gastos y tarjetas.                                                                 |
+| 4. Deudas                     | **Implementada en local:** principal fijo, pagos parciales con undo, ajustes auditables, cancelar/reabrir y pantalla propia.             | Estados y saldos exactos, separados del reparto de gastos y tarjetas.                                                                 |
 | 5. Tarjetas                   | Compras, cuotas, recurrentes, statements y conciliación manual.                                                                          | Una fuente de verdad para cuotas; pago/reversión del statement consistente; cargos desconocidos y ausentes resueltos.                 |
 | 6. Notificaciones y operación | Preferencias, outbox, reintentos, herramientas de DB y backups.                                                                          | Envíos idempotentes; configuración de recursos y restauración verificadas.                                                            |
 | 7. Publicación inicial        | Alcance completo probado en local, imagen Docker ensayada localmente y despliegue del commit validado con base nueva.                    | Comprobación en staging/producción de HTTPS, auth, permisos, backup/restauración y monitoreo; producción aprobada operativamente.     |
@@ -916,7 +929,9 @@ La landing `ingbruno.ar` y el importador desde V1 son trabajos independientes. L
 - Roles y RLS con conexiones del pool reutilizadas entre usuarios distintos.
 - Instalación limpia, persistencia tras redeploy, salud y restauración aislada.
 
-La Fase 3 agrega 3 pruebas unitarias y 11 resultados de integración: contactos privados y versionados, validación de porcentajes y contactos ajenos/archivados, parte exacta al centavo con contacto sin cuenta y 0%/100%, pago que no salda y congela el snapshot (trigger de inmutabilidad y de suma 100%), recálculo por importe y por reparto desde un mes, omitido sin reparto y pago anual repartido una sola vez, invitación con email obligatorio y sin auto-invitación, aceptación con visibilidad solo desde ese mes y solo de la propia parte (RLS verificado directamente), compartido bidireccional, desconexión que conserva saldos propios, rechazo y vencimiento. El recorrido de navegador cubre crear compartido con persona nueva, partes iguales, cambio de reparto, invitación y aceptación desde el iPhone de la contraparte.
+La Fase 4 agrega 2 pruebas unitarias y 9 resultados de integración: estados derivados, validación del préstamo, pagos parciales en su moneda, versión obsoleta, sobrepago, fecha anterior al préstamo, pagos concurrentes que no superan el saldo, undo conservado en el historial, aumento y perdón parcial con motivo, cancelación sin pago inventado y reapertura, resumen por moneda separado del mes y de los compartidos, privacidad entre cuentas y protecciones en la base (saldo negativo, ajustes inmutables, pagos solo revertibles, audit log). El recorrido de navegador cubre préstamo a persona nueva, pago con nota de otra moneda, deshacer, sobrepago, perdón parcial, cancelar/reabrir, saldar, préstamo vencido y móvil 375/390.
+
+La Fase 3 agrega 3 pruebas unitarias y 11 resultados de integración: contactos privados y versionados, validación de porcentajes y contactos ajenos/archivados, parte exacta al centavo con contacto sin cuenta y 0%/100%, pago que no salda y congela el snapshot (trigger de inmutabilidad y de suma 100%), recálculo por importe y por reparto desde un mes, omitido sin reparto y pago anual repartido una sola vez, invitación con email obligatorio y sin auto-invitación, aceptación con historial completo y solo de la propia parte (RLS verificado directamente), compartido bidireccional, desconexión que conserva saldos propios, rechazo y vencimiento. El recorrido de navegador cubre crear compartido con persona nueva, partes iguales, cambio de reparto, invitación y aceptación desde el iPhone de la contraparte.
 
 La Fase 2 agrega 7 resultados de integración: bimestral anclado y sin importe en meses intermedios, omitir con motivo y restaurar, baja que oculta meses posteriores y se rechaza ante meses resueltos, pago anual con meses ya materializados y futuros cubiertos, doble envío concurrente, superposición, conflicto con meses pagados, límite por baja, undo completo, inmutabilidad de meses cubiertos en la base y renombrar con versión y aislamiento. El recorrido de navegador cubre crear mensual/USD/bimestral, omitir/restaurar, pago anual y navegación al mes de pago, editar con alcance y renombrar, baja/reactivar y móvil 375/390/430.
 
@@ -934,16 +949,15 @@ Las instrucciones y ejemplos de Opción B/Vercel describían el sistema anterior
 
 ## 10. Pendientes concretos y siguiente entrega
 
-La fundación técnica y las Fases 1 a 3 ya están implementadas. Quedan tareas de configuración, módulos e infraestructura:
+La fundación técnica y las Fases 1 a 4 ya están implementadas. Quedan tareas de configuración, módulos e infraestructura:
 
 - Completar las credenciales del cliente OAuth local y validar el ingreso real con Google; la integración y las versiones ya están fijadas y probadas automáticamente.
 - Completar registro/delegación del dominio y DNS; cerrar staging y certificados según el proxy real.
 - Medir recursos y preparar el proyecto GastApp con sus credenciales, bases y volúmenes.
-- Confirmar la visibilidad al conectar (implementada: desde el mes de aceptación).
 - Envío de invitaciones por correo y enlace de un solo uso (Fase 6, con el outbox de notificaciones).
 - Fijar parámetros operativos de sesiones, backups, recuperación, correo y jobs en sus fases.
 
-**Siguiente entrega:** Fase 4, Deudas: préstamos manuales con principal fijo, pagos parciales en la moneda de la deuda, cancelación y ajustes explícitos auditables, con estados derivados (`OPEN`, `PARTIALLY_PAID`, `PAID`, `CANCELLED`) y navegación propia, separados de los repartos. Decisión de Fase 2: el pago rápido sigue usando la fecha de hoy y un canal opcional, sin canal predeterminado configurable. No se migran datos de V1 ni se despliega al VPS durante esa entrega local.
+**Siguiente entrega:** Fase 5, Tarjetas: tarjetas, compras en cuotas con snapshot de reparto por cuota, cargos recurrentes, statements por período con cierre y vencimiento reales, conciliación manual (esperado, coincide, diferencias, desconocidos, ausentes arrastrados al siguiente), pago y reversión del statement completo. Decisiones vigentes: el pago rápido usa la fecha de hoy y un canal opcional; la contraparte conectada ve el historial completo de lo compartido. No se migran datos de V1 ni se despliega al VPS durante esa entrega local.
 
 ## 11. Referencias técnicas
 

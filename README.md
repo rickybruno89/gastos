@@ -1,6 +1,6 @@
 # GastApp V2
 
-Base local en la rama `v2`: React Router + Node/Express + Prisma/PostgreSQL, con Better Auth y Google. Incluye acceso, sesiones, cuenta, preferencias y **Mi mes** y **Compartidos**: gastos mensuales y bimestrales reales (crear, cambiar importe o vencimiento, pagar y deshacer, omitir un mes, dar de baja, pago anual y renombrar; repartos con contactos sin cuenta, saldos por persona e invitaciones entre cuentas). El resto de los módulos sigue el roadmap del **[plan único de V2](docs/PLAN_V2.md)**.
+Base local en la rama `v2`: React Router + Node/Express + Prisma/PostgreSQL, con Better Auth y Google. Incluye acceso, sesiones, cuenta, preferencias y **Mi mes**, **Compartidos** y **Deudas**: gastos mensuales y bimestrales reales (crear, cambiar importe o vencimiento, pagar y deshacer, omitir un mes, dar de baja, pago anual y renombrar; repartos con contactos sin cuenta, saldos por persona e invitaciones entre cuentas; préstamos con pagos parciales, ajustes y cancelación). El resto de los módulos sigue el roadmap del **[plan único de V2](docs/PLAN_V2.md)**.
 
 ## Empezar en local
 
